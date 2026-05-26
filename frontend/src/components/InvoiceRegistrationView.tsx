@@ -27,6 +27,7 @@ interface InvoiceScannerDebugInfo {
   barcodeDetectorAvailable: boolean
   scannerType: 'native' | 'html5-qrcode' | 'none'
   activeFormats: string[]
+  cameraResolution: string
 }
 
 interface InvoiceRegistrationViewProps {
@@ -257,6 +258,13 @@ export function InvoiceRegistrationView({
                       value={invoiceScannerDebug.hasGetUserMedia ? 'disponible' : 'no disponible'}
                       ok={invoiceScannerDebug.hasGetUserMedia}
                     />
+                    {invoiceScannerDebug.cameraResolution && (
+                      <DebugRow
+                        label="Resolución cámara"
+                        value={invoiceScannerDebug.cameraResolution}
+                        ok={true}
+                      />
+                    )}
                     <DebugRow label="Origen" value={invoiceScannerDebug.origin} ok={true} />
                     <div className="pt-1 text-on-surface-variant/50 break-all leading-relaxed">
                       UA: {invoiceScannerDebug.userAgent}

@@ -122,6 +122,7 @@ interface InvoiceScannerDebugInfo {
   barcodeDetectorAvailable: boolean
   scannerType: 'native' | 'html5-qrcode' | 'none'
   activeFormats: string[]
+  cameraResolution: string
 }
 
 interface InvoiceScannerRef {
@@ -202,6 +203,7 @@ async function startNativeBarcodeScanner(
   formats: string[],
   onSuccess: (text: string) => void,
   onError: (msg: string) => void,
+  onActive: (resolution: string) => void,
 ): Promise<{ stop: () => Promise<void>; clear: () => void }> {
   const container = document.getElementById(elementId)
   if (!container) throw new Error('Contenedor del escaner no encontrado')
@@ -245,20 +247,30 @@ async function startNativeBarcodeScanner(
   const detector = new (window as any).BarcodeDetector({ formats: formats })
   let stopped = false
   let timerId: ReturnType<typeof setTimeout> | null = null
+  let activeNotified = false
 
   async function scanFrame() {
     if (stopped) return
     if (video.readyState >= video.HAVE_ENOUGH_DATA) {
+      if (!activeNotified) {
+        activeNotified = true
+        onActive(`${video.videoWidth}x${video.videoHeight}`)
+      }
+      let bitmap: ImageBitmap | null = null
       try {
-        // detect() acepta HTMLVideoElement directamente — usa el frame nativo a resolución completa
+        // createImageBitmap captura el frame a la resolución real de la cámara (no la visual del elemento).
+        // detect(video) en Chrome Android usa la resolución de renderizado CSS, que puede ser mucho menor.
+        bitmap = await createImageBitmap(video)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const codes: any[] = await detector.detect(video)
+        const codes: any[] = await detector.detect(bitmap)
         if (codes.length > 0 && !stopped) {
           onSuccess(codes[0].rawValue as string)
           return
         }
       } catch (e) {
         onError(String(e))
+      } finally {
+        bitmap?.close()
       }
     }
     if (!stopped) timerId = setTimeout(() => { void scanFrame() }, 80)
@@ -294,6 +306,7 @@ function buildInvoiceScannerDebugInfo(partial?: Partial<InvoiceScannerDebugInfo>
       barcodeDetectorAvailable: false,
       scannerType: partial?.scannerType ?? 'none',
       activeFormats: partial?.activeFormats ?? [],
+      cameraResolution: partial?.cameraResolution ?? '',
     }
   }
 
@@ -319,6 +332,7 @@ function buildInvoiceScannerDebugInfo(partial?: Partial<InvoiceScannerDebugInfo>
     barcodeDetectorAvailable: 'BarcodeDetector' in window,
     scannerType: partial?.scannerType ?? 'none',
     activeFormats: partial?.activeFormats ?? [],
+    cameraResolution: partial?.cameraResolution ?? '',
   }
 }
 
@@ -1168,6 +1182,13 @@ export function App() {
               (errorMessage: string) => {
                 setInvoiceScannerDebug((current) =>
                   current.lastStage === 'decoded-camera' ? current : { ...current, lastStage: 'scanning-camera', lastError: errorMessage },
+                )
+              },
+              (resolution: string) => {
+                setInvoiceScannerDebug((current) =>
+                  current.lastStage === 'decoded-camera'
+                    ? current
+                    : { ...current, lastStage: 'scanning-camera', lastError: null, cameraResolution: resolution },
                 )
               },
             )
