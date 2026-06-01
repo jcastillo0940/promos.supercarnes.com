@@ -989,6 +989,7 @@ export function App() {
   )
   const [invoiceGalleryProcessing, setInvoiceGalleryProcessing] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [selectedGroupLabel, setSelectedGroupLabel] = useState<string | null>(null)
   const [predictionDrafts, setPredictionDrafts] = useState<Record<number, PredictionDraft>>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -1013,6 +1014,7 @@ export function App() {
   const invoiceScannerRef = useRef<InvoiceScannerRef | null>(null)
   const lastResolvedInvoiceCufeRef = useRef<string | null>(null)
   const googleButtonRef = useRef<HTMLDivElement | null>(null)
+  const userMenuRef = useRef<HTMLDivElement | null>(null)
   const [authForm, setAuthForm] = useState<AuthFormState>({
     full_name: '',
     document_type: 'cedula',
@@ -1102,6 +1104,34 @@ export function App() {
 
     return () => URL.revokeObjectURL(objectUrl)
   }, [registrationAvatarFile])
+
+  useEffect(() => {
+    if (!userMenuOpen) return
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setUserMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [userMenuOpen])
+
+  useEffect(() => {
+    setUserMenuOpen(false)
+  }, [location.pathname])
 
   useEffect(() => {
     api.get<PublicSettingsResponse>('/public/settings')
@@ -3111,9 +3141,34 @@ export function App() {
                 <button className="marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" aria-label="Notificaciones">
                   notifications
                 </button>
-                <button className="marea-header-avatar" type="button" onClick={() => navigateToView('cuenta')} aria-label="Abrir perfil">
-                  {playerAvatarUrl ? <img alt={`Avatar de ${playerName}`} src={playerAvatarUrl} /> : <span>{playerBadge}</span>}
-                </button>
+                <div className="marea-header-user-menu" ref={userMenuRef}>
+                  <button
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="menu"
+                    className="marea-header-avatar"
+                    type="button"
+                    onClick={() => setUserMenuOpen((value) => !value)}
+                    aria-label="Abrir menu de usuario"
+                  >
+                    {playerAvatarUrl ? <img alt={`Avatar de ${playerName}`} src={playerAvatarUrl} /> : <span>{playerBadge}</span>}
+                  </button>
+                  {userMenuOpen ? (
+                    <div className="marea-header-user-dropdown" role="menu" aria-label="Menu de usuario">
+                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => navigateToView('cuenta')}>
+                        <span className="material-symbols-outlined">person</span>
+                        <span>Mi cuenta</span>
+                      </button>
+                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => navigateToView('cuenta')}>
+                        <span className="material-symbols-outlined">settings</span>
+                        <span>Ajustes</span>
+                      </button>
+                      <button className="marea-header-user-item danger" role="menuitem" type="button" onClick={() => void handleLogout()}>
+                        <span className="material-symbols-outlined">logout</span>
+                        <span>Cerrar sesion</span>
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
                 <button className="marea-header-cta bg-primary-container text-on-tertiary-container font-display-lg px-4 py-1 rounded-lg text-sm hover:opacity-80 active:scale-95 transition-all" type="button" onClick={() => navigateToView('facturas')}>
                   Registrar factura
                 </button>
