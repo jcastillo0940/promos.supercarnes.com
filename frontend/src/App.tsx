@@ -1912,6 +1912,13 @@ export function App() {
                   ? `Tienes hasta el ${formatDateTime(nextDeadlineMatch.kickoff_at)} para enviar tus resultados de ${activeGroupTitle}.`
                   : `Registro legal hasta el ${REGISTRATION_DEADLINE}. Los ganadores se anuncian el ${WINNERS_ANNOUNCEMENT}.`}
               </p>
+              {nextDeadlineMatch ? (
+                <div className="marea-deadline-global">
+                  <span className="material-symbols-outlined">warning</span>
+                  <strong>CIERRE GLOBAL DE PRONOSTICOS</strong>
+                  <span>{formatUpperDate(nextDeadlineMatch.kickoff_at).toUpperCase()} - {formatTime(nextDeadlineMatch.kickoff_at)}</span>
+                </div>
+              ) : null}
               {countdownParts ? (
                 <div className="marea-countdown" aria-label="Cuenta regresiva para cierre de pronosticos">
                   {countdownParts.map((part) => (
@@ -1946,6 +1953,17 @@ export function App() {
               </button>
             ))}
           </div>
+
+          <label className="marea-mobile-group-select">
+            <span>Grupo</span>
+            <select value={selectedGroupLabel ?? ''} onChange={(event) => setSelectedGroupLabel(event.target.value)}>
+              {groupLabels.map((groupLabel) => (
+                <option key={groupLabel} value={groupLabel}>
+                  {fullGroupLabel(groupLabel)}
+                </option>
+              ))}
+            </select>
+          </label>
         </section>
 
         <section className="marea-group-stack">
@@ -2011,13 +2029,6 @@ export function App() {
                         <TeamBadge team={awayTeam} featured={favoriteTeam?.id === awayTeam?.id} />
                         <span className="team-name">{awayTeam?.name ?? 'Visitante'}</span>
                       </div>
-                    </div>
-
-                    <div className="marea-betting-close">
-                      <span className="material-symbols-outlined">warning</span>
-                      <span>
-                        {prediction ? 'PRONOSTICO ENVIADO' : 'CIERRE DE PRONOSTICOS'}: {formatUpperDate(match.kickoff_at).toUpperCase()} - {formatTime(match.kickoff_at)}
-                      </span>
                     </div>
 
                     <div className="marea-card-action">
@@ -2755,7 +2766,7 @@ export function App() {
             <div className="flex justify-between items-center px-4 md:px-margin-desktop w-full max-w-7xl mx-auto h-16">
               <div className="flex items-center gap-3">
                 <button
-                  className="marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all"
+                  className="marea-header-menu marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all"
                   type="button"
                   onClick={() => setSidebarOpen((value) => !value)}
                   aria-label="Abrir menu"
@@ -2795,14 +2806,14 @@ export function App() {
             </div>
           </header>
 
-          {sidebarOpen ? <button className="fixed inset-0 z-30 bg-black/45 md:hidden" type="button" onClick={() => setSidebarOpen(false)} /> : null}
+          {sidebarOpen ? <button className="marea-sidebar-overlay fixed inset-0 z-30 bg-black/45 md:hidden" type="button" onClick={() => setSidebarOpen(false)} /> : null}
 
           <div className="flex w-full">
             <aside
               className={
                 sidebarOpen
-                  ? 'fixed inset-y-16 left-0 z-40 flex w-64 flex-col bg-surface-container-low border-r border-outline-variant py-unit md:sticky md:top-16 md:h-[calc(100vh-64px)]'
-                  : 'hidden'
+                  ? 'marea-client-sidebar fixed inset-y-16 left-0 z-40 flex w-64 flex-col bg-surface-container-low border-r border-outline-variant py-unit md:sticky md:top-16 md:h-[calc(100vh-64px)]'
+                  : 'marea-client-sidebar hidden'
               }
             >
               <div className="px-6 py-4 mb-4">
@@ -2882,7 +2893,7 @@ export function App() {
             </button>
           </nav>
 
-          <button className="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-primary-container text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all md:hidden z-40" type="button" onClick={() => setSidebarOpen((value) => !value)}>
+          <button className="marea-mobile-menu-fab fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-primary-container text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all md:hidden z-40" type="button" onClick={() => setSidebarOpen((value) => !value)}>
             <span className="material-symbols-outlined text-3xl">{sidebarOpen ? 'close' : 'menu'}</span>
           </button>
         </div>
