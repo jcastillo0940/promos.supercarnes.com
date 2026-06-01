@@ -26,6 +26,7 @@ class MatchesFilterBackofficeTest extends TestCase
 
         $groupPhase = TournamentPhase::query()->where('slug', 'fase-grupos')->firstOrFail();
         $quarterPhase = TournamentPhase::query()->where('slug', 'cuartos')->firstOrFail();
+        $quarterPhase->update(['is_active' => true]);
 
         $panamaId = $this->insertTeam('Panama', 'PAN');
         $mexicoId = $this->insertTeam('Mexico', 'MEX');
@@ -68,6 +69,67 @@ class MatchesFilterBackofficeTest extends TestCase
 
         $this->assertCount(1, $matches);
         $this->assertSame(57, (int) $matches->first()->match_number);
+    }
+
+    public function test_inactive_phase_does_not_appear_on_matches_backoffice(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'cedula' => 'ADMIN-1',
+            'document_type' => 'passport',
+            'password' => bcrypt('secret'),
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $activePhase = TournamentPhase::query()->where('slug', 'fase-grupos')->firstOrFail();
+        $inactivePhase = TournamentPhase::query()->where('slug', 'octavos')->firstOrFail();
+
+        $inactivePhase->update(['is_active' => false]);
+
+        $panamaId = $this->insertTeam('Panama', 'PAN');
+        $mexicoId = $this->insertTeam('Mexico', 'MEX');
+        $brazilId = $this->insertTeam('Brasil', 'BRA');
+        $argentinaId = $this->insertTeam('Argentina', 'ARG');
+
+        TournamentMatch::query()->create([
+            'phase_id' => $activePhase->id,
+            'match_number' => 2,
+            'group_label' => 'A',
+            'home_team_id' => $panamaId,
+            'away_team_id' => $mexicoId,
+            'favorite_side' => 'away',
+            'kickoff_at' => now()->addHour(),
+            'status' => 'scheduled',
+        ]);
+
+        TournamentMatch::query()->create([
+            'phase_id' => $inactivePhase->id,
+            'match_number' => 48,
+            'group_label' => null,
+            'round_label' => 'Octavos',
+            'stage_label' => 'Eliminatoria',
+            'home_team_id' => $brazilId,
+            'away_team_id' => $argentinaId,
+            'favorite_side' => 'home',
+            'kickoff_at' => now()->addHours(2),
+            'status' => 'scheduled',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/adminrepus1car/matches');
+
+        $response->assertOk();
+        $response->assertSee('Fase de Grupos');
+        $response->assertDontSee('Octavos de Final');
+
+        $matches = $response->viewData('matches');
+        $phases = $response->viewData('phases');
+
+        $this->assertCount(1, $matches);
+        $this->assertSame(2, (int) $matches->first()->match_number);
+        $this->assertTrue($phases->every(fn ($phase) => (bool) $phase->is_active));
+        $this->assertFalse($phases->contains(fn ($phase) => $phase->slug === 'octavos'));
     }
 
     private function insertTeam(string $name, string $code): int

@@ -66,6 +66,7 @@ class BackofficeController extends Controller
         return view('admin.matches', [
             'matches' => TournamentMatch::query()
                 ->with(['phase', 'homeTeam', 'awayTeam'])
+                ->whereHas('phase', fn ($query) => $query->where('is_active', true))
                 ->when($phaseId, fn ($query) => $query->where('phase_id', $phaseId))
                 ->when($teamId, function ($query) use ($teamId): void {
                     $query->where(function ($teamQuery) use ($teamId): void {
@@ -81,7 +82,7 @@ class BackofficeController extends Controller
                 ->where('status', 'pending')
                 ->latest('id')
                 ->get(),
-            'phases' => TournamentPhase::query()->orderBy('stage_order')->get(),
+            'phases' => TournamentPhase::query()->where('is_active', true)->orderBy('stage_order')->get(),
             'teams' => Team::query()->where('is_active', true)->orderBy('name')->get(),
             'filters' => [
                 'phase_id' => $phaseId ?: '',
