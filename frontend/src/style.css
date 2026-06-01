@@ -4956,6 +4956,87 @@ a {
     min-height: 0;
   }
 
+  .vestuario-podium-grid {
+    gap: 12px;
+  }
+
+  .vestuario-podium-card.place-1 {
+    order: 1;
+  }
+
+  .vestuario-podium-card.place-2 {
+    order: 2;
+  }
+
+  .vestuario-podium-card.place-3 {
+    order: 3;
+  }
+
+  .vestuario-podium-card,
+  .vestuario-podium-card.champion,
+  .vestuario-podium-card.support {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    justify-items: start;
+    align-items: center;
+    gap: 10px 12px;
+    padding: 16px;
+    text-align: left;
+  }
+
+  .vestuario-podium-card.champion {
+    border-left: 6px solid var(--secondary);
+  }
+
+  .vestuario-podium-card .vestuario-podium-avatar,
+  .vestuario-podium-card.champion .vestuario-podium-avatar {
+    grid-row: 1 / 4;
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+  }
+
+  .vestuario-podium-place {
+    position: static;
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 38px;
+    padding: 6px 10px;
+    font-size: 16px;
+    transform: none;
+  }
+
+  .vestuario-podium-icon,
+  .vestuario-podium-card.champion .vestuario-podium-icon {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: center;
+    font-size: 24px;
+  }
+
+  .vestuario-podium-card h3,
+  .vestuario-podium-card p,
+  .vestuario-podium-card strong {
+    grid-column: 2;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .vestuario-podium-card h3 {
+    font-size: 22px;
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .vestuario-podium-card p {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .vestuario-podium-card strong {
+    font-size: 24px;
+    line-height: 1;
+  }
+
   .vestuario-table th,
   .vestuario-table td {
     padding: 14px 16px;

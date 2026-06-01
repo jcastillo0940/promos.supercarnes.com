@@ -140,7 +140,7 @@ export function VestuarioView({
               const place = topThree.findIndex((candidate) => candidate.user_id === entry.user_id) + 1
 
               return (
-                <article key={entry.user_id} className={isChampion ? 'vestuario-podium-card champion' : 'vestuario-podium-card support'}>
+                <article key={entry.user_id} className={`${isChampion ? 'vestuario-podium-card champion' : 'vestuario-podium-card support'} place-${place}`}>
                   <div className="vestuario-podium-avatar">{userInitials(entry.full_name)}</div>
                   <div className="vestuario-podium-place">{place}</div>
                   <span className="vestuario-podium-icon material-symbols-outlined">

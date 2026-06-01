@@ -82,13 +82,11 @@ export function InvoiceRegistrationView({
   invoices,
   invoiceEntryMode,
   invoiceForm,
-  invoiceGalleryProcessing,
   invoiceResolving,
   invoiceScannerError,
   invoiceScannerDebug,
   invoiceSubmitting,
   resolvedInvoiceData,
-  onGalleryUpload,
   onSubmit,
   onModeChange,
   onFieldChange,
@@ -342,22 +340,6 @@ export function InvoiceRegistrationView({
                   </p>
                 </div>
               </div>
-
-              {/* Subir foto como alternativa */}
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-outline-variant bg-surface-container cursor-pointer hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">photo_camera</span>
-                <span className="text-sm text-on-surface-variant">
-                  {invoiceGalleryProcessing ? 'Leyendo imagen…' : 'O toma una foto de la factura para extraer el CUFE'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  disabled={invoiceGalleryProcessing}
-                  onChange={onGalleryUpload}
-                />
-              </label>
 
               {invoiceScannerError && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
