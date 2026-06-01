@@ -2334,29 +2334,35 @@ export function App() {
           </div>
 
           <div className="marea-alert-banner">
-            <span className="material-symbols-outlined">campaign</span>
+            <div className="marea-alert-icon">
+              <span className="material-symbols-outlined">campaign</span>
+            </div>
             <div className="marea-alert-copy">
-              <p>
+              <p className="marea-alert-message">
                 <strong>Atencion, seleccionado.</strong>{' '}
                 {nextDeadlineMatch
                   ? `Tienes hasta el ${formatDateTime(nextDeadlineMatch.kickoff_at)} para enviar tus resultados de ${activeGroupTitle}.`
                   : `Registro legal hasta el ${REGISTRATION_DEADLINE}. Los ganadores por fase se anuncian el ${WINNERS_ANNOUNCEMENT}.`}
               </p>
-              {nextDeadlineMatch ? (
-                <div className="marea-deadline-global">
-                  <span className="material-symbols-outlined">warning</span>
-                  <strong>CIERRE GLOBAL DE PRONOSTICOS</strong>
-                  <span>{formatUpperDate(nextDeadlineMatch.kickoff_at).toUpperCase()} - {formatTime(nextDeadlineMatch.kickoff_at)}</span>
-                </div>
-              ) : null}
-              {countdownParts ? (
-                <div className="marea-countdown" aria-label="Cuenta regresiva para cierre de pronosticos">
-                  {countdownParts.map((part) => (
-                    <div key={part.label} className="marea-countdown-chip">
-                      <strong>{part.value}</strong>
-                      <span>{part.label}</span>
+              {(nextDeadlineMatch || countdownParts) ? (
+                <div className="marea-alert-meta">
+                  {nextDeadlineMatch ? (
+                    <div className="marea-deadline-global">
+                      <span className="material-symbols-outlined">warning</span>
+                      <strong>Cierre</strong>
+                      <span>{formatUpperDate(nextDeadlineMatch.kickoff_at).toUpperCase()} - {formatTime(nextDeadlineMatch.kickoff_at)}</span>
                     </div>
-                  ))}
+                  ) : null}
+                  {countdownParts ? (
+                    <div className="marea-countdown" aria-label="Cuenta regresiva para cierre de pronosticos">
+                      {countdownParts.map((part) => (
+                        <div key={part.label} className="marea-countdown-chip">
+                          <strong>{part.value}</strong>
+                          <span>{part.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -3258,7 +3264,7 @@ export function App() {
                 </button>
               </nav>
               <div className="flex items-center gap-4">
-                <button className="marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" aria-label="Notificaciones">
+                <button className="marea-header-icon marea-header-notifications material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" aria-label="Notificaciones">
                   notifications
                 </button>
                 <div className="marea-header-user-menu" ref={userMenuRef}>
