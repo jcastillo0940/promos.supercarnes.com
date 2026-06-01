@@ -27,6 +27,19 @@ class ContestTermsAlignmentTest extends TestCase
             'ends_at' => now()->addDay(),
         ]);
 
+        TournamentMatch::query()->create([
+            'phase_id' => $phase->id,
+            'match_number' => 55,
+            'group_label' => null,
+            'round_label' => 'Octavos',
+            'stage_label' => 'Eliminatoria',
+            'home_team_id' => $this->insertTeam('Alemania', 'GER'),
+            'away_team_id' => $this->insertTeam('Inglaterra', 'ENG'),
+            'favorite_side' => 'home',
+            'kickoff_at' => now()->addHours(4),
+            'status' => 'scheduled',
+        ]);
+
         Sanctum::actingAs($user);
 
         $response = $this->getJson('/api/client/bootstrap');
@@ -72,6 +85,39 @@ class ContestTermsAlignmentTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('prediction.phase_id', $phase->id);
+    }
+
+    public function test_group_stage_is_hidden_after_it_ends_if_next_knockout_has_no_matches_loaded(): void
+    {
+        $user = $this->createEligibleClient();
+
+        $groupStage = TournamentPhase::query()->where('slug', 'fase-grupos')->firstOrFail();
+        $groupStage->update([
+            'is_active' => true,
+            'starts_at' => now()->subDays(10),
+            'ends_at' => now()->subMinute(),
+        ]);
+
+        $nextPhase = TournamentPhase::query()->where('slug', 'dieciseisavos')->firstOrFail();
+        $nextPhase->update([
+            'is_active' => true,
+            'starts_at' => now()->addDay(),
+            'ends_at' => now()->addDays(4),
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/client/bootstrap');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('active_phase', null);
+
+        $phasesResponse = $this->getJson('/api/client/phases');
+
+        $phasesResponse
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 
     private function createEligibleClient(): User

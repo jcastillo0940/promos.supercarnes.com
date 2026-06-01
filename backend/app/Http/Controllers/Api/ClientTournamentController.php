@@ -99,6 +99,19 @@ class ClientTournamentController extends Controller
     {
         return TournamentPhase::query()
             ->where('is_active', true)
+            ->where(function ($phaseQuery): void {
+                $phaseQuery
+                    ->where(function ($groupStageQuery): void {
+                        $groupStageQuery
+                            ->where('slug', 'fase-grupos')
+                            ->where('ends_at', '>=', now());
+                    })
+                    ->orWhere(function ($knockoutQuery): void {
+                        $knockoutQuery
+                            ->where('slug', '!=', 'fase-grupos')
+                            ->whereHas('matches');
+                    });
+            })
             ->orderBy('stage_order');
     }
 }
