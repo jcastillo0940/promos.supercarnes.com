@@ -47,6 +47,7 @@ class Team extends Model
             ->whereNotNull('name')
             ->where('name', 'not like', 'Winner %')
             ->where('name', 'not like', 'Runner-up %')
-            ->where('name', 'not like', 'Loser %');
+            ->where('name', 'not like', 'Loser %')
+            ->where('name', 'not like', '3rd Group%');
     }
 }

@@ -53,15 +53,7 @@ class ClientTournamentController extends Controller
         $matches = TournamentMatch::query()
             ->with(['phase', 'homeTeam', 'awayTeam'])
             ->whereIn('phase_id', $allowedPhaseIds)
-            ->where(function ($query): void {
-                $query
-                    ->whereHas('phase', fn ($phaseQuery) => $phaseQuery->where('slug', 'fase-grupos'))
-                    ->orWhere(function ($knockoutQuery): void {
-                        $knockoutQuery
-                            ->whereHas('phase', fn ($phaseQuery) => $phaseQuery->where('slug', '!=', 'fase-grupos'))
-                            ->withAssignedTeams();
-                    });
-            })
+            ->withAssignedTeams()
             ->when($phaseId, fn ($query) => $query->where('phase_id', $phaseId))
             ->orderBy('kickoff_at')
             ->get();
@@ -108,19 +100,6 @@ class ClientTournamentController extends Controller
     {
         return TournamentPhase::query()
             ->where('is_active', true)
-            ->where(function ($phaseQuery): void {
-                $phaseQuery
-                    ->where(function ($groupStageQuery): void {
-                        $groupStageQuery
-                            ->where('slug', 'fase-grupos')
-                            ->where('ends_at', '>=', now());
-                    })
-                    ->orWhere(function ($knockoutQuery): void {
-                        $knockoutQuery
-                            ->where('slug', '!=', 'fase-grupos')
-                            ->whereHas('matches', fn ($matchesQuery) => $matchesQuery->withAssignedTeams());
-                    });
-            })
             ->orderBy('stage_order');
     }
 }
