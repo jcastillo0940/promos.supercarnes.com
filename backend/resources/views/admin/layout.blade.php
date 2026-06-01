@@ -31,10 +31,15 @@
         .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#20313a;border:1px solid var(--line);font-size:12px}
         .metric{font-size:30px;font-weight:700;margin-top:6px}
         form{margin:0}
+        .cursor-trail{position:fixed;inset:0;z-index:1000;overflow:hidden;pointer-events:none}
+        .trail-dot{position:absolute;width:7px;height:7px;border-radius:999px;background:#ffd166;box-shadow:0 0 18px rgba(255,209,102,.82);animation:cursor-trail-fade .72s ease-out forwards;transform:translate(-50%,-50%)}
+        @keyframes cursor-trail-fade{from{opacity:.92;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
+        @media (hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){.cursor-trail{display:none}}
         @media (max-width: 980px){.wrap{grid-template-columns:1fr}.sidebar{border-right:0;border-bottom:1px solid var(--line)}}
     </style>
 </head>
 <body>
+<div class="cursor-trail" aria-hidden="true"></div>
 <div class="wrap">
     <aside class="sidebar">
         <h2>Backoffice</h2>
@@ -66,5 +71,33 @@
         @yield('content')
     </main>
 </div>
+<script>
+    (() => {
+        const trail = document.querySelector('.cursor-trail');
+
+        if (!trail || window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        let lastTrail = 0;
+
+        const addTrail = (x, y) => {
+            const dot = document.createElement('span');
+            dot.className = 'trail-dot';
+            dot.style.left = `${x}px`;
+            dot.style.top = `${y}px`;
+            trail.appendChild(dot);
+            setTimeout(() => dot.remove(), 760);
+        };
+
+        window.addEventListener('mousemove', (event) => {
+            const now = performance.now();
+            if (now - lastTrail > 46) {
+                addTrail(event.clientX, event.clientY);
+                lastTrail = now;
+            }
+        }, { passive: true });
+    })();
+</script>
 </body>
 </html>

@@ -52,7 +52,7 @@ const CLIENT_VIEW_PATHS: Record<MainView, string> = {
 const CLIENT_VIEW_LABELS: Record<MainView, string> = {
   cancha: 'La Cancha',
   facturas: 'Entrenamiento',
-  perfil: 'Vestuario',
+  perfil: 'Ranking',
   reglas: 'Vitrina',
   cuenta: 'Mi Cuenta',
 }
@@ -437,6 +437,18 @@ function normalizePanamaPhone(value: string) {
 
 function validatePanamaPhone(value: string) {
   return /^\+507\d{8}$/.test(value)
+}
+
+function validateEmail(value: string) {
+  if (!value.trim()) return 'Debes ingresar tu correo.'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return 'Usa un correo valido, por ejemplo nombre@correo.com.'
+  return null
+}
+
+function validatePassword(value: string) {
+  if (!value) return 'Debes ingresar una contrasena.'
+  if (value.length < 8) return 'La contrasena debe tener al menos 8 caracteres.'
+  return null
 }
 
 function parseParticipantBrands(value?: string | null): ParticipantBrand[] {
@@ -931,9 +943,11 @@ export function App() {
   const [registerStep, setRegisterStep] = useState(1)
   const [authBgVideoId, setAuthBgVideoId] = useState(DEFAULT_AUTH_BG_YOUTUBE_ID)
   const [authLogoUrl, setAuthLogoUrl] = useState(DEFAULT_AUTH_LOGO_URL)
+  const [heroVideoUrl, setHeroVideoUrl] = useState('')
   const [participantBrands, setParticipantBrands] = useState<ParticipantBrand[]>([])
   const [termsText, setTermsText] = useState(OFFICIAL_TERMS_TEXT)
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState('')
+  const [predictionCelebration, setPredictionCelebration] = useState<string | null>(null)
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [termsScrolledEnd, setTermsScrolledEnd] = useState(false)
   const [savingPredictionIds, setSavingPredictionIds] = useState<number[]>([])
@@ -972,6 +986,49 @@ export function App() {
 
     return [...loopBrands, ...loopBrands]
   }, [participantBrands])
+  const registrationStepErrors = useMemo(() => {
+    const errors: Record<string, string> = {}
+
+    if (registerStep === 1) {
+      if (!registrationAvatarFile) errors.avatar = 'Debes subir tu foto de perfil.'
+      if (!authForm.full_name.trim()) errors.full_name = 'Debes ingresar tu nombre completo.'
+      if (!authForm.phone.trim()) {
+        errors.phone = 'Debes ingresar tu telefono en formato +507 seguido de 8 digitos. Ejemplo: +50761234567.'
+      } else if (!validatePanamaPhone(authForm.phone)) {
+        errors.phone = 'Formato esperado: +507 seguido de 8 digitos. Ejemplo: +50761234567.'
+      }
+    }
+
+    if (registerStep === 2) {
+      const documentError = validateDocumentNumber(authForm.document_type, authForm.cedula)
+      if (documentError) errors.cedula = documentError
+      if (!authForm.birthdate) {
+        errors.birthdate = 'Debes ingresar tu fecha de nacimiento.'
+      } else if (!isAtLeast18(authForm.birthdate)) {
+        errors.birthdate = 'Debes ser mayor de 18 anos para participar.'
+      }
+    }
+
+    if (registerStep === 3) {
+      if (!authForm.resides_in_panama) errors.resides_in_panama = 'Debes confirmar que resides en Panama.'
+      if (!authForm.accepted_terms) errors.accepted_terms = 'Debes leer y aceptar los terminos y condiciones.'
+    }
+
+    if (registerStep === 4) {
+      const emailError = validateEmail(authForm.email)
+      const passwordError = validatePassword(authForm.password)
+      if (emailError) errors.email = emailError
+      if (passwordError) errors.password = passwordError
+      if (!authForm.password_confirmation) {
+        errors.password_confirmation = 'Debes confirmar tu contrasena.'
+      } else if (authForm.password_confirmation !== authForm.password) {
+        errors.password_confirmation = 'Las contrasenas deben coincidir.'
+      }
+    }
+
+    return errors
+  }, [authForm, registerStep, registrationAvatarFile])
+  const registrationStepValid = Object.keys(registrationStepErrors).length === 0
 
   useEffect(() => {
     if (!registrationAvatarFile) {
@@ -986,10 +1043,11 @@ export function App() {
   }, [registrationAvatarFile])
 
   useEffect(() => {
-    api.get<{ auth_bg_youtube_id: string; auth_logo_url?: string; participant_brands?: string; terms_and_conditions?: string; recaptcha_site_key?: string }>('/public/settings')
+    api.get<{ auth_bg_youtube_id: string; auth_logo_url?: string; hero_video_url?: string; participant_brands?: string; terms_and_conditions?: string; recaptcha_site_key?: string }>('/public/settings')
       .then((res) => {
         if (res.data.auth_bg_youtube_id) setAuthBgVideoId(res.data.auth_bg_youtube_id)
         if (res.data.auth_logo_url) setAuthLogoUrl(res.data.auth_logo_url)
+        if (res.data.hero_video_url) setHeroVideoUrl(res.data.hero_video_url)
         if (res.data.terms_and_conditions?.trim()) setTermsText(res.data.terms_and_conditions)
         if (res.data.recaptcha_site_key) setRecaptchaSiteKey(res.data.recaptcha_site_key)
         setParticipantBrands(parseParticipantBrands(res.data.participant_brands))
@@ -1007,6 +1065,36 @@ export function App() {
     script.dataset.recaptcha = 'v3'
     document.head.appendChild(script)
   }, [recaptchaSiteKey])
+
+  useEffect(() => {
+    const trail = document.querySelector('.cursor-trail')
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const coarsePointer = window.matchMedia('(pointer: coarse)')
+
+    if (!trail || reduceMotion.matches || coarsePointer.matches) return
+
+    let lastTrail = 0
+    const addTrail = (x: number, y: number) => {
+      const dot = document.createElement('span')
+      dot.className = 'trail-dot'
+      dot.style.left = `${x}px`
+      dot.style.top = `${y}px`
+      trail.appendChild(dot)
+      window.setTimeout(() => dot.remove(), 760)
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const now = performance.now()
+      if (now - lastTrail > 46) {
+        addTrail(event.clientX, event.clientY)
+        lastTrail = now
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
+
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
 
   useEffect(() => {
     setApiToken(token)
@@ -1730,7 +1818,10 @@ export function App() {
         predicted_away_score: Number(predictionDrafts[match.id]?.away ?? 0),
       })
 
-      setMessage(`Pronostico enviado para ${match.homeTeam?.name ?? match.home_team?.name ?? 'este partido'}.`)
+      const homeName = match.homeTeam?.name ?? match.home_team?.name ?? 'este partido'
+      setMessage(`Pronostico enviado para ${homeName}.`)
+      setPredictionCelebration(homeName)
+      window.setTimeout(() => setPredictionCelebration(null), 2800)
       await bootstrap()
     } catch (predictionError) {
       setError(normalizeError(predictionError))
@@ -2154,6 +2245,11 @@ export function App() {
   const playerName = user?.full_name ?? 'Participante'
   const playerBadge = userInitials(user?.full_name)
   const playerAvatarUrl = user?.avatar_url ?? null
+  const headerBrand = authLogoUrl ? (
+    <img alt="Super Carnes" src={authLogoUrl} />
+  ) : (
+    <span>Super Carnes</span>
+  )
   const topNavButton = (target: MainView) =>
     `transition-colors duration-200 ${
       currentView === target ? 'text-primary-container font-bold border-b-2 border-primary-container pb-1' : 'text-on-surface-variant font-body-lg hover:text-primary'
@@ -2187,8 +2283,27 @@ export function App() {
 
   return (
     <div className="marea-app-shell">
+      <div className="cursor-trail" aria-hidden="true" />
       {message ? <div className="feedback success">{message}</div> : null}
       {error ? <div className="feedback error">{error}</div> : null}
+      {predictionCelebration ? (
+        <div className="prediction-celebration" role="status" aria-live="polite">
+          <div className="prediction-celebration-card">
+            <div className="prediction-player" aria-hidden="true">
+              <span className="prediction-player-head" />
+              <span className="prediction-player-body" />
+              <span className="prediction-player-arm left" />
+              <span className="prediction-player-arm right" />
+              <span className="prediction-player-leg left" />
+              <span className="prediction-player-leg right" />
+            </div>
+            <div className="prediction-ball" aria-hidden="true" />
+            <p>Pronostico enviado</p>
+            <strong>Panama celebra tu jugada</strong>
+            <small>{predictionCelebration}</small>
+          </div>
+        </div>
+      ) : null}
 
       {/* Modal de Términos y Condiciones */}
       {termsModalOpen ? (
@@ -2325,7 +2440,7 @@ export function App() {
                     </div>
                     <button
                       type="button"
-                      className="auth-avatar-zone"
+                      className={`auth-avatar-zone${registrationStepErrors.avatar ? ' is-invalid' : ''}`}
                       onClick={() => { document.getElementById('reg-avatar-input')?.click() }}
                     >
                       {registrationAvatarPreview ? (
@@ -2337,6 +2452,7 @@ export function App() {
                         </span>
                       )}
                     </button>
+                    {registrationStepErrors.avatar ? <p className="auth-field-error">{registrationStepErrors.avatar}</p> : null}
                     <input
                       accept="image/png,image/jpeg,image/webp"
                       id="reg-avatar-input"
@@ -2354,7 +2470,7 @@ export function App() {
                       }}
                     />
                     <div className="auth-field-grid">
-                      <label>
+                      <label className={registrationStepErrors.full_name ? 'is-invalid' : ''}>
                         Nombre completo *
                         <input
                           required
@@ -2362,8 +2478,9 @@ export function App() {
                           value={authForm.full_name}
                           onChange={(event) => setAuthForm({ ...authForm, full_name: event.target.value })}
                         />
+                        {registrationStepErrors.full_name ? <span className="auth-field-error">{registrationStepErrors.full_name}</span> : null}
                       </label>
-                      <label>
+                      <label className={registrationStepErrors.phone ? 'is-invalid' : ''}>
                         Teléfono *
                         <input
                           required
@@ -2371,6 +2488,7 @@ export function App() {
                           value={authForm.phone}
                           onChange={(event) => setAuthForm({ ...authForm, phone: normalizePanamaPhone(event.target.value) })}
                         />
+                        {registrationStepErrors.phone ? <span className="auth-field-error">{registrationStepErrors.phone}</span> : null}
                       </label>
                     </div>
                   </>
@@ -2399,7 +2517,7 @@ export function App() {
                       ))}
                     </div>
                     <div className="auth-field-grid">
-                      <label>
+                      <label className={registrationStepErrors.cedula ? 'is-invalid' : ''}>
                         {documentNumberLabel(authForm.document_type)} *
                         <input
                           required
@@ -2407,8 +2525,9 @@ export function App() {
                           value={authForm.cedula}
                           onChange={(event) => setAuthForm({ ...authForm, cedula: normalizeIdentityNumber(authForm.document_type, event.target.value) })}
                         />
+                        {registrationStepErrors.cedula ? <span className="auth-field-error">{registrationStepErrors.cedula}</span> : null}
                       </label>
-                      <label>
+                      <label className={registrationStepErrors.birthdate ? 'is-invalid' : ''}>
                         Fecha de nacimiento *
                         <input
                           required
@@ -2428,6 +2547,7 @@ export function App() {
                             }
                           }}
                         />
+                        {registrationStepErrors.birthdate ? <span className="auth-field-error">{registrationStepErrors.birthdate}</span> : null}
                       </label>
                     </div>
                   </>
@@ -2485,7 +2605,7 @@ export function App() {
                     </div>
                     <button
                       type="button"
-                      className={`auth-toggle-card${authForm.resides_in_panama ? ' is-on' : ''}`}
+                      className={`auth-toggle-card${authForm.resides_in_panama ? ' is-on' : ''}${registrationStepErrors.resides_in_panama ? ' is-invalid' : ''}`}
                       onClick={() => setAuthForm((f) => ({ ...f, resides_in_panama: !f.resides_in_panama }))}
                     >
                       <span className="material-symbols-outlined auth-toggle-card-icon">location_on</span>
@@ -2495,9 +2615,10 @@ export function App() {
                       </div>
                       <div className="auth-toggle-switch" />
                     </button>
+                    {registrationStepErrors.resides_in_panama ? <p className="auth-field-error">{registrationStepErrors.resides_in_panama}</p> : null}
                     <button
                       type="button"
-                      className={`auth-toggle-card${authForm.accepted_terms ? ' is-on' : ''}`}
+                      className={`auth-toggle-card${authForm.accepted_terms ? ' is-on' : ''}${registrationStepErrors.accepted_terms ? ' is-invalid' : ''}`}
                       onClick={() => { setTermsScrolledEnd(false); setTermsModalOpen(true) }}
                     >
                       <span className="material-symbols-outlined auth-toggle-card-icon">gavel</span>
@@ -2511,6 +2632,7 @@ export function App() {
                         ? <span className="material-symbols-outlined" style={{ color: 'var(--secondary)', flexShrink: 0 }}>check_circle</span>
                         : <span className="material-symbols-outlined" style={{ color: 'rgba(225,226,236,0.4)', flexShrink: 0 }}>chevron_right</span>}
                     </button>
+                    {registrationStepErrors.accepted_terms ? <p className="auth-field-error">{registrationStepErrors.accepted_terms}</p> : null}
                   </>
                 ) : null}
 
@@ -2527,16 +2649,18 @@ export function App() {
             {/* Campos de email/contraseña: login siempre, registro solo en paso 4 */}
             {(authMode === 'login' || registerStep === 4) ? (
               <>
-                <label>
+                <label className={authMode === 'register' && registrationStepErrors.email ? 'is-invalid' : ''}>
                   Correo *
                   <input required type="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} />
+                  {authMode === 'register' && registrationStepErrors.email ? <span className="auth-field-error">{registrationStepErrors.email}</span> : null}
                 </label>
-                <label>
+                <label className={authMode === 'register' && registrationStepErrors.password ? 'is-invalid' : ''}>
                   Contraseña *
                   <input required type="password" value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} />
+                  {authMode === 'register' && registrationStepErrors.password ? <span className="auth-field-error">{registrationStepErrors.password}</span> : null}
                 </label>
                 {authMode === 'register' ? (
-                  <label>
+                  <label className={registrationStepErrors.password_confirmation ? 'is-invalid' : ''}>
                     Confirmar contraseña *
                     <input
                       required
@@ -2544,6 +2668,7 @@ export function App() {
                       value={authForm.password_confirmation}
                       onChange={(event) => setAuthForm({ ...authForm, password_confirmation: event.target.value })}
                     />
+                    {registrationStepErrors.password_confirmation ? <span className="auth-field-error">{registrationStepErrors.password_confirmation}</span> : null}
                   </label>
                 ) : null}
               </>
@@ -2562,6 +2687,7 @@ export function App() {
                   <button
                     type="button"
                     className="auth-step-next"
+                    disabled={!registrationStepValid}
                     onClick={() => {
                       setError(null)
                       if (registerStep === 1) {
@@ -2587,7 +2713,7 @@ export function App() {
                     <span className="material-symbols-outlined">arrow_forward</span>
                   </button>
                 ) : (
-                  <button className="auth-submit auth-submit-step" disabled={loading || !isAtLeast18(authForm.birthdate)} type="submit">
+                  <button className="auth-submit auth-submit-step" disabled={loading || !registrationStepValid} type="submit">
                     {loading ? 'Procesando...' : 'Completar registro'}
                   </button>
                 )}
@@ -2625,17 +2751,21 @@ export function App() {
         </section>
       ) : (
         <div className="client-shell bg-background text-on-background font-body-lg min-h-screen">
-          <header className="bg-background/80 backdrop-blur-xl border-b border-outline-variant bg-surface-container-lowest/90 docked full-width top-0 sticky z-50 shadow-md">
+          <header className="marea-client-header bg-background/80 backdrop-blur-xl border-b border-outline-variant bg-surface-container-lowest/90 docked full-width top-0 sticky z-50 shadow-md">
             <div className="flex justify-between items-center px-4 md:px-margin-desktop w-full max-w-7xl mx-auto h-16">
               <div className="flex items-center gap-3">
                 <button
-                  className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all"
+                  className="marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all"
                   type="button"
                   onClick={() => setSidebarOpen((value) => !value)}
+                  aria-label="Abrir menu"
                 >
                   menu
                 </button>
-                <div className="font-display-lg text-headline-lg text-primary-container tracking-tight">GOAL RUSH</div>
+                <button className="marea-header-brand" type="button" onClick={() => navigateToView('cancha')} aria-label="Ir a La Cancha">
+                  {headerBrand}
+                  <small>Polla Mundialista 2026</small>
+                </button>
               </div>
               <nav className="hidden md:flex items-center gap-8">
                 <button className={topNavButton('cancha')} type="button" onClick={() => navigateToView('cancha')}>
@@ -2645,21 +2775,21 @@ export function App() {
                   Entrenamiento
                 </button>
                 <button className={topNavButton('perfil')} type="button" onClick={() => navigateToView('perfil')}>
-                  Vestuario
+                  Ranking
                 </button>
                 <button className={topNavButton('reglas')} type="button" onClick={() => navigateToView('reglas')}>
                   Vitrina
                 </button>
               </nav>
               <div className="flex items-center gap-4">
-                <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button">
+                <button className="marea-header-icon material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" aria-label="Notificaciones">
                   notifications
                 </button>
-                <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" onClick={() => navigateToView('cuenta')}>
-                  person
+                <button className="marea-header-avatar" type="button" onClick={() => navigateToView('cuenta')} aria-label="Abrir perfil">
+                  {playerAvatarUrl ? <img alt={`Avatar de ${playerName}`} src={playerAvatarUrl} /> : <span>{playerBadge}</span>}
                 </button>
-                <button className="bg-primary-container text-on-tertiary-container font-display-lg px-4 py-1 rounded-lg text-sm hover:opacity-80 active:scale-95 transition-all" type="button">
-                  Mi Gaceta
+                <button className="marea-header-cta bg-primary-container text-on-tertiary-container font-display-lg px-4 py-1 rounded-lg text-sm hover:opacity-80 active:scale-95 transition-all" type="button" onClick={() => navigateToView('facturas')}>
+                  Registrar factura
                 </button>
               </div>
             </div>
@@ -2700,8 +2830,8 @@ export function App() {
                   <span className="font-label-caps text-label-caps">Vitrina</span>
                 </button>
                 <button className={sideNavButton('perfil')} type="button" onClick={() => navigateToView('perfil')}>
-                  <span className="material-symbols-outlined">checkroom</span>
-                  <span className="font-label-caps text-label-caps">Vestuario</span>
+                  <span className="material-symbols-outlined">leaderboard</span>
+                  <span className="font-label-caps text-label-caps">Ranking</span>
                 </button>
               </nav>
               <div className="mt-auto border-t border-outline-variant pt-4 flex flex-col gap-1">
@@ -2716,16 +2846,18 @@ export function App() {
               </div>
             </aside>
 
-            <main className="flex-1 min-w-0">
-              {currentView === 'facturas' ? <div className="max-w-7xl mx-auto p-margin-mobile md:p-margin-desktop">{renderFacturas()}</div> : (
-                <>
-                  <div className="marea-hero-background">
-                    <img alt="Ambiente del estadio para la polla mundialista" src={STADIUM_IMAGE_URL} />
-                    <div className="marea-hero-overlay" />
-                  </div>
-                  <div className="marea-content">{renderMainView()}</div>
-                </>
-              )}
+            <main className="marea-main flex-1 min-w-0">
+              <div className="marea-hero-background">
+                {heroVideoUrl ? (
+                  <video aria-hidden="true" autoPlay loop muted playsInline poster={STADIUM_IMAGE_URL}>
+                    <source src={heroVideoUrl} />
+                  </video>
+                ) : (
+                  <img alt="Ambiente del estadio para la polla mundialista" src={STADIUM_IMAGE_URL} />
+                )}
+                <div className="marea-hero-overlay" />
+              </div>
+              <div className="marea-content">{renderMainView()}</div>
             </main>
           </div>
 
@@ -2741,8 +2873,8 @@ export function App() {
               <span className="text-[10px] font-bold">Entrena</span>
             </button>
             <button className={`flex flex-col items-center gap-1 ${currentView === 'perfil' ? 'text-primary-container' : 'text-on-surface-variant'}`} type="button" onClick={() => navigateToView('perfil')}>
-              <span className="material-symbols-outlined">checkroom</span>
-              <span className="text-[10px] font-bold">Vestuario</span>
+              <span className="material-symbols-outlined">leaderboard</span>
+              <span className="text-[10px] font-bold">Ranking</span>
             </button>
             <button className={`flex flex-col items-center gap-1 ${currentView === 'reglas' ? 'text-primary-container' : 'text-on-surface-variant'}`} type="button" onClick={() => navigateToView('reglas')}>
               <span className="material-symbols-outlined">storefront</span>

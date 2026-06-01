@@ -69,9 +69,9 @@ export function VitrinaView({
     <section className="vitrina-view">
       <header className="vitrina-hero">
         <div className="vitrina-hero-copy">
-          <span className="vitrina-kicker">Puntos del cliente</span>
-          <h1>La Vitrina</h1>
-          <p>Aqui vive el historial completo de tus goles. Todo lo que sumaste, gastaste o moviste dentro del concurso.</p>
+          <span className="vitrina-kicker">SUPER CARNES 2026</span>
+          <h1>Vitrina de goles</h1>
+          <p>Consulta tu saldo, tus tiros disponibles y cada movimiento registrado durante la promocion.</p>
         </div>
 
         <div className="vitrina-scoreboard">
@@ -80,11 +80,11 @@ export function VitrinaView({
             <strong>{formatCompactNumber(wallet?.goals_balance ?? 0)} G</strong>
           </article>
           <article>
-            <span>Goles historicos</span>
+            <span>Goles acumulados</span>
             <strong>{formatCompactNumber(wallet?.lifetime_goals_earned ?? totalGoalsWon)} G</strong>
           </article>
           <article>
-            <span>Tiros disponibles</span>
+            <span>Tiros activos</span>
             <strong>{formatCompactNumber(wallet?.shots_balance ?? 0)} T</strong>
           </article>
         </div>
@@ -93,8 +93,8 @@ export function VitrinaView({
       <section className="vitrina-history-shell">
         <div className="vitrina-history-head">
           <div>
-            <span className="vitrina-kicker">Historial completo</span>
-            <h2>Movimientos de goles</h2>
+            <span className="vitrina-kicker">Actividad oficial</span>
+            <h2>Historial de cuenta</h2>
           </div>
 
           <div className="vitrina-chip-row">
@@ -141,8 +141,8 @@ export function VitrinaView({
         ) : (
           <div className="vitrina-empty-state">
             <span className="material-symbols-outlined">monitoring</span>
-            <h3>Sin movimientos todavia</h3>
-            <p>Cuando tu cuenta empiece a sumar o gastar goles, el historial completo aparecera aqui.</p>
+            <h3>Sin movimientos registrados</h3>
+            <p>Cuando sumes goles, uses tiros o canjees premios, el historial aparecera aqui.</p>
           </div>
         )}
       </section>

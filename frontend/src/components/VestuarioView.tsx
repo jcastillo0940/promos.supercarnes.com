@@ -100,7 +100,7 @@ export function VestuarioView({
 
   const summaryCards = [
     { label: 'Participantes', value: formatCompactNumber(leaderboard.length) },
-    { label: 'Top 3 visible', value: formatCompactNumber(topThree.length) },
+    { label: 'Top 3', value: formatCompactNumber(topThree.length) },
     { label: 'Tu posicion', value: userEntry ? `#${positionLabel(userEntry.position)}` : 'N/D' },
     { label: 'Tus goles', value: formatCompactNumber(userGoals) },
   ]
@@ -109,9 +109,9 @@ export function VestuarioView({
     <section className="vestuario-view">
       <header className="vestuario-stage">
         <div className="vestuario-stage-copy">
-          <span className="vestuario-kicker">Marea Roja 2026</span>
-          <h1>El Vestuario</h1>
-          <p>La elite de la Marea Roja se reune aqui. Arquitectos del gol, muros del torneo y datos reales sin relleno.</p>
+          <span className="vestuario-kicker">SUPER CARNES 2026</span>
+          <h1>Tabla de goleadores</h1>
+          <p>Consulta tu posicion, los lideres actuales y el avance de participantes durante la promocion.</p>
         </div>
 
         <div className="vestuario-stage-player">
@@ -120,13 +120,13 @@ export function VestuarioView({
           </div>
           <div className="vestuario-stage-player-copy">
             <strong>{user.full_name}</strong>
-            <span>{user.branch?.name ?? 'Participante nacional'}</span>
+            <span>{user.branch?.name ?? 'Participante registrado'}</span>
             <small>
-              {userEntry ? `Posicion #${positionLabel(userEntry.position)} en el ranking real` : 'Esperando tu aparicion en el ranking'}
+              {userEntry ? `Posicion #${positionLabel(userEntry.position)} en el ranking oficial` : 'Esperando tu aparicion en el ranking'}
             </small>
           </div>
           <div className="vestuario-stage-score">
-            <span>Tu marcador</span>
+            <span>Tus goles</span>
             <strong>{formatCompactNumber(userGoals)} G</strong>
           </div>
         </div>
@@ -157,8 +157,8 @@ export function VestuarioView({
         ) : (
           <div className="vestuario-empty-state large">
             <span className="material-symbols-outlined">leaderboard</span>
-            <h3>Sin podio publicado todavia</h3>
-            <p>Cuando el torneo publique posiciones reales, el vestuario mostrara aqui a los tres cracks del momento.</p>
+            <h3>Sin podio publicado</h3>
+            <p>Cuando haya posiciones oficiales, aqui se mostraran los tres primeros participantes.</p>
           </div>
         )}
       </section>
@@ -166,8 +166,8 @@ export function VestuarioView({
       <section className="vestuario-ranking-shell">
         <div className="vestuario-ranking-head">
           <div>
-            <span className="vestuario-panel-kicker">Tabla oficial</span>
-            <h2>Clasificacion general</h2>
+            <span className="vestuario-panel-kicker">Ranking oficial</span>
+            <h2>Goleadores</h2>
           </div>
 
           <div className="vestuario-ranking-controls">
@@ -177,7 +177,7 @@ export function VestuarioView({
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar crack..."
+                placeholder="Buscar participante..."
               />
             </label>
 
@@ -214,7 +214,7 @@ export function VestuarioView({
                 <thead>
                   <tr>
                     <th>Pos</th>
-                    <th>Crack</th>
+                    <th>Participante</th>
                     <th>Rol</th>
                     <th>Rendimiento</th>
                     <th className="is-right">Goles</th>
@@ -265,14 +265,14 @@ export function VestuarioView({
           <div className="vestuario-empty-state">
             <span className="material-symbols-outlined">search_off</span>
             <h3>Sin resultados para esa busqueda</h3>
-            <p>Ajusta el nombre o cambia el filtro para volver a ver la tabla del vestuario.</p>
+            <p>Ajusta el nombre o cambia el filtro para volver a ver la tabla.</p>
           </div>
         )}
       </section>
 
       <section className="vestuario-insight-strip">
         <article className="vestuario-insight-card wide dark">
-          <span>Meta global temporada</span>
+          <span>Meta global</span>
           <strong>{formatCompactNumber(generalGoals)} goles</strong>
           <div className="vestuario-progress-block">
             <div className="vestuario-progress-track">
@@ -283,7 +283,7 @@ export function VestuarioView({
         </article>
 
         <article className="vestuario-insight-card gold">
-          <span>Heroe del vestuario</span>
+          <span>Lider actual</span>
           <strong>{spotlightLeader?.full_name ?? 'Sin lider visible'}</strong>
           <p>{spotlightLeader ? `${roleLabel(spotlightLeader.football_role)} con ${formatCompactNumber(spotlightLeader.goals)} goles.` : 'Esperando lider del ranking.'}</p>
         </article>
@@ -301,7 +301,7 @@ export function VestuarioView({
         <section className="vestuario-panel">
           <div className="vestuario-panel-head compact">
             <div>
-              <span className="vestuario-panel-kicker">Lectura rapida</span>
+              <span className="vestuario-panel-kicker">Resumen</span>
               <h2>Resumen del ranking</h2>
             </div>
           </div>
@@ -319,8 +319,8 @@ export function VestuarioView({
         <section className="vestuario-panel">
           <div className="vestuario-panel-head compact">
             <div>
-              <span className="vestuario-panel-kicker">Ritmo del torneo</span>
-              <h2>Lectura general</h2>
+              <span className="vestuario-panel-kicker">Actividad</span>
+              <h2>Estado general</h2>
             </div>
           </div>
 
