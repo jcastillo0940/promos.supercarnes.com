@@ -1606,6 +1606,147 @@ a {
   box-shadow: 0 12px 26px rgba(218, 41, 28, 0.24);
 }
 
+/* ── Mobile user sidebar ─────────────────────────────────── */
+@keyframes mobileUserSidebarIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.marea-mobile-user-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 17, 25, 0.97);
+  backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(172, 136, 131, 0.18);
+  box-shadow: -28px 0 64px rgba(0, 0, 0, 0.55);
+  animation: mobileUserSidebarIn 220ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.marea-mobile-user-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid rgba(172, 136, 131, 0.12);
+}
+
+.marea-mobile-user-sidebar-header > span {
+  font: 700 17px/1 'Archivo Narrow', sans-serif;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.marea-mobile-user-sidebar-close {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: rgba(255,255,255,0.5);
+  font-size: 22px;
+  transition: background 150ms, color 150ms;
+}
+
+.marea-mobile-user-sidebar-close:hover,
+.marea-mobile-user-sidebar-close:active {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.marea-mobile-user-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(172, 136, 131, 0.10);
+}
+
+.marea-mobile-user-sidebar-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 2px solid rgba(218, 199, 105, 0.5);
+  background: rgba(218, 41, 28, 0.18);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font: 700 18px/1 'Archivo Narrow', sans-serif;
+  flex-shrink: 0;
+}
+
+.marea-mobile-user-sidebar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marea-mobile-user-sidebar-name {
+  color: #fff;
+  font: 700 16px/1.2 'Archivo Narrow', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.marea-mobile-user-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  flex: 1;
+}
+
+.marea-mobile-user-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  color: rgba(255,255,255,0.82);
+  font: 700 15px/1 'Archivo Narrow', sans-serif;
+  text-align: left;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.marea-mobile-user-sidebar-item:hover,
+.marea-mobile-user-sidebar-item:active {
+  background: rgba(218, 41, 28, 0.13);
+  color: #fff;
+}
+
+.marea-mobile-user-sidebar-item .material-symbols-outlined {
+  font-size: 22px;
+  color: rgba(218, 199, 105, 0.7);
+}
+
+.marea-mobile-user-sidebar-item.danger {
+  color: #ffd9d4;
+}
+
+.marea-mobile-user-sidebar-item.danger:hover,
+.marea-mobile-user-sidebar-item.danger:active {
+  background: rgba(218, 41, 28, 0.20);
+}
+
+.marea-mobile-user-sidebar-item.danger .material-symbols-outlined {
+  color: #ff9a8f;
+}
+
+.marea-mobile-user-sidebar-divider {
+  height: 1px;
+  background: rgba(172, 136, 131, 0.14);
+  margin: 8px 4px;
+}
+
 .marea-hero-background {
   position: absolute;
   top: 0;
@@ -3730,11 +3871,58 @@ a {
 .vestuario-ranking-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 16px 24px 20px;
   border-top: 1px solid rgba(92, 64, 59, 0.3);
   background: rgba(11, 14, 21, 0.56);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vestuario-ranking-footer .material-symbols-outlined {
+  font-size: 20px;
+  color: rgba(218, 199, 105, 0.8);
+  flex-shrink: 0;
+}
+
+.vestuario-ranking-footer strong {
+  color: #fff;
+  font-style: normal;
+  font-size: 14px;
+  margin-top: 0;
+  display: inline;
+}
+
+.vestuario-ranking-footer--leader .material-symbols-outlined {
+  color: rgba(218, 199, 105, 1);
+}
+
+.vestuario-ranking-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vestuario-ranking-gap .material-symbols-outlined {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.vestuario-table tr.is-masked td {
+  opacity: 0.45;
+}
+
+.vestuario-table tr.is-masked .vestuario-row-player-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+  font-style: normal;
 }
 
 .vestuario-ranking-footer strong,
@@ -4793,53 +4981,68 @@ a {
     display: none !important;
   }
 
+  /* Header container */
   .marea-client-header > div {
-    gap: 10px;
-    padding-left: 14px;
-    padding-right: 14px;
+    gap: 0;
+    padding-left: 16px;
+    padding-right: 12px;
+    height: 56px;
   }
 
+  /* Left: brand area */
   .marea-client-header .flex.items-center.gap-3 {
     min-width: 0;
     flex: 1 1 auto;
+    gap: 0;
   }
 
+  /* Right: icons area */
   .marea-client-header .flex.items-center.gap-4 {
     flex: 0 0 auto;
-    gap: 8px;
+    gap: 6px;
   }
 
   .marea-header-notifications {
     display: none;
   }
 
+  /* Show invoice icon on mobile */
+  .marea-header-invoice-mobile {
+    display: grid !important;
+  }
+
   .marea-header-brand {
-    gap: 8px;
+    gap: 0;
     min-width: 0;
     max-width: calc(100vw - 110px);
   }
 
   .marea-header-brand img {
-    max-width: min(168px, 46vw);
-    max-height: 40px;
+    max-width: min(160px, 44vw);
+    max-height: 38px;
   }
 
   .marea-header-brand > span {
-    font-size: 22px;
-    line-height: 0.95;
+    font-size: 20px;
+    line-height: 1;
   }
 
   .marea-header-brand small {
     display: none;
   }
 
-  .marea-header-icon,
+  /* Avatar: slightly bigger, stronger ring on mobile */
   .marea-header-avatar {
     width: 38px;
     height: 38px;
+    border-width: 2px;
+    border-color: rgba(218, 199, 105, 0.65);
+    box-shadow: 0 0 0 3px rgba(218, 41, 28, 0.18);
   }
 
   .marea-header-icon {
+    width: 38px;
+    height: 38px;
     border-radius: 12px;
   }
 
@@ -4847,24 +5050,9 @@ a {
     position: static;
   }
 
+  /* Hide dropdown on mobile — sidebar is used instead */
   .marea-header-user-dropdown {
-    position: fixed;
-    top: 72px;
-    right: 12px;
-    left: 12px;
-    min-width: 0;
-    padding: 10px;
-    border-radius: 20px;
-    z-index: 95;
-  }
-
-  .marea-header-user-dropdown::before {
-    display: none;
-  }
-
-  .marea-header-user-item {
-    min-height: 48px;
-    border-radius: 14px;
+    display: none !important;
   }
 
   .marea-topbar-inner {
@@ -5040,14 +5228,26 @@ a {
     padding: 0 42px 0 16px;
     border: 1px solid rgba(92, 64, 59, 0.5);
     border-radius: 14px;
-    background:
-      linear-gradient(45deg, transparent 50%, var(--secondary) 50%) right 18px center / 7px 7px no-repeat,
-      linear-gradient(135deg, rgba(218, 41, 28, 0.2), rgba(25, 27, 35, 0.94));
+    background-color: #1a1d26;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--secondary) 50%),
+      linear-gradient(135deg, var(--secondary) 50%, transparent 50%);
+    background-position: right 20px center, right 14px center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
     color: #fff;
-    font: 700 18px/1 'Archivo Narrow', sans-serif;
+    font: 700 16px/1 'Archivo Narrow', sans-serif;
     text-transform: uppercase;
     appearance: none;
     outline: none;
+    color-scheme: dark;
+  }
+
+  .marea-mobile-group-select select option {
+    background-color: #1a1d26;
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
   }
 
   .marea-mobile-group-select select:focus {

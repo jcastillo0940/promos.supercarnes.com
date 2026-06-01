@@ -924,6 +924,7 @@ class BackofficeController extends Controller
         $data = $request->validate([
             'auth_bg_youtube_id' => ['nullable', 'string', 'max:20'],
             'auth_logo_url' => ['nullable', 'url', 'max:255'],
+            'header_logo_url' => ['nullable', 'url', 'max:255'],
             'participant_brands' => ['nullable', 'string'],
             'hero_video_url' => ['nullable', 'url', 'max:255'],
             'seo_site_title' => ['nullable', 'string', 'max:120'],
@@ -964,6 +965,7 @@ class BackofficeController extends Controller
         $keys = [
             'auth_bg_youtube_id',
             'auth_logo_url',
+            'header_logo_url',
             'participant_brands',
             'hero_video_url',
             'seo_site_title',

@@ -17,6 +17,7 @@ class PublicSettingsController extends Controller
             return response()->json([
                 'auth_bg_youtube_id' => SiteSetting::get('auth_bg_youtube_id', ''),
                 'auth_logo_url' => SiteSetting::get('auth_logo_url', ''),
+                'header_logo_url' => SiteSetting::get('header_logo_url', ''),
                 'participant_brands' => SiteSetting::get('participant_brands', ''),
                 'hero_video_url' => SiteSetting::get('hero_video_url', ''),
                 'seo_site_title' => SiteSetting::get('seo_site_title', ''),
@@ -34,6 +35,7 @@ class PublicSettingsController extends Controller
             return response()->json([
                 'auth_bg_youtube_id' => env('AUTH_BG_YOUTUBE_ID', 'O9diw9_5pys'),
                 'auth_logo_url' => env('AUTH_LOGO_URL', ''),
+                'header_logo_url' => env('HEADER_LOGO_URL', ''),
                 'participant_brands' => env('PARTICIPANT_BRANDS', ''),
                 'hero_video_url' => '',
                 'seo_site_title' => '',

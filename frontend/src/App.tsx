@@ -40,6 +40,7 @@ type InvoiceEntryMode = 'scan' | 'manual'
 interface PublicSettingsResponse {
   auth_bg_youtube_id: string
   auth_logo_url?: string
+  header_logo_url?: string
   hero_video_url?: string
   participant_brands?: string
   terms_and_conditions?: string
@@ -1088,6 +1089,7 @@ export function App() {
   const [invoiceGalleryProcessing, setInvoiceGalleryProcessing] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [mobileUserSidebarOpen, setMobileUserSidebarOpen] = useState(false)
   const [selectedGroupLabel, setSelectedGroupLabel] = useState<string | null>(null)
   const [predictionDrafts, setPredictionDrafts] = useState<Record<number, PredictionDraft>>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -1098,6 +1100,7 @@ export function App() {
   const [registerStep, setRegisterStep] = useState(1)
   const [authBgVideoId, setAuthBgVideoId] = useState(DEFAULT_AUTH_BG_YOUTUBE_ID)
   const [authLogoUrl, setAuthLogoUrl] = useState(DEFAULT_AUTH_LOGO_URL)
+  const [headerLogoUrl, setHeaderLogoUrl] = useState('')
   const [heroVideoUrl, setHeroVideoUrl] = useState('')
   const [participantBrands, setParticipantBrands] = useState<ParticipantBrand[]>([])
   const [termsText, setTermsText] = useState(OFFICIAL_TERMS_TEXT_V2 || OFFICIAL_TERMS_TEXT)
@@ -1113,6 +1116,7 @@ export function App() {
   const lastResolvedInvoiceCufeRef = useRef<string | null>(null)
   const googleButtonRef = useRef<HTMLDivElement | null>(null)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileUserSidebarRef = useRef<HTMLDivElement | null>(null)
   const [authForm, setAuthForm] = useState<AuthFormState>({
     full_name: '',
     document_type: 'cedula',
@@ -1229,13 +1233,24 @@ export function App() {
 
   useEffect(() => {
     setUserMenuOpen(false)
+    setMobileUserSidebarOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!mobileUserSidebarOpen) return
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileUserSidebarOpen(false)
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [mobileUserSidebarOpen])
 
   useEffect(() => {
     api.get<PublicSettingsResponse>('/public/settings')
       .then((res) => {
         if (res.data.auth_bg_youtube_id) setAuthBgVideoId(res.data.auth_bg_youtube_id)
         if (res.data.auth_logo_url) setAuthLogoUrl(res.data.auth_logo_url)
+        if (res.data.header_logo_url) setHeaderLogoUrl(res.data.header_logo_url)
         if (res.data.hero_video_url) setHeroVideoUrl(res.data.hero_video_url)
         if (res.data.terms_and_conditions?.trim()) setTermsText(res.data.terms_and_conditions)
         if (res.data.recaptcha_site_key) setRecaptchaSiteKey(res.data.recaptcha_site_key)
@@ -1939,7 +1954,7 @@ export function App() {
         return
       }
 
-      const [phasesResponse, matchesResponse, predictionsResponse, overviewResponse, dashboardResponse, walletResponse, prizesResponse] = await Promise.all([
+      const [phasesResponse, matchesResponse, predictionsResponse, overviewResponse, dashboardResponse, walletResponse, prizesResponse, invoicesResponse] = await Promise.all([
         api.get<PhasesResponse>('/client/phases'),
         api.get<MatchesResponse>('/client/matches'),
         api.get<PredictionsResponse>('/client/predictions'),
@@ -1947,6 +1962,7 @@ export function App() {
         api.get<DashboardResponse>('/dashboard'),
         api.get<WalletResponse>('/wallet'),
         api.get<PrizesResponse>('/prizes/store'),
+        api.get<InvoicesResponse>('/client/invoices'),
       ])
 
       const nextPhases = phasesResponse.data.data
@@ -1965,6 +1981,7 @@ export function App() {
       setDashboardSnapshot(dashboardResponse.data)
       setWalletSnapshot(walletResponse.data)
       setPrizes(prizesResponse.data.data ?? [])
+      setInvoices(invoicesResponse.data.data ?? [])
 
       const drafts = nextMatches.reduce<Record<number, PredictionDraft>>((accumulator, match) => {
         const existing = nextPredictions.find((prediction) => prediction.match_id === match.id)
@@ -1976,7 +1993,6 @@ export function App() {
       }, {})
 
       setPredictionDrafts(drafts)
-      await loadInvoices()
     } catch (bootstrapError) {
       const status = typeof bootstrapError === 'object' && bootstrapError
         ? (bootstrapError as { response?: { status?: number } }).response?.status
@@ -1988,15 +2004,6 @@ export function App() {
       }
 
       setError('La sesion sigue activa, pero no se pudieron cargar todos los datos. Recarga nuevamente en unos segundos.')
-    }
-  }
-
-  async function loadInvoices() {
-    try {
-      const invoicesResponse = await api.get<InvoicesResponse>('/client/invoices')
-      setInvoices(invoicesResponse.data.data ?? [])
-    } catch {
-      setInvoices([])
     }
   }
 
@@ -2702,8 +2709,9 @@ export function App() {
   const playerName = user?.full_name ?? 'Participante'
   const playerBadge = userInitials(user?.full_name)
   const playerAvatarUrl = user?.avatar_url ?? null
-  const headerBrand = authLogoUrl ? (
-    <img alt="Super Carnes" src={authLogoUrl} />
+  const effectiveHeaderLogo = headerLogoUrl || authLogoUrl
+  const headerBrand = effectiveHeaderLogo ? (
+    <img alt="Super Carnes" src={effectiveHeaderLogo} />
   ) : (
     <span>Super Carnes</span>
   )
@@ -3267,13 +3275,27 @@ export function App() {
                 <button className="marea-header-icon marea-header-notifications material-symbols-outlined text-on-surface-variant hover:text-primary transition-all" type="button" aria-label="Notificaciones">
                   notifications
                 </button>
+                <button
+                  className="marea-header-icon marea-header-invoice-mobile material-symbols-outlined text-on-surface-variant hover:text-primary transition-all md:hidden"
+                  type="button"
+                  onClick={() => navigateToView('facturas')}
+                  aria-label="Registrar factura"
+                >
+                  receipt_long
+                </button>
                 <div className="marea-header-user-menu" ref={userMenuRef}>
                   <button
-                    aria-expanded={userMenuOpen}
+                    aria-expanded={userMenuOpen || mobileUserSidebarOpen}
                     aria-haspopup="menu"
                     className="marea-header-avatar"
                     type="button"
-                    onClick={() => setUserMenuOpen((value) => !value)}
+                    onClick={() => {
+                      if (window.innerWidth < 640) {
+                        setMobileUserSidebarOpen((v) => !v)
+                      } else {
+                        setUserMenuOpen((value) => !value)
+                      }
+                    }}
                     aria-label="Abrir menu de usuario"
                   >
                     {playerAvatarUrl ? <img alt={`Avatar de ${playerName}`} src={playerAvatarUrl} /> : <span>{playerBadge}</span>}
@@ -3303,6 +3325,48 @@ export function App() {
           </header>
 
           {sidebarOpen ? <button className="marea-sidebar-overlay fixed inset-0 z-30 bg-black/45 md:hidden" type="button" onClick={() => setSidebarOpen(false)} /> : null}
+
+          {mobileUserSidebarOpen ? (
+            <>
+              <button
+                className="fixed inset-0 z-[60] bg-black/55 md:hidden"
+                type="button"
+                onClick={() => setMobileUserSidebarOpen(false)}
+                aria-label="Cerrar menu de usuario"
+              />
+              <div ref={mobileUserSidebarRef} className="marea-mobile-user-sidebar md:hidden">
+                <div className="marea-mobile-user-sidebar-header">
+                  <span>Mi cuenta</span>
+                  <button className="marea-mobile-user-sidebar-close material-symbols-outlined" type="button" onClick={() => setMobileUserSidebarOpen(false)}>
+                    close
+                  </button>
+                </div>
+                <div className="marea-mobile-user-sidebar-profile">
+                  <div className="marea-mobile-user-sidebar-avatar">
+                    {playerAvatarUrl ? <img alt={`Avatar de ${playerName}`} src={playerAvatarUrl} /> : <span>{playerBadge}</span>}
+                  </div>
+                  <div>
+                    <p className="marea-mobile-user-sidebar-name">{playerName}</p>
+                  </div>
+                </div>
+                <nav className="marea-mobile-user-sidebar-nav">
+                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { navigateToView('cuenta'); setMobileUserSidebarOpen(false); }}>
+                    <span className="material-symbols-outlined">person</span>
+                    <span>Mi cuenta</span>
+                  </button>
+                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { navigateToView('cuenta'); setMobileUserSidebarOpen(false); }}>
+                    <span className="material-symbols-outlined">settings</span>
+                    <span>Ajustes</span>
+                  </button>
+                  <div className="marea-mobile-user-sidebar-divider" />
+                  <button className="marea-mobile-user-sidebar-item danger" type="button" onClick={() => { void handleLogout(); setMobileUserSidebarOpen(false); }}>
+                    <span className="material-symbols-outlined">logout</span>
+                    <span>Cerrar sesión</span>
+                  </button>
+                </nav>
+              </div>
+            </>
+          ) : null}
 
           <div className="flex w-full">
             <aside

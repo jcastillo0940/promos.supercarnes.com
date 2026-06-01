@@ -11,11 +11,20 @@
 
         <div class="card">
             <h3>Login publico y hero</h3>
-            <p><small>El logo superior del login reemplaza el texto "Super Carnes". Usa una URL publica de imagen PNG, JPG, WebP o SVG.</small></p>
+            <p><small>Usa URLs publicas de imagen PNG, JPG, WebP o SVG.</small></p>
             <div class="row">
                 <input name="auth_bg_youtube_id" value="{{ $settings['auth_bg_youtube_id'] }}" placeholder="YouTube ID para auth / hero">
-                <input name="auth_logo_url" value="{{ $settings['auth_logo_url'] }}" placeholder="URL del logo superior del login">
                 <input name="hero_video_url" value="{{ $settings['hero_video_url'] }}" placeholder="URL MP4/WebM del video hero">
+            </div>
+            <div class="row">
+                <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+                    <small><strong>Logo del header (topbar)</strong> — reemplaza el texto "Super Carnes" en la barra superior de la app.</small>
+                    <input name="header_logo_url" value="{{ $settings['header_logo_url'] }}" placeholder="https://...logo-header.png">
+                </label>
+                <label style="display:flex;flex-direction:column;gap:4px;flex:1">
+                    <small><strong>Logo del login</strong> — aparece en la pantalla de acceso. Si no se configura el logo del header, se usa este como respaldo.</small>
+                    <input name="auth_logo_url" value="{{ $settings['auth_logo_url'] }}" placeholder="https://...logo-login.png">
+                </label>
             </div>
         </div>
 

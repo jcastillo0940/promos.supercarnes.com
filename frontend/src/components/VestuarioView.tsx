@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type {
   ClientBootstrap,
   DashboardSnapshot,
@@ -25,6 +25,13 @@ function userInitials(name: string | null | undefined) {
     .toUpperCase()
 }
 
+function maskName(name: string | null | undefined) {
+  if (!name) return 'Participante'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return `${parts[0][0].toUpperCase()}***`
+  return `${parts[0]} ${parts[1][0].toUpperCase()}.`
+}
+
 function roleLabel(value: string | null | undefined) {
   if (!value) return 'Participante'
   return value.replace(/_/g, ' ')
@@ -41,22 +48,6 @@ function podiumLabel(place: number) {
   return `${place}to lugar`
 }
 
-function leaderboardSlice(entries: LeaderboardEntry[], userId: number) {
-  if (entries.length <= 8) return entries
-
-  const userIndex = entries.findIndex((entry) => entry.user_id === userId)
-  if (userIndex >= 0 && userIndex > 2) {
-    const start = Math.max(0, userIndex - 2)
-    return entries.slice(start, Math.min(entries.length, start + 6))
-  }
-
-  return entries.slice(0, 8)
-}
-
-function calculatePercent(value: number, total: number) {
-  if (total <= 0) return 0
-  return Math.max(0, Math.min(100, (value / total) * 100))
-}
 
 function performancePercent(entry: LeaderboardEntry, maxGoals: number) {
   if (maxGoals <= 0) return 10
@@ -75,42 +66,25 @@ export function VestuarioView({
   predictions: Prediction[]
   invoices: unknown[]
 }) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [rankingMode, setRankingMode] = useState<'all' | 'top' | 'nearby'>('all')
-
   const avatarUrl = user.avatar_url ?? null
   const leaderboard = overview?.leaderboard ?? []
   const topThree = leaderboard.slice(0, 3)
   const userEntry = leaderboard.find((entry) => entry.user_id === user.id) ?? null
-  const generalGoals = Number(overview?.general_goals ?? leaderboard.reduce((total, entry) => total + Number(entry.goals ?? 0), 0))
   const userGoals = Number(userEntry?.goals ?? 0)
-  const nextMilestone = generalGoals > 0 ? Math.ceil((generalGoals + 1) / 500) * 500 : 500
-  const milestoneProgress = calculatePercent(generalGoals, nextMilestone)
-  const milestoneRemaining = Math.max(nextMilestone - generalGoals, 0)
   const maxGoals = leaderboard.reduce((currentMax, entry) => Math.max(currentMax, entry.goals), 0)
   const podiumEntries = topThree.length === 3 ? [topThree[1], topThree[0], topThree[2]] : topThree
-  const spotlightLeader = topThree[0] ?? userEntry
-  const userContribution = calculatePercent(userGoals, generalGoals)
+  const userIndex = leaderboard.findIndex((entry) => entry.user_id === user.id)
+  const leader = leaderboard[0] ?? null
+  const goalsToFirst = leader && userEntry && userEntry.position > 1 ? Math.max(Number(leader.goals) - userGoals, 0) : 0
 
-  const rankingRows = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase()
-    const baseRows =
-      rankingMode === 'top' ? leaderboard.slice(0, 10) : rankingMode === 'nearby' ? leaderboardSlice(leaderboard, user.id) : leaderboard
-
-    if (!query) return baseRows
-
-    return baseRows.filter((entry) => {
-      const haystack = `${entry.full_name} ${roleLabel(entry.football_role)} ${entry.position}`.toLowerCase()
-      return haystack.includes(query)
-    })
-  }, [leaderboard, rankingMode, searchTerm, user.id])
-
-  const summaryCards = [
-    { label: 'Participantes', value: formatCompactNumber(leaderboard.length) },
-    { label: 'Top 3', value: formatCompactNumber(topThree.length) },
-    { label: 'Tu posicion', value: userEntry ? `#${positionLabel(userEntry.position)}` : 'N/D' },
-    { label: 'Tus goles', value: formatCompactNumber(userGoals) },
-  ]
+  const contextRows = useMemo(() => {
+    if (userIndex < 0) return []
+    const rows: Array<LeaderboardEntry & { isCurrentUser: boolean }> = []
+    if (userIndex > 0) rows.push({ ...leaderboard[userIndex - 1], isCurrentUser: false })
+    rows.push({ ...leaderboard[userIndex], isCurrentUser: true })
+    if (userIndex < leaderboard.length - 1) rows.push({ ...leaderboard[userIndex + 1], isCurrentUser: false })
+    return rows
+  }, [leaderboard, userIndex])
 
   return (
     <section className="vestuario-view">
@@ -174,76 +148,45 @@ export function VestuarioView({
         <div className="vestuario-ranking-head">
           <div>
             <span className="vestuario-panel-kicker">Ranking oficial</span>
-            <h2>Goleadores</h2>
-          </div>
-
-          <div className="vestuario-ranking-controls">
-            <label className="vestuario-search">
-              <span className="material-symbols-outlined">search</span>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar participante..."
-              />
-            </label>
-
-            <div className="vestuario-filter-group" role="tablist" aria-label="Filtro de ranking">
-              <button
-                className={rankingMode === 'all' ? 'vestuario-filter-chip active' : 'vestuario-filter-chip'}
-                type="button"
-                onClick={() => setRankingMode('all')}
-              >
-                Todo
-              </button>
-              <button
-                className={rankingMode === 'top' ? 'vestuario-filter-chip active' : 'vestuario-filter-chip'}
-                type="button"
-                onClick={() => setRankingMode('top')}
-              >
-                Top 10
-              </button>
-              <button
-                className={rankingMode === 'nearby' ? 'vestuario-filter-chip active' : 'vestuario-filter-chip'}
-                type="button"
-                onClick={() => setRankingMode('nearby')}
-              >
-                Cerca de mi
-              </button>
-            </div>
+            <h2>Tu posicion</h2>
           </div>
         </div>
 
-        {rankingRows.length ? (
+        {userEntry ? (
           <>
+            {userEntry.position > 2 && (
+              <div className="vestuario-ranking-gap">
+                <span className="material-symbols-outlined">more_horiz</span>
+                <span>{userEntry.position - 2} participante{userEntry.position - 2 !== 1 ? 's' : ''} arriba</span>
+              </div>
+            )}
+
             <div className="vestuario-table-wrap">
               <table className="vestuario-table">
                 <thead>
                   <tr>
                     <th>Pos</th>
                     <th>Participante</th>
-                    <th>Rol</th>
                     <th>Rendimiento</th>
                     <th className="is-right">Goles</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rankingRows.map((entry) => {
+                  {contextRows.map((entry) => {
                     const progress = performancePercent(entry, maxGoals)
+                    const isMe = entry.isCurrentUser
+                    const displayName = isMe ? entry.full_name : maskName(entry.full_name)
 
                     return (
-                      <tr key={entry.user_id} className={entry.user_id === user.id ? 'is-current-user' : ''}>
+                      <tr key={entry.user_id} className={isMe ? 'is-current-user' : 'is-masked'}>
                         <td className="vestuario-rank-cell">{positionLabel(entry.position)}</td>
                         <td>
                           <div className="vestuario-row-player">
                             <div className="vestuario-row-player-badge">{userInitials(entry.full_name)}</div>
                             <div>
-                              <strong>{entry.full_name}</strong>
+                              <strong>{displayName}</strong>
                             </div>
                           </div>
-                        </td>
-                        <td>
-                          <span className="vestuario-role-chip">{roleLabel(entry.football_role)}</span>
                         </td>
                         <td>
                           <div className="vestuario-performance">
@@ -252,7 +195,7 @@ export function VestuarioView({
                             </div>
                           </div>
                         </td>
-                        <td className="vestuario-goals-cell">{formatCompactNumber(entry.goals)}</td>
+                        <td className="vestuario-goals-cell">{isMe ? formatCompactNumber(entry.goals) : '—'}</td>
                       </tr>
                     )
                   })}
@@ -260,88 +203,29 @@ export function VestuarioView({
               </table>
             </div>
 
-            <div className="vestuario-ranking-footer">
-              <span>
-                {userEntry ? `Tu posicion actual es #${positionLabel(userEntry.position)} con ${formatCompactNumber(userEntry.goals)} goles.` : 'Todavia no apareces en el ranking oficial.'}
-              </span>
-              <strong>{formatCompactNumber(leaderboard.length)} participantes en competencia</strong>
-            </div>
+            {userEntry.position > 1 && (
+              <div className="vestuario-ranking-footer">
+                <span className="material-symbols-outlined">trending_up</span>
+                <span>Te faltan <strong>{formatCompactNumber(goalsToFirst)} goles</strong> para alcanzar el 1er lugar.</span>
+              </div>
+            )}
+
+            {userEntry.position === 1 && (
+              <div className="vestuario-ranking-footer vestuario-ranking-footer--leader">
+                <span className="material-symbols-outlined">emoji_events</span>
+                <span>Eres el lider del ranking con <strong>{formatCompactNumber(userGoals)} goles</strong>.</span>
+              </div>
+            )}
           </>
         ) : (
           <div className="vestuario-empty-state">
-            <span className="material-symbols-outlined">search_off</span>
-            <h3>Sin resultados para esa busqueda</h3>
-            <p>Ajusta el nombre o cambia el filtro para volver a ver la tabla.</p>
+            <span className="material-symbols-outlined">leaderboard</span>
+            <h3>Todavia no apareces en el ranking</h3>
+            <p>Registra tus facturas para acumular goles y entrar en la tabla oficial.</p>
           </div>
         )}
       </section>
 
-      <section className="vestuario-insight-strip">
-        <article className="vestuario-insight-card wide dark">
-          <span>Meta global</span>
-          <strong>{formatCompactNumber(generalGoals)} goles</strong>
-          <div className="vestuario-progress-block">
-            <div className="vestuario-progress-track">
-              <span className="vestuario-progress-fill" style={{ width: `${milestoneProgress}%` }} />
-            </div>
-          </div>
-          <p>Faltan {formatCompactNumber(milestoneRemaining)} goles para alcanzar el siguiente corte oficial de {formatCompactNumber(nextMilestone)}.</p>
-        </article>
-
-        <article className="vestuario-insight-card gold">
-          <span>Lider actual</span>
-          <strong>{spotlightLeader?.full_name ?? 'Sin lider visible'}</strong>
-          <p>{spotlightLeader ? `${roleLabel(spotlightLeader.football_role)} con ${formatCompactNumber(spotlightLeader.goals)} goles.` : 'Esperando lider del ranking.'}</p>
-        </article>
-
-        <article className="vestuario-insight-card red">
-          <span>Estado de tu cuenta</span>
-          <strong>{userEntry ? `#${positionLabel(userEntry.position)}` : 'Pendiente'}</strong>
-          <p>
-            Aportas {formatCompactNumber(userGoals)} goles al torneo y representas {userContribution.toFixed(1)}% del acumulado actual.
-          </p>
-        </article>
-      </section>
-
-      <div className="vestuario-dashboard-grid">
-        <section className="vestuario-panel">
-          <div className="vestuario-panel-head compact">
-            <div>
-              <span className="vestuario-panel-kicker">Resumen</span>
-              <h2>Resumen del ranking</h2>
-            </div>
-          </div>
-
-          <div className="vestuario-summary-grid">
-            {summaryCards.map((card) => (
-              <article key={card.label}>
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="vestuario-panel">
-          <div className="vestuario-panel-head compact">
-            <div>
-              <span className="vestuario-panel-kicker">Actividad</span>
-              <h2>Estado general</h2>
-            </div>
-          </div>
-
-          <div className="vestuario-mini-strip">
-            <article>
-              <span>Goles totales</span>
-              <strong>{formatCompactNumber(generalGoals)}</strong>
-            </article>
-            <article>
-              <span>Lider actual</span>
-              <strong>{spotlightLeader ? `#${positionLabel(spotlightLeader.position)}` : 'N/D'}</strong>
-            </article>
-          </div>
-        </section>
-      </div>
     </section>
   )
 }
