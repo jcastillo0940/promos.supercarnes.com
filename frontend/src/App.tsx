@@ -2509,9 +2509,14 @@ export function App() {
                     ) : null}
 
                     <div className="marea-teams-row">
-                      <div className="marea-team-col">
+                      <div className="marea-teams-badges">
                         <TeamBadge team={homeTeam} featured={favoriteTeam?.id === homeTeam?.id} />
+                        <TeamBadge team={awayTeam} featured={favoriteTeam?.id === awayTeam?.id} />
+                      </div>
+
+                      <div className="marea-teams-names">
                         <span className="team-name">{homeTeam?.name ?? 'Local'}</span>
+                        <span className="team-name">{awayTeam?.name ?? 'Visitante'}</span>
                       </div>
 
                       {isReadonlyPrediction ? (
@@ -2575,11 +2580,6 @@ export function App() {
                           </div>
                         </div>
                       )}
-
-                      <div className="marea-team-col">
-                        <TeamBadge team={awayTeam} featured={favoriteTeam?.id === awayTeam?.id} />
-                        <span className="team-name">{awayTeam?.name ?? 'Visitante'}</span>
-                      </div>
                     </div>
 
                     <div className="marea-card-action">

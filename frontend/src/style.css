@@ -2782,10 +2782,27 @@ a {
 
 .marea-teams-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 0 8px;
+}
+
+.marea-teams-badges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  width: 100%;
+}
+
+.marea-teams-names {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+}
+
+.marea-teams-names .team-name {
+  text-align: center;
 }
 
 .marea-team-col {
@@ -2852,50 +2869,56 @@ a {
 }
 
 .team-name {
+  max-width: 100%;
   color: #fff;
   font: 700 18px/1.2 'Archivo Narrow', sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.01em;
   text-align: center;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .marea-score-inputs {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
+  width: 100%;
 }
 
 .marea-score-stepper {
   display: grid;
-  grid-template-columns: 42px minmax(72px, 80px) 42px;
+  grid-template-columns: 32px minmax(72px, 80px) 32px;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
 
 .marea-score-stepper-button {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  border: 1px solid rgba(218, 199, 105, 0.36);
-  background: rgba(11, 14, 21, 0.82);
-  color: var(--secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.65);
   cursor: pointer;
-  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
 }
 
 .marea-score-stepper-button:hover {
-  border-color: rgba(218, 199, 105, 0.62);
-  background: rgba(39, 42, 50, 0.94);
+  border-color: rgba(218, 199, 105, 0.5);
+  background: rgba(218, 199, 105, 0.08);
+  color: var(--secondary);
 }
 
 .marea-score-stepper-button:active {
-  transform: scale(0.96);
+  transform: scale(0.92);
 }
 
 .marea-score-stepper-button:disabled {
-  opacity: 0.48;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -2911,9 +2934,15 @@ a {
   transition: 160ms ease;
 }
 
-.marea-score-inputs span {
+.marea-score-inputs > span {
+  flex: 1;
+  text-align: center;
   color: var(--secondary);
   font: 700 32px/1 'Archivo Narrow', sans-serif;
+}
+
+.marea-score-stepper-button .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .marea-score-readonly {
@@ -4372,17 +4401,18 @@ a {
 }
 
 .info-tooltip-bubble {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  z-index: 20;
-  width: min(280px, 70vw);
-  padding: 12px 14px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 200;
+  width: min(320px, 86vw);
+  padding: 18px 20px;
   border-radius: 16px;
   border: 1px solid rgba(218, 199, 105, 0.18);
-  background: rgba(11, 14, 21, 0.96);
+  background: rgba(11, 14, 21, 0.98);
   color: rgba(225, 226, 236, 0.92);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
@@ -5498,16 +5528,8 @@ a {
   }
 
   .marea-teams-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: start;
     gap: 10px;
     padding: 0;
-  }
-
-  .marea-team-col {
-    min-width: 0;
-    gap: 8px;
   }
 
   .team-badge {
@@ -5528,7 +5550,6 @@ a {
   }
 
   .team-name {
-    max-width: 100%;
     font-size: 13px;
     line-height: 1.15;
     overflow-wrap: anywhere;
@@ -5536,18 +5557,34 @@ a {
 
   .marea-score-inputs {
     align-self: center;
-    gap: 6px;
+    gap: 5px;
   }
 
   .marea-score-inputs input {
-    width: 52px;
-    height: 62px;
-    border-radius: 12px;
-    font-size: 34px;
+    width: 46px;
+    height: 56px;
+    border-radius: 10px;
+    font-size: 30px;
   }
 
-  .marea-score-inputs span {
-    font-size: 22px;
+  .marea-score-inputs > span {
+    font-size: 18px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .marea-score-stepper {
+    grid-template-columns: 28px minmax(46px, 52px) 28px;
+    gap: 10px;
+  }
+
+  .marea-score-stepper-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .marea-score-stepper-button .material-symbols-outlined {
+    font-size: 16px;
   }
 
   .marea-send-button {
