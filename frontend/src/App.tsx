@@ -37,6 +37,7 @@ type AuthMode = 'login' | 'register'
 type MainView = 'cancha' | 'reglas' | 'facturas' | 'perfil' | 'cuenta'
 type PredictionMode = 'pending' | 'mine'
 type InvoiceEntryMode = 'scan' | 'manual'
+type AccountSection = 'perfil' | 'terminos'
 
 interface PublicSettingsResponse {
   auth_bg_youtube_id: string
@@ -1112,6 +1113,7 @@ export function App() {
   const [predictionCelebration, setPredictionCelebration] = useState<string | null>(null)
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [termsScrolledEnd, setTermsScrolledEnd] = useState(false)
+  const [accountSection, setAccountSection] = useState<AccountSection>('perfil')
   const [savingPredictionIds, setSavingPredictionIds] = useState<number[]>([])
   const [now, setNow] = useState(() => Date.now())
   const invoiceScannerRef = useRef<InvoiceScannerRef | null>(null)
@@ -1440,6 +1442,13 @@ export function App() {
       navigate(CLIENT_VIEW_PATHS.cancha, { replace: true })
     }
   }, [authBootstrapping, isAuthRoute, location.pathname, navigate, token, user])
+
+  useEffect(() => {
+    if (currentView !== 'cuenta') return
+
+    const section = new URLSearchParams(location.search).get('section')
+    setAccountSection(section === 'terminos' ? 'terminos' : 'perfil')
+  }, [currentView, location.search])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -2226,9 +2235,24 @@ export function App() {
 
   function navigateToView(target: MainView) {
     const nextPath = CLIENT_VIEW_PATHS[target]
-    if (location.pathname !== nextPath) {
+    if (location.pathname !== nextPath || location.search) {
       navigate(nextPath)
     }
+  }
+
+  function openAccountSection(section: AccountSection) {
+    setAccountSection(section)
+    navigate(`${CLIENT_VIEW_PATHS.cuenta}?section=${section}`)
+  }
+
+  function openTermsPage() {
+    if (user && isRegistrationComplete(user)) {
+      openAccountSection('terminos')
+      return
+    }
+
+    setTermsScrolledEnd(false)
+    setTermsModalOpen(true)
   }
 
   function updateScore(matchId: number, side: 'home' | 'away', value: string) {
@@ -2240,6 +2264,23 @@ export function App() {
         [side]: sanitized,
       },
     }))
+  }
+
+  function adjustScore(matchId: number, side: 'home' | 'away', delta: number) {
+    setPredictionDrafts((current) => {
+      const currentValue = Number(current[matchId]?.[side] ?? 0)
+      const nextValue = Math.max(0, Math.min(99, currentValue + delta))
+
+      return {
+        ...current,
+        [matchId]: {
+          ...current[matchId],
+          home: current[matchId]?.home ?? '0',
+          away: current[matchId]?.away ?? '0',
+          [side]: String(nextValue),
+        },
+      }
+    })
   }
 
   async function handlePredictionSubmit(match: TournamentMatch) {
@@ -2439,6 +2480,9 @@ export function App() {
                 const draft = predictionDrafts[match.id] ?? { home: '0', away: '0' }
                 const prediction = predictionMap.get(match.id)
                 const isSaving = savingPredictionIds.includes(match.id)
+                const isReadonlyPrediction = predictionMode === 'mine' && Boolean(prediction)
+                const homeDisplayScore = isReadonlyPrediction ? String(prediction?.predicted_home_score ?? 0) : (draft.home || '0')
+                const awayDisplayScore = isReadonlyPrediction ? String(prediction?.predicted_away_score ?? 0) : (draft.away || '0')
 
                 return (
                   <article key={match.id} className={favoriteTeam ? 'marea-match-card featured' : 'marea-match-card'}>
@@ -2470,23 +2514,67 @@ export function App() {
                         <span className="team-name">{homeTeam?.name ?? 'Local'}</span>
                       </div>
 
-                      <div className="marea-score-inputs">
-                        <input
-                          aria-label={`Marcador local ${homeTeam?.name ?? 'Local'}`}
-                          type="text"
-                          inputMode="numeric"
-                          value={draft.home}
-                          onChange={(event) => updateScore(match.id, 'home', event.target.value)}
-                        />
-                        <span>-</span>
-                        <input
-                          aria-label={`Marcador visitante ${awayTeam?.name ?? 'Visitante'}`}
-                          type="text"
-                          inputMode="numeric"
-                          value={draft.away}
-                          onChange={(event) => updateScore(match.id, 'away', event.target.value)}
-                        />
-                      </div>
+                      {isReadonlyPrediction ? (
+                        <div className="marea-score-readonly" aria-label="Pronostico enviado">
+                          <strong>{homeDisplayScore}</strong>
+                          <span>-</span>
+                          <strong>{awayDisplayScore}</strong>
+                        </div>
+                      ) : (
+                        <div className="marea-score-inputs">
+                          <div className="marea-score-stepper">
+                            <button
+                              type="button"
+                              className="marea-score-stepper-button"
+                              aria-label={`Restar marcador local ${homeTeam?.name ?? 'Local'}`}
+                              onClick={() => adjustScore(match.id, 'home', -1)}
+                            >
+                              <span className="material-symbols-outlined">remove</span>
+                            </button>
+                            <input
+                              aria-label={`Marcador local ${homeTeam?.name ?? 'Local'}`}
+                              type="text"
+                              inputMode="numeric"
+                              value={homeDisplayScore}
+                              onChange={(event) => updateScore(match.id, 'home', event.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="marea-score-stepper-button"
+                              aria-label={`Sumar marcador local ${homeTeam?.name ?? 'Local'}`}
+                              onClick={() => adjustScore(match.id, 'home', 1)}
+                            >
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
+                          </div>
+                          <span>-</span>
+                          <div className="marea-score-stepper">
+                            <button
+                              type="button"
+                              className="marea-score-stepper-button"
+                              aria-label={`Restar marcador visitante ${awayTeam?.name ?? 'Visitante'}`}
+                              onClick={() => adjustScore(match.id, 'away', -1)}
+                            >
+                              <span className="material-symbols-outlined">remove</span>
+                            </button>
+                            <input
+                              aria-label={`Marcador visitante ${awayTeam?.name ?? 'Visitante'}`}
+                              type="text"
+                              inputMode="numeric"
+                              value={awayDisplayScore}
+                              onChange={(event) => updateScore(match.id, 'away', event.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="marea-score-stepper-button"
+                              aria-label={`Sumar marcador visitante ${awayTeam?.name ?? 'Visitante'}`}
+                              onClick={() => adjustScore(match.id, 'away', 1)}
+                            >
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="marea-team-col">
                         <TeamBadge team={awayTeam} featured={favoriteTeam?.id === awayTeam?.id} />
@@ -2712,7 +2800,7 @@ export function App() {
     }
 
     if (currentView === 'cuenta') {
-      return user ? <CuentaView user={user} saving={profileSaving} branches={branches} onSave={handleProfileSave} /> : null
+      return user ? <CuentaView user={user} saving={profileSaving} branches={branches} termsText={TERMS_TEXT} section={accountSection} onSectionChange={openAccountSection} onSave={handleProfileSave} /> : null
     }
 
     return renderCancha()
@@ -3263,7 +3351,7 @@ export function App() {
           <footer className="auth-footer">
             <strong>Mundialista 2026</strong>
             <nav aria-label="Legal">
-              <button type="button" onClick={() => { setTermsScrolledEnd(false); setTermsModalOpen(true) }}>Terminos y Condiciones</button>
+              <button type="button" onClick={openTermsPage}>Terminos y Condiciones</button>
               <span>Privacidad</span>
               <span>Contacto</span>
             </nav>
@@ -3333,11 +3421,11 @@ export function App() {
                   </button>
                   {userMenuOpen ? (
                     <div className="marea-header-user-dropdown" role="menu" aria-label="Menu de usuario">
-                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => navigateToView('cuenta')}>
+                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => openAccountSection('perfil')}>
                         <span className="material-symbols-outlined">person</span>
                         <span>Mi cuenta</span>
                       </button>
-                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => navigateToView('cuenta')}>
+                      <button className="marea-header-user-item" role="menuitem" type="button" onClick={() => openAccountSection('perfil')}>
                         <span className="material-symbols-outlined">settings</span>
                         <span>Ajustes</span>
                       </button>
@@ -3381,11 +3469,11 @@ export function App() {
                   </div>
                 </div>
                 <nav className="marea-mobile-user-sidebar-nav">
-                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { navigateToView('cuenta'); setMobileUserSidebarOpen(false); }}>
+                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { openAccountSection('perfil'); setMobileUserSidebarOpen(false); }}>
                     <span className="material-symbols-outlined">person</span>
                     <span>Mi cuenta</span>
                   </button>
-                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { navigateToView('cuenta'); setMobileUserSidebarOpen(false); }}>
+                  <button className="marea-mobile-user-sidebar-item" type="button" onClick={() => { openAccountSection('perfil'); setMobileUserSidebarOpen(false); }}>
                     <span className="material-symbols-outlined">settings</span>
                     <span>Ajustes</span>
                   </button>
@@ -3437,7 +3525,7 @@ export function App() {
                 </button>
               </nav>
               <div className="mt-auto border-t border-outline-variant pt-4 flex flex-col gap-1">
-                <button className={sideNavButton('cuenta')} type="button" onClick={() => navigateToView('cuenta')}>
+                <button className={sideNavButton('cuenta')} type="button" onClick={() => openAccountSection('perfil')}>
                   <span className="material-symbols-outlined">settings</span>
                   <span className="font-label-caps text-label-caps">Ajustes</span>
                 </button>

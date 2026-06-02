@@ -1,4 +1,5 @@
 import type { RegisteredInvoice, User, WalletMovement, WalletSnapshot } from '../types'
+import { InfoTooltip } from './InfoTooltip'
 
 function formatCompactNumber(value: number | string | null | undefined) {
   const amount = Number(value ?? 0)
@@ -87,11 +88,17 @@ export function VitrinaView({
 
         <div className="vitrina-scoreboard">
           <article className="vitrina-scoreboard-primary">
-            <span>Goles acumulados</span>
+            <span>
+              Goles acumulados
+              <InfoTooltip compact content="Suma historica de goles acreditados por facturas validadas, pronosticos acertados y otras dinamicas oficiales." />
+            </span>
             <strong>{formatCompactNumber(wallet?.lifetime_goals_earned ?? totalGoalsWon)} G</strong>
           </article>
           <article className="vitrina-scoreboard-secondary">
-            <span>Total facturas</span>
+            <span>
+              Total facturas
+              <InfoTooltip compact content="Monto acumulado de todas tus facturas aprobadas dentro de la promocion." />
+            </span>
             <strong>{formatCurrency(approvedInvoiceTotal)}</strong>
           </article>
         </div>
@@ -101,7 +108,10 @@ export function VitrinaView({
         <div className="vitrina-history-head">
           <div>
             <span className="vitrina-kicker">Actividad oficial</span>
-            <h2>Historial de cuenta</h2>
+            <h2>
+              Historial de cuenta
+              <InfoTooltip compact content="Aqui ves cada movimiento que afecto tus goles o tiros: ganancias por pronosticos, facturas validadas, canjes y premios." />
+            </h2>
           </div>
 
           <div className="vitrina-chip-row">
