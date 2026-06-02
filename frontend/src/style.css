@@ -5804,21 +5804,6 @@ a {
     line-height: 1.45;
   }
 
-  .auth-promo-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: 100%;
-    gap: 8px;
-  }
-
-  .auth-promo-strip article {
-    min-height: 64px;
-    padding: 12px 10px;
-  }
-
-  .auth-promo-strip article strong {
-    font-size: 19px;
-  }
-
   .auth-panel {
     width: min(calc(100% - 28px), 540px);
     max-height: none;
@@ -5840,10 +5825,6 @@ a {
 
   .auth-panel-header h2 {
     font-size: 31px;
-  }
-
-  .auth-promo-strip {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -6011,18 +5992,29 @@ a {
 }
 
 .auth-promo-strip {
-  width: min(100%, 620px);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  justify-self: start;
+  width: min(100%, 680px);
+  margin: 0;
+  padding-bottom: clamp(24px, 3.5vh, 44px);
 }
 
 .auth-promo-strip article {
-  min-height: 48px;
-  padding: 12px 14px;
-  border-color: rgba(255, 255, 255, 0.12);
-  background: linear-gradient(180deg, rgba(28, 30, 39, 0.76), rgba(11, 12, 17, 0.82));
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  text-align: left;
 }
 
 .auth-promo-strip article span {
@@ -6031,7 +6023,7 @@ a {
 }
 
 .auth-promo-strip article strong {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .auth-panel {
@@ -6114,14 +6106,14 @@ a {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
-  gap: 6px;
-  min-height: 42px;
-  padding: 0 9px;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 7px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 3px;
   background: rgba(9, 10, 14, 0.78);
   color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
@@ -6138,13 +6130,13 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 20px;
+  height: 16px;
+  padding: 0 4px;
   border-radius: 999px;
   background: rgba(227, 38, 29, 0.18);
   color: #fff;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.06em;
 }
@@ -6312,10 +6304,6 @@ a {
     font-size: clamp(46px, 6vw, 74px);
   }
 
-  .auth-promo-strip article {
-    min-height: 44px;
-  }
-
   .auth-panel {
     padding: 18px;
   }
@@ -6325,7 +6313,7 @@ a {
   .auth-shell {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 62px auto auto 52px 40px;
+    grid-template-rows: 62px auto auto auto 52px 40px;
     overflow-y: auto;
   }
 
@@ -6353,17 +6341,26 @@ a {
     grid-row: 3;
     width: min(calc(100% - 28px), 430px);
     max-height: none;
-    margin: 26px auto 34px;
+    margin: 26px auto 20px;
+  }
+
+  .auth-promo-strip {
+    grid-column: 1;
+    grid-row: 4;
+    justify-content: center;
+    gap: 6px 20px;
+    padding: 12px 18px 24px;
+    align-self: start;
   }
 
   .auth-football-ticker {
-    grid-row: 4;
+    grid-row: 5;
     justify-content: flex-start;
     overflow-x: auto;
   }
 
   .auth-footer {
-    grid-row: 5;
+    grid-row: 6;
     grid-template-columns: 1fr;
     gap: 4px;
     justify-items: center;
@@ -6377,10 +6374,6 @@ a {
 }
 
 @media (max-width: 460px) {
-  .auth-promo-strip {
-    grid-template-columns: 1fr;
-  }
-
   .auth-footer nav {
     gap: 14px;
   }

@@ -2858,20 +2858,6 @@ export function App() {
                 <span>Pronosticos</span>
                 <span>Premios</span>
               </div>
-              <div className="auth-promo-strip">
-                <article>
-                  <span>01</span>
-                  <strong>Compra</strong>
-                </article>
-                <article>
-                  <span>02</span>
-                  <strong>Registra</strong>
-                </article>
-                <article>
-                  <span>03</span>
-                  <strong>Gana</strong>
-                </article>
-              </div>
             </div>
           </div>
 
@@ -3250,6 +3236,20 @@ export function App() {
               {authMode === 'register' ? `Registro hasta el ${REGISTRATION_DEADLINE}` : 'Mundialista · Super Carnes 2026'}
             </p>
           </form>
+          <div className="auth-promo-strip" aria-label="Pasos de la promocion">
+            <article>
+              <span>01</span>
+              <strong>Regístrate</strong>
+            </article>
+            <article>
+              <span>02</span>
+              <strong>Da el marcador</strong>
+            </article>
+            <article>
+              <span>03</span>
+              <strong>Gana</strong>
+            </article>
+          </div>
           <div className="auth-football-ticker" aria-hidden="true">
             <div className="auth-brand-track">
               {authCarouselBrands.map((brand, index) => (
