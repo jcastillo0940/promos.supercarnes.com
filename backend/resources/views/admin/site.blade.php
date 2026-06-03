@@ -58,6 +58,69 @@
         </div>
 
         <div class="card">
+            <h3>Colores del sitio</h3>
+            <p class="muted">Deja un campo vacío para usar el color por defecto del tema. Los cambios aplican en tiempo real al guardar.</p>
+
+            @php
+            $themeDefaults = [
+                'theme_background'      => ['label' => 'Fondo general',        'default' => '#10131a', 'hint' => 'Pantalla de fondo principal'],
+                'theme_surface_low'     => ['label' => 'Superficie cards',     'default' => '#191b23', 'hint' => 'Fondo de cards y paneles'],
+                'theme_surface'         => ['label' => 'Superficie base',      'default' => '#1d1f27', 'hint' => 'Superficie intermedia'],
+                'theme_surface_high'    => ['label' => 'Superficie elevada',   'default' => '#272a32', 'hint' => 'Elementos sobre cards'],
+                'theme_primary'         => ['label' => 'Color primario',       'default' => '#da291c', 'hint' => 'Botones, acentos, activos'],
+                'theme_secondary'       => ['label' => 'Color secundario',     'default' => '#dac769', 'hint' => 'Dorado, highlights'],
+                'theme_text_main'       => ['label' => 'Texto principal',      'default' => '#e1e2ec', 'hint' => 'Color del texto general'],
+                'theme_outline_variant' => ['label' => 'Bordes / separadores', 'default' => '#5c403b', 'hint' => 'Líneas y bordes de cards'],
+            ];
+            @endphp
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px">
+                @foreach($themeDefaults as $key => $meta)
+                @php $current = $settings[$key] ?: $meta['default']; @endphp
+                <label style="display:flex;flex-direction:column;gap:6px">
+                    <span style="font-size:12px;color:var(--muted)">{{ $meta['label'] }}</span>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input
+                            type="color"
+                            name="{{ $key }}"
+                            value="{{ $settings[$key] ?: $meta['default'] }}"
+                            style="width:44px;height:38px;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:#0f171b"
+                            oninput="this.nextElementSibling.value=this.value;this.parentElement.nextElementSibling.textContent=this.value"
+                        >
+                        <input
+                            type="text"
+                            value="{{ $settings[$key] ?: $meta['default'] }}"
+                            maxlength="7"
+                            style="flex:1;font-family:monospace;font-size:13px;text-transform:uppercase"
+                            oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){this.previousElementSibling.value=this.value}; document.querySelector('[name={{ $key }}]').value=this.value"
+                        >
+                    </div>
+                    <span style="font-size:11px;color:var(--muted)">{{ $meta['hint'] }} · defecto: <code style="color:#ffd27a">{{ $meta['default'] }}</code></span>
+                </label>
+                @endforeach
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button type="button" class="ghost" style="width:auto;padding:8px 16px;font-size:13px"
+                    onclick="
+                        const defaults = {
+                            theme_background:'#10131a',theme_surface_low:'#191b23',
+                            theme_surface:'#1d1f27',theme_surface_high:'#272a32',
+                            theme_primary:'#da291c',theme_secondary:'#dac769',
+                            theme_text_main:'#e1e2ec',theme_outline_variant:'#5c403b'
+                        };
+                        Object.entries(defaults).forEach(([k,v])=>{
+                            const el=document.querySelector('[name='+k+']');
+                            if(el){el.value=v;const txt=el.parentElement.querySelector('input[type=text]');if(txt)txt.value=v;}
+                        });
+                    ">
+                    Restaurar defaults
+                </button>
+                <span class="muted" style="font-size:12px">Colores base del tema oscuro Super Carnes</span>
+            </div>
+        </div>
+
+        <div class="card">
             <h3>Información de contacto</h3>
             <p class="muted">Aparece en la página pública /contacto del sitio.</p>
             <div class="grid" style="margin-top:12px">

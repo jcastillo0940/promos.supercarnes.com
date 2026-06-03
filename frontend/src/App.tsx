@@ -54,6 +54,14 @@ interface PublicSettingsResponse {
   allow_google_auth?: boolean
   google_client_id?: string
   registration_deadline?: string
+  theme_background?: string
+  theme_surface_low?: string
+  theme_surface?: string
+  theme_surface_high?: string
+  theme_primary?: string
+  theme_secondary?: string
+  theme_text_main?: string
+  theme_outline_variant?: string
   show_scanner_debug?: boolean
   show_auth_ticker?: boolean
   contact_email?: string
@@ -1042,6 +1050,15 @@ Los datos personales suministrados serán utilizados exclusivamente para la admi
 12. ACEPTACIÓN DE LOS TÉRMINOS Y CONDICIONES
 La participación en la promoción implica el conocimiento, aceptación plena e incondicional de los presentes términos y condiciones.`
 
+function applyTheme(vars: Record<string, string | undefined>) {
+  const root = document.documentElement
+  Object.entries(vars).forEach(([prop, value]) => {
+    if (value?.trim()) {
+      root.style.setProperty(prop, value.trim())
+    }
+  })
+}
+
 export function App() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -1255,6 +1272,16 @@ export function App() {
         if (res.data.google_client_id?.trim()) setGoogleClientId(res.data.google_client_id)
         setParticipantBrands(parseParticipantBrands(res.data.participant_brands))
         if (res.data.registration_deadline) setRegistrationDeadline(res.data.registration_deadline)
+        applyTheme({
+          '--background':       res.data.theme_background,
+          '--surface-low':      res.data.theme_surface_low,
+          '--surface':          res.data.theme_surface,
+          '--surface-high':     res.data.theme_surface_high,
+          '--primary-container': res.data.theme_primary,
+          '--secondary':        res.data.theme_secondary,
+          '--text-main':        res.data.theme_text_main,
+          '--outline-variant':  res.data.theme_outline_variant,
+        })
         setShowScannerDebug(Boolean(res.data.show_scanner_debug))
         setShowAuthTicker(res.data.show_auth_ticker !== false)
         setContactInfo({

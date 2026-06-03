@@ -6161,7 +6161,7 @@ a {
   max-height: min(330px, 34vh);
   object-fit: contain;
   object-position: left center;
-  filter: drop-shadow(0 18px 26px rgba(4, 12, 45, 0.34));
+  filter: brightness(0) invert(1) drop-shadow(0 18px 26px rgba(4, 12, 45, 0.34));
 }
 
 .auth-hero-content > p {

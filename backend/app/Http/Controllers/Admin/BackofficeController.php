@@ -1051,6 +1051,14 @@ class BackofficeController extends Controller
             'contact_phone'        => ['nullable', 'string', 'max:40'],
             'contact_address'      => ['nullable', 'string', 'max:255'],
             'contact_hours'        => ['nullable', 'string', 'max:255'],
+            'theme_background'     => ['nullable', 'string', 'max:20'],
+            'theme_surface_low'    => ['nullable', 'string', 'max:20'],
+            'theme_surface'        => ['nullable', 'string', 'max:20'],
+            'theme_surface_high'   => ['nullable', 'string', 'max:20'],
+            'theme_primary'        => ['nullable', 'string', 'max:20'],
+            'theme_secondary'      => ['nullable', 'string', 'max:20'],
+            'theme_text_main'      => ['nullable', 'string', 'max:20'],
+            'theme_outline_variant' => ['nullable', 'string', 'max:20'],
         ]);
 
         $data['show_scanner_debug'] = $request->boolean('show_scanner_debug') ? '1' : '0';
@@ -1101,6 +1109,14 @@ class BackofficeController extends Controller
             'contact_phone',
             'contact_address',
             'contact_hours',
+            'theme_background',
+            'theme_surface_low',
+            'theme_surface',
+            'theme_surface_high',
+            'theme_primary',
+            'theme_secondary',
+            'theme_text_main',
+            'theme_outline_variant',
         ];
 
         $settings = [];
