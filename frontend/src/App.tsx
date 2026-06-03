@@ -5,6 +5,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { createWorker, PSM } from 'tesseract.js'
 import { api, setApiToken } from './api'
 import { InvoiceRegistrationView } from './components/InvoiceRegistrationView'
+import { TerminosPage } from './components/TerminosPage'
+import { PrivacidadPage } from './components/PrivacidadPage'
+import { ContactoPage } from './components/ContactoPage'
 import { CuentaView } from './components/CuentaView'
 import { VestuarioView } from './components/VestuarioView'
 import { VitrinaView } from './components/VitrinaView'
@@ -49,6 +52,12 @@ interface PublicSettingsResponse {
   recaptcha_site_key?: string
   allow_google_auth?: boolean
   google_client_id?: string
+  show_scanner_debug?: boolean
+  show_auth_ticker?: boolean
+  contact_email?: string
+  contact_phone?: string
+  contact_address?: string
+  contact_hours?: string
 }
 
 interface AuthResponse {
@@ -1063,6 +1072,9 @@ export function App() {
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState('')
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false)
   const [googleClientId, setGoogleClientId] = useState(import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '')
+  const [showScannerDebug, setShowScannerDebug] = useState(false)
+  const [showAuthTicker, setShowAuthTicker] = useState(true)
+  const [contactInfo, setContactInfo] = useState<{ contact_email?: string; contact_phone?: string; contact_address?: string; contact_hours?: string }>({})
   const [predictionCelebration, setPredictionCelebration] = useState<string | null>(null)
   const [termsModalOpen, setTermsModalOpen] = useState(false)
   const [termsScrolledEnd, setTermsScrolledEnd] = useState(false)
@@ -1094,6 +1106,7 @@ export function App() {
   const [registrationAvatarPreview, setRegistrationAvatarPreview] = useState<string | null>(null)
   const currentView = currentViewFromPath(location.pathname)
   const isAuthRoute = location.pathname === '/login'
+  const isPublicPage = ['/terminos', '/privacidad', '/contacto'].includes(location.pathname)
   const isCompletingGoogleRegistration = Boolean(token && user && !isRegistrationComplete(user))
   const totalRegisterSteps = isCompletingGoogleRegistration ? 3 : 4
   const currentViewLabel = CLIENT_VIEW_LABELS[currentView]
@@ -1217,6 +1230,14 @@ export function App() {
         setGoogleAuthEnabled(Boolean(res.data.allow_google_auth))
         if (res.data.google_client_id?.trim()) setGoogleClientId(res.data.google_client_id)
         setParticipantBrands(parseParticipantBrands(res.data.participant_brands))
+        setShowScannerDebug(Boolean(res.data.show_scanner_debug))
+        setShowAuthTicker(res.data.show_auth_ticker !== false)
+        setContactInfo({
+          contact_email: res.data.contact_email,
+          contact_phone: res.data.contact_phone,
+          contact_address: res.data.contact_address,
+          contact_hours: res.data.contact_hours,
+        })
       })
       .catch(() => null)
 
@@ -1369,6 +1390,7 @@ export function App() {
 
   useEffect(() => {
     if (authBootstrapping) return
+    if (isPublicPage) return
     const isKnownClientRoute = Object.values(CLIENT_VIEW_PATHS).includes(location.pathname)
     const registrationIsComplete = isRegistrationComplete(user)
 
@@ -2130,16 +2152,6 @@ export function App() {
     navigate(`${CLIENT_VIEW_PATHS.cuenta}?section=${section}`)
   }
 
-  function openTermsPage() {
-    if (user && isRegistrationComplete(user)) {
-      openAccountSection('terminos')
-      return
-    }
-
-    setTermsScrolledEnd(false)
-    setTermsModalOpen(true)
-  }
-
   function updateScore(matchId: number, side: 'home' | 'away', value: string) {
     const sanitized = value.replace(/[^\d]/g, '').slice(0, 2)
     setPredictionDrafts((current) => ({
@@ -2524,6 +2536,7 @@ export function App() {
         onReset={handleInvoiceReset}
         onSubmit={handleInvoiceSubmit}
         resolvedInvoiceData={resolvedInvoiceData}
+        showScannerDebug={showScannerDebug}
       />
     )
 
@@ -2736,6 +2749,10 @@ export function App() {
     currentView === target
       ? 'flex items-center gap-4 bg-primary-container text-white rounded-xl p-3 mx-2 transition-all'
       : 'flex items-center gap-4 text-on-surface-variant p-3 mx-2 hover:bg-surface-variant hover:text-on-surface transition-all hover:translate-x-1 duration-300'
+
+  if (location.pathname === '/terminos') return <TerminosPage termsText={termsText} />
+  if (location.pathname === '/privacidad') return <PrivacidadPage />
+  if (location.pathname === '/contacto') return <ContactoPage contactInfo={contactInfo} />
 
   if (authBootstrapping) {
     return (
@@ -3248,22 +3265,24 @@ export function App() {
               <strong>Gana</strong>
             </article>
           </div>
-          <div className="auth-football-ticker" aria-hidden="true">
-            <div className="auth-brand-track">
-              {authCarouselBrands.map((brand, index) => (
-                <span className="auth-brand-item" key={`${brand.name}-${index}`}>
-                  {brand.logo_url ? <img alt="" src={brand.logo_url} /> : null}
-                  <strong>{brand.name}</strong>
-                </span>
-            ))}
+          {showAuthTicker && (
+            <div className="auth-football-ticker" aria-hidden="true">
+              <div className="auth-brand-track">
+                {authCarouselBrands.map((brand, index) => (
+                  <span className="auth-brand-item" key={`${brand.name}-${index}`}>
+                    {brand.logo_url ? <img alt="" src={brand.logo_url} /> : null}
+                    <strong>{brand.name}</strong>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <footer className="auth-footer">
             <strong>Mundialista 2026</strong>
             <nav aria-label="Legal">
-              <button type="button" onClick={openTermsPage}>Terminos y Condiciones</button>
-              <span>Privacidad</span>
-              <span>Contacto</span>
+              <button type="button" onClick={() => navigate('/terminos')}>Terminos y Condiciones</button>
+              <button type="button" onClick={() => navigate('/privacidad')}>Privacidad</button>
+              <button type="button" onClick={() => navigate('/contacto')}>Contacto</button>
             </nav>
             <small>Super Carnes</small>
           </footer>

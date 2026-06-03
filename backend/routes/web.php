@@ -115,6 +115,8 @@ Route::prefix('adminrepus1car')->group(function (): void {
         Route::post('/integrations/live-score/sync-commentary', [BackofficeController::class, 'syncCommentary'])->name('admin.integrations.live-score.sync-commentary');
         Route::get('/users', [BackofficeController::class, 'users'])->name('admin.users');
         Route::put('/users/{user}', [BackofficeController::class, 'updateUserStatus'])->name('admin.users.update');
+        Route::get('/player-points', [BackofficeController::class, 'playerPoints'])->name('admin.player-points');
+        Route::get('/player-points/{user}', [BackofficeController::class, 'playerPointsDetail'])->name('admin.player-points.detail');
         Route::get('/fraud', [BackofficeController::class, 'fraud'])->name('admin.fraud');
         Route::get('/fraud/export', [BackofficeController::class, 'exportFraudFlags'])->name('admin.fraud.export');
         Route::put('/fraud/{flag}', [BackofficeController::class, 'updateFraudFlag'])->name('admin.fraud.update');

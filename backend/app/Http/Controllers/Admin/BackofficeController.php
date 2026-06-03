@@ -484,7 +484,7 @@ class BackofficeController extends Controller
     {
         $phaseId = request()->integer('phase_id') ?: null;
         $phase = $this->rankingService->activeRankingPhase($phaseId);
-        $winnerSlots = $this->rankingService->winnerSlots();
+        $winnerSlots = $phase ? $this->rankingService->winnerSlotsForPhase($phase->id) : $this->rankingService->winnerSlots();
         $leaderboard = $phase ? $this->rankingService->leaderboardForPhase($phase->id, $winnerSlots)->all() : [];
         $winners = $phase
             ? PromoWinner::query()
@@ -510,7 +510,7 @@ class BackofficeController extends Controller
 
         return view('admin.winners', [
             'phase' => $phase,
-            'phases' => TournamentPhase::query()->where('is_active', true)->orderBy('stage_order')->get(),
+            'phases' => TournamentPhase::query()->orderBy('stage_order')->get(),
             'leaderboard' => $leaderboard,
             'winners' => $winners,
             'winnerSlots' => $winnerSlots,
@@ -564,7 +564,7 @@ class BackofficeController extends Controller
             return back()->with('status', 'Ya existe una selección activa de ganadores para esta fase.');
         }
 
-        $winnerSlots = $this->rankingService->winnerSlots();
+        $winnerSlots = $this->rankingService->winnerSlotsForPhase($phase->id);
         $this->ensurePrizeTokensForPhase($phase->id, $winnerSlots);
         $rows = $this->rankingService->leaderboardForPhase($phase->id, $winnerSlots);
 
@@ -1045,7 +1045,16 @@ class BackofficeController extends Controller
             'seo_og_description' => ['nullable', 'string', 'max:255'],
             'seo_og_image' => ['nullable', 'url', 'max:255'],
             'terms_and_conditions' => ['nullable', 'string'],
+            'show_scanner_debug'   => ['nullable', 'boolean'],
+            'show_auth_ticker'     => ['nullable', 'boolean'],
+            'contact_email'        => ['nullable', 'email', 'max:120'],
+            'contact_phone'        => ['nullable', 'string', 'max:40'],
+            'contact_address'      => ['nullable', 'string', 'max:255'],
+            'contact_hours'        => ['nullable', 'string', 'max:255'],
         ]);
+
+        $data['show_scanner_debug'] = $request->boolean('show_scanner_debug') ? '1' : '0';
+        $data['show_auth_ticker']   = $request->boolean('show_auth_ticker') ? '1' : '0';
 
         foreach ($data as $key => $value) {
             SiteSetting::set($key, $value);
@@ -1086,6 +1095,12 @@ class BackofficeController extends Controller
             'seo_og_description',
             'seo_og_image',
             'terms_and_conditions',
+            'show_scanner_debug',
+            'show_auth_ticker',
+            'contact_email',
+            'contact_phone',
+            'contact_address',
+            'contact_hours',
         ];
 
         $settings = [];
@@ -1289,5 +1304,97 @@ class BackofficeController extends Controller
         $this->createWinnerFromRow($winner->phase_id, $next, 'replacement', $createdBy, $winner->id, $token);
 
         return $next;
+    }
+
+    public function playerPoints(): View
+    {
+        $query   = trim((string) request('query'));
+        $phaseId = request()->integer('phase_id') ?: null;
+        $phases  = TournamentPhase::orderBy('stage_order')->get();
+
+        $users = DB::table('users')
+            ->leftJoin('wallets', 'wallets.user_id', '=', 'users.id')
+            ->leftJoin('branches', 'branches.id', '=', 'users.branch_id')
+            ->where('users.role', 'client')
+            ->when($query, fn ($q) => $q->where(function ($w) use ($query) {
+                $w->where('users.name', 'like', "%{$query}%")
+                  ->orWhere('users.cedula', 'like', "%{$query}%")
+                  ->orWhere('users.email', 'like', "%{$query}%");
+            }))
+            ->selectRaw("
+                users.id,
+                users.name,
+                users.cedula,
+                users.email,
+                users.phone,
+                users.disqualified_at,
+                branches.name as branch_name,
+                COALESCE(wallets.goals_balance, 0) as total_points,
+                COALESCE(wallets.lifetime_goals_earned, 0) as lifetime_points
+            ")
+            ->orderByDesc('total_points')
+            ->paginate(50)
+            ->withQueryString();
+
+        $userIds = collect($users->items())->pluck('id')->all();
+
+        $invoiceSums = DB::table('registered_invoices')
+            ->whereIn('user_id', $userIds)
+            ->where('validation_status', 'approved')
+            ->selectRaw('user_id, SUM(points_awarded) as pts, COUNT(*) as cnt')
+            ->groupBy('user_id')
+            ->pluck('pts', 'user_id');
+
+        $invoiceCounts = DB::table('registered_invoices')
+            ->whereIn('user_id', $userIds)
+            ->where('validation_status', 'approved')
+            ->selectRaw('user_id, COUNT(*) as cnt')
+            ->groupBy('user_id')
+            ->pluck('cnt', 'user_id');
+
+        $predictionQuery = DB::table('match_predictions')
+            ->whereIn('user_id', $userIds)
+            ->where('points_awarded', '>', 0);
+
+        if ($phaseId) {
+            $predictionQuery->where('phase_id', $phaseId);
+        }
+
+        $predSums = $predictionQuery
+            ->selectRaw('user_id, SUM(points_awarded) as pts, COUNT(*) as hits')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        return view('admin.player-points', compact(
+            'users', 'query', 'phases', 'phaseId',
+            'invoiceSums', 'invoiceCounts', 'predSums'
+        ));
+    }
+
+    public function playerPointsDetail(User $user): View
+    {
+        $phases = TournamentPhase::orderBy('stage_order')->get()->keyBy('id');
+
+        $invoices = RegisteredInvoice::where('user_id', $user->id)
+            ->where('validation_status', 'approved')
+            ->orderByDesc('issued_at')
+            ->get(['id', 'invoice_number', 'cufe', 'issuer_name', 'purchase_amount', 'points_awarded', 'issued_at', 'branch_id']);
+
+        $predictions = MatchPrediction::with(['match.homeTeam', 'match.awayTeam', 'match.phase'])
+            ->where('user_id', $user->id)
+            ->where('points_awarded', '>', 0)
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $wallet = $user->wallet;
+
+        $invoicePoints    = $invoices->sum('points_awarded');
+        $predictionPoints = $predictions->sum('points_awarded');
+
+        return view('admin.player-points-detail', compact(
+            'user', 'wallet', 'invoices', 'predictions',
+            'invoicePoints', 'predictionPoints', 'phases'
+        ));
     }
 }

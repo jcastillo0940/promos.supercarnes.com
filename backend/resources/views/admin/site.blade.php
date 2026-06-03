@@ -57,6 +57,56 @@
             <textarea name="terms_and_conditions" placeholder="Texto legal del sitio">{{ $settings['terms_and_conditions'] }}</textarea>
         </div>
 
+        <div class="card">
+            <h3>Información de contacto</h3>
+            <p class="muted">Aparece en la página pública /contacto del sitio.</p>
+            <div class="grid" style="margin-top:12px">
+                <div class="row">
+                    <div>
+                        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Correo electrónico</label>
+                        <input name="contact_email" type="email" value="{{ $settings['contact_email'] }}" placeholder="contacto@supercarnes.com">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Teléfono</label>
+                        <input name="contact_phone" value="{{ $settings['contact_phone'] }}" placeholder="(507) 6000-0000">
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Dirección</label>
+                    <input name="contact_address" value="{{ $settings['contact_address'] }}" placeholder="Ciudad de Panamá, República de Panamá">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Horario de atención</label>
+                    <input name="contact_hours" value="{{ $settings['contact_hours'] }}" placeholder="Lunes a sábado, 8:00 a.m. – 6:00 p.m.">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Visibilidad de elementos del sitio</h3>
+            <p class="muted">Activa o desactiva elementos de la interfaz sin necesidad de redesplegar.</p>
+            <div class="row" style="margin-top:12px">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:14px;border:1px solid var(--line);border-radius:12px;background:#0f171b">
+                    <input type="checkbox" name="show_auth_ticker" value="1"
+                           @checked($settings['show_auth_ticker'] !== '0')
+                           style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)">
+                    <div>
+                        <strong>Ticker de marcas (pantalla de login)</strong>
+                        <div class="muted" style="font-size:12px;margin-top:2px">Cinta animada con "Super Carnes · Importadora Virzi · Marcas participantes"</div>
+                    </div>
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:14px;border:1px solid var(--line);border-radius:12px;background:#0f171b">
+                    <input type="checkbox" name="show_scanner_debug" value="1"
+                           @checked($settings['show_scanner_debug'] === '1')
+                           style="width:18px;height:18px;cursor:pointer;accent-color:var(--accent)">
+                    <div>
+                        <strong>Info técnica del escáner</strong>
+                        <div class="muted" style="font-size:12px;margin-top:2px">Panel expandible con detalles de BarcodeDetector, permisos y User-Agent. Oculto en producción por defecto.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
         <button type="submit">Guardar configuracion del sitio</button>
     </form>
 </div>

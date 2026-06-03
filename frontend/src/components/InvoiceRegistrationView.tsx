@@ -49,6 +49,7 @@ interface InvoiceRegistrationViewProps {
   onGalleryUpload: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>
   onModeChange: (mode: InvoiceEntryMode) => void
   onFieldChange: <K extends keyof InvoiceFormState>(field: K, value: InvoiceFormState[K]) => void
+  showScannerDebug?: boolean
 }
 
 function formatCurrency(value: number | string | null | undefined) {
@@ -95,6 +96,7 @@ export function InvoiceRegistrationView({
   onReset,
   onModeChange,
   onFieldChange,
+  showScannerDebug = false,
 }: InvoiceRegistrationViewProps) {
   const hasResolved = Boolean(resolvedInvoiceData)
   const [debugOpen, setDebugOpen] = useState(false)
@@ -247,7 +249,7 @@ export function InvoiceRegistrationView({
               </div>
 
               {/* Panel de debug técnico */}
-              <div className="border-t border-outline-variant">
+              {showScannerDebug && <div className="border-t border-outline-variant">
                 <button
                   type="button"
                   className="w-full flex items-center justify-between px-4 py-2.5 text-xs text-on-surface-variant hover:bg-surface-container transition-colors"
@@ -326,7 +328,7 @@ export function InvoiceRegistrationView({
                     </div>
                   </div>
                 )}
-              </div>
+              </div>}
                 </>
               )}
             </div>

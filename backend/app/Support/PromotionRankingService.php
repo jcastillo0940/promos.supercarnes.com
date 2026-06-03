@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\MatchPrediction;
+use App\Models\PhasePrize;
 use App\Models\PromoWinner;
 use App\Models\RegisteredInvoice;
 use App\Models\TournamentMatch;
@@ -24,9 +25,16 @@ class PromotionRankingService
         return $this->contestRules->winnerSlots() ?: self::WINNER_SLOTS;
     }
 
+    public function winnerSlotsForPhase(int $phaseId): int
+    {
+        $max = (int) PhasePrize::where('phase_id', $phaseId)->max('ranking_to');
+
+        return $max > 0 ? $max : $this->winnerSlots();
+    }
+
     public function leaderboardForPhase(int $phaseId, ?int $limit = null): Collection
     {
-        $limit ??= $this->winnerSlots();
+        $limit ??= $this->winnerSlotsForPhase($phaseId);
         $phase = TournamentPhase::findOrFail($phaseId);
 
         // Exclude winners from OTHER phases (not disqualified) so they can't win twice.
