@@ -52,6 +52,7 @@ interface PublicSettingsResponse {
   recaptcha_site_key?: string
   allow_google_auth?: boolean
   google_client_id?: string
+  registration_deadline?: string
   show_scanner_debug?: boolean
   show_auth_ticker?: boolean
   contact_email?: string
@@ -1072,6 +1073,7 @@ export function App() {
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState('')
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false)
   const [googleClientId, setGoogleClientId] = useState(import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '')
+  const [registrationDeadline, setRegistrationDeadline] = useState('2026-06-10T23:59:59-05:00')
   const [showScannerDebug, setShowScannerDebug] = useState(false)
   const [showAuthTicker, setShowAuthTicker] = useState(true)
   const [contactInfo, setContactInfo] = useState<{ contact_email?: string; contact_phone?: string; contact_address?: string; contact_hours?: string }>({})
@@ -1107,6 +1109,7 @@ export function App() {
   const currentView = currentViewFromPath(location.pathname)
   const isAuthRoute = location.pathname === '/login'
   const isPublicPage = ['/terminos', '/privacidad', '/contacto'].includes(location.pathname)
+  const isRegistrationClosed = new Date() > new Date(registrationDeadline)
   const isCompletingGoogleRegistration = Boolean(token && user && !isRegistrationComplete(user))
   const totalRegisterSteps = isCompletingGoogleRegistration ? 3 : 4
   const currentViewLabel = CLIENT_VIEW_LABELS[currentView]
@@ -1230,6 +1233,7 @@ export function App() {
         setGoogleAuthEnabled(Boolean(res.data.allow_google_auth))
         if (res.data.google_client_id?.trim()) setGoogleClientId(res.data.google_client_id)
         setParticipantBrands(parseParticipantBrands(res.data.participant_brands))
+        if (res.data.registration_deadline) setRegistrationDeadline(res.data.registration_deadline)
         setShowScannerDebug(Boolean(res.data.show_scanner_debug))
         setShowAuthTicker(res.data.show_auth_ticker !== false)
         setContactInfo({
@@ -1391,6 +1395,7 @@ export function App() {
   useEffect(() => {
     if (authBootstrapping) return
     if (isPublicPage) return
+    if (isRegistrationClosed && authMode === 'register') setAuthMode('login')
     const isKnownClientRoute = Object.values(CLIENT_VIEW_PATHS).includes(location.pathname)
     const registrationIsComplete = isRegistrationComplete(user)
 
@@ -2883,10 +2888,30 @@ export function App() {
               <button className={authMode === 'login' ? 'active' : ''} type="button" onClick={() => { setAuthMode('login'); setRegisterStep(1) }}>
                 Iniciar sesión
               </button>
-              <button className={authMode === 'register' ? 'active' : ''} type="button" onClick={() => { setAuthMode('register'); setRegisterStep(1) }}>
-                Registrarse
-              </button>
+              {!isRegistrationClosed && (
+                <button className={authMode === 'register' ? 'active' : ''} type="button" onClick={() => { setAuthMode('register'); setRegisterStep(1) }}>
+                  Registrarse
+                </button>
+              )}
             </div>}
+
+            {isRegistrationClosed && !isCompletingGoogleRegistration && (
+              <div style={{
+                background: 'rgba(178,60,47,0.15)',
+                border: '1px solid rgba(178,60,47,0.4)',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '13px',
+                color: '#ffb4a8',
+                margin: '0 0 4px',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', flexShrink: 0 }}>lock</span>
+                <span>El registro cerró el <strong>10 de junio de 2026</strong>. Si ya participas, inicia sesión para ver tu posición.</span>
+              </div>
+            )}
 
             <div className="auth-panel-header">
               <p>{isCompletingGoogleRegistration ? 'Registro pendiente' : authMode === 'login' ? 'Acceso privado' : 'Nuevo participante'}</p>
