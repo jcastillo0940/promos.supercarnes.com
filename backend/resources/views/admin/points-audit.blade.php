@@ -1,7 +1,20 @@
 @extends('admin.layout')
 
 @section('content')
-<h1>Auditoria de puntos</h1>
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px">
+    <h1 style="margin:0">Auditoria de puntos</h1>
+    <div class="no-print" style="display:flex;gap:8px">
+        <a href="{{ route('admin.points-audit.csv', request()->query()) }}"
+           class="btn"
+           style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">
+            ⬇ Exportar CSV
+        </a>
+        <button type="button" class="btn" onclick="window.print()"
+                style="display:inline-flex;align-items:center;gap:6px">
+            🖨 Exportar PDF
+        </button>
+    </div>
+</div>
 
 <div class="grid cols-3">
     <div class="card">
@@ -111,4 +124,20 @@
         </tbody>
     </table>
 </div>
+<style>
+@media print {
+    .no-print, form, nav, header, aside, .sidebar { display: none !important; }
+    body { background: #fff !important; color: #000 !important; font-size: 11px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+    th { background: #f0f0f0 !important; color: #000 !important; }
+    details summary { display: none; }
+    details > div { display: block !important; }
+    pre { font-size: 9px; white-space: pre-wrap; }
+    .card { border: 1px solid #ddd; padding: 8px; margin-bottom: 12px; }
+    .metric { font-size: 20px; font-weight: bold; }
+    .pill { border: 1px solid #999; padding: 1px 4px; border-radius: 3px; }
+    a[href]::after { content: none !important; }
+}
+</style>
 @endsection

@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RegisteredInvoice, ResolvedInvoiceData } from '../types'
 
 const CUFE_PREFIX = 'FE01200000032812-2-249262-'
@@ -37,11 +37,14 @@ interface InvoiceRegistrationViewProps {
   invoiceEntryMode: InvoiceEntryMode
   invoiceForm: InvoiceFormState
   invoiceGalleryProcessing: boolean
-  invoiceResolving: boolean
+  invoiceScannerActivated: boolean
   invoiceScannerError: string | null
   invoiceScannerDebug: InvoiceScannerDebugInfo
   invoiceSubmitting: boolean
   resolvedInvoiceData: ResolvedInvoiceData | null
+  onActivateScan: () => void
+  onRegister: (rawCufe: string) => void
+  onReset: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>
   onGalleryUpload: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>
   onModeChange: (mode: InvoiceEntryMode) => void
@@ -82,21 +85,33 @@ export function InvoiceRegistrationView({
   invoices,
   invoiceEntryMode,
   invoiceForm,
-  invoiceResolving,
+  invoiceScannerActivated,
   invoiceScannerError,
   invoiceScannerDebug,
   invoiceSubmitting,
   resolvedInvoiceData,
-  onSubmit,
+  onActivateScan,
+  onRegister,
+  onReset,
   onModeChange,
   onFieldChange,
 }: InvoiceRegistrationViewProps) {
   const hasResolved = Boolean(resolvedInvoiceData)
   const [debugOpen, setDebugOpen] = useState(false)
+  const loaderRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (invoiceSubmitting && loaderRef.current) {
+      loaderRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [invoiceSubmitting])
 
   const deriveShortCode = (raw: string) => {
     if (!raw) return ''
     if (raw.startsWith(CUFE_PREFIX)) return raw.slice(CUFE_PREFIX.length)
+    // URL DGI: ?chFE=FE01200000032812-2-249262-SHORTCODE&...
+    const chFeMatch = raw.match(/[?&]chFE=[^&]*-([A-Z0-9]{10,})(?:&|$)/i)
+    if (chFeMatch?.[1]) return chFeMatch[1]
     const idx = raw.lastIndexOf('-')
     return idx >= 0 ? raw.slice(idx + 1) : raw
   }
@@ -107,10 +122,14 @@ export function InvoiceRegistrationView({
     setShortCode(deriveShortCode(invoiceForm.rawInput))
   }, [invoiceForm.rawInput])
 
-  function handleShortCodeChange(value: string) {
+  function handleShortCodeChange(value: string, autoPaste = false) {
     const trimmed = value.replace(/\s/g, '')
     setShortCode(trimmed)
     onFieldChange('rawInput', trimmed ? CUFE_PREFIX + trimmed : '')
+    // Auto-registrar si se pegó un código con longitud suficiente (>= 30 chars)
+    if (autoPaste && trimmed.length >= 30) {
+      setTimeout(() => onRegister(CUFE_PREFIX + trimmed), 0)
+    }
   }
 
   const totalPoints = useMemo(
@@ -187,14 +206,31 @@ export function InvoiceRegistrationView({
         <section className="lg:col-span-5 flex flex-col gap-4">
 
           {/* Panel QR */}
-          {invoiceEntryMode === 'scan' && (
+          {invoiceEntryMode === 'scan' && !invoiceSubmitting && (
             <div className="bg-surface-container-low rounded-2xl border border-outline-variant overflow-hidden">
-              <div className="px-5 pt-5 pb-3">
-                <p className="text-sm text-on-surface-variant text-center">
-                  Apunta la cámara al código QR de tu factura DGI
-                </p>
-              </div>
-              <div id="dgi-qr-reader" className="w-full min-h-[280px] bg-black" />
+              {!invoiceScannerActivated ? (
+                <div className="flex flex-col items-center gap-4 px-6 py-10">
+                  <span className="material-symbols-outlined text-5xl text-primary-container">qr_code_scanner</span>
+                  <p className="text-sm text-on-surface-variant text-center">
+                    Apunta la cámara al código QR de tu factura DGI para registrarla automáticamente.
+                  </p>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-container text-white font-semibold text-sm transition-opacity hover:opacity-90"
+                    onClick={onActivateScan}
+                  >
+                    <span className="material-symbols-outlined text-base">videocam</span>
+                    Activar escaneo de QR
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="px-5 pt-5 pb-3">
+                    <p className="text-sm text-on-surface-variant text-center">
+                      Apunta la cámara al código QR de tu factura DGI
+                    </p>
+                  </div>
+                  <div id="dgi-qr-reader" className="w-full min-h-[280px] bg-black" />
               {invoiceScannerError && (
                 <div className="mx-4 mb-4 mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
                   <span className="material-symbols-outlined text-base flex-shrink-0 mt-0.5">error</span>
@@ -291,11 +327,13 @@ export function InvoiceRegistrationView({
                   </div>
                 )}
               </div>
+                </>
+              )}
             </div>
           )}
 
           {/* Panel Manual */}
-          {invoiceEntryMode === 'manual' && (
+          {invoiceEntryMode === 'manual' && !invoiceSubmitting && (
             <div className="bg-surface-container-low rounded-2xl border border-outline-variant p-5 flex flex-col gap-4">
 
               {/* Explicativo */}
@@ -333,6 +371,11 @@ export function InvoiceRegistrationView({
                       placeholder="6300032026051830…"
                       value={shortCode}
                       onChange={(e) => handleShortCodeChange(e.target.value)}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData.getData('text')
+                        e.preventDefault()
+                        handleShortCodeChange(pasted, true)
+                      }}
                     />
                   </div>
                   <p className="text-xs text-on-surface-variant">
@@ -347,20 +390,22 @@ export function InvoiceRegistrationView({
                   {invoiceScannerError}
                 </div>
               )}
+
+              <button
+                type="button"
+                disabled={shortCode.length < 10 || invoiceSubmitting}
+                onClick={() => onRegister(CUFE_PREFIX + shortCode)}
+                className="w-full py-3.5 bg-primary-container text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-base">sports_soccer</span>
+                {invoiceSubmitting ? 'Registrando…' : 'Registrar factura'}
+              </button>
             </div>
           )}
 
-          {/* Estado de consulta DGI */}
-          {invoiceResolving && (
-            <div className="flex items-center gap-3 bg-surface-container rounded-xl border border-outline-variant p-4 text-sm text-on-surface-variant">
-              <span className="material-symbols-outlined animate-spin text-primary-container">progress_activity</span>
-              Consultando datos en DGI…
-            </div>
-          )}
-
-          {/* Loader mientras se verifica con DGI */}
+          {/* Loader mientras se registra */}
           {invoiceSubmitting && (
-            <div className="bg-surface-container-low rounded-2xl border border-outline-variant p-8 flex flex-col items-center gap-5 text-center">
+            <div ref={loaderRef} className="bg-surface-container-low rounded-2xl border border-outline-variant p-8 flex flex-col items-center gap-5 text-center">
               <div className="relative">
                 <div className="w-16 h-16 rounded-full border-4 border-outline-variant border-t-primary-container animate-spin" />
                 <span className="material-symbols-outlined absolute inset-0 flex items-center justify-center text-primary-container text-2xl" data-weight="fill">
@@ -381,47 +426,45 @@ export function InvoiceRegistrationView({
             </div>
           )}
 
-          {/* Datos resueltos + botón de registro */}
-          {hasResolved && !invoiceResolving && !invoiceSubmitting && (
-            <form onSubmit={onSubmit} className="flex flex-col gap-4">
-              <div className="bg-surface-container-low rounded-2xl border border-outline-variant overflow-hidden">
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-emerald-400 text-base" data-weight="fill">check_circle</span>
+          {/* Resultado del registro */}
+          {hasResolved && !invoiceSubmitting && (
+            <div className="flex flex-col gap-3">
+              <div className="bg-surface-container-low rounded-2xl border border-emerald-500/30 overflow-hidden">
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant bg-emerald-500/10">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-emerald-400 text-xl" data-weight="fill">check_circle</span>
                   </div>
                   <div>
-                    <div className="font-semibold text-on-surface text-sm">Factura verificada en DGI</div>
+                    <div className="font-bold text-emerald-400 text-sm">¡Factura registrada!</div>
                     {resolvedInvoiceData?.issuer_name && (
-                      <div className="text-xs text-on-surface-variant truncate max-w-[220px]">{resolvedInvoiceData.issuer_name}</div>
+                      <div className="text-xs text-on-surface-variant">{resolvedInvoiceData.issuer_name}</div>
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 divide-x divide-outline-variant">
                   <div className="px-4 py-3 text-center">
-                    <div className="text-xs text-on-surface-variant mb-0.5">Factura</div>
-                    <div className="font-semibold text-on-surface text-sm truncate">
-                      {invoiceForm.invoice_number ? `#${invoiceForm.invoice_number}` : '—'}
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 text-center">
                     <div className="text-xs text-on-surface-variant mb-0.5">Monto</div>
-                    <div className="font-semibold text-primary-container text-sm">{formatCurrency(invoiceForm.purchase_amount)}</div>
+                    <div className="font-semibold text-primary-container text-sm">{formatCurrency(resolvedInvoiceData?.purchase_amount)}</div>
                   </div>
                   <div className="px-4 py-3 text-center">
                     <div className="text-xs text-on-surface-variant mb-0.5">Fecha</div>
-                    <div className="font-semibold text-on-surface text-sm">{formatDate(invoiceForm.issued_at)}</div>
+                    <div className="font-semibold text-on-surface text-sm">{formatDate(resolvedInvoiceData?.issued_at ?? '')}</div>
+                  </div>
+                  <div className="px-4 py-3 text-center">
+                    <div className="text-xs text-on-surface-variant mb-0.5">CUFE</div>
+                    <div className="font-semibold text-on-surface text-xs truncate">{resolvedInvoiceData?.cufe?.slice(-8)}</div>
                   </div>
                 </div>
               </div>
-
               <button
-                type="submit"
-                className="w-full py-4 bg-primary-container text-white font-bold text-base rounded-2xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
+                type="button"
+                onClick={onReset}
+                className="w-full py-3.5 bg-surface-container border border-outline-variant text-on-surface font-semibold text-sm rounded-2xl flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors"
               >
-                <span className="material-symbols-outlined text-lg">sports_soccer</span>
-                Registrar factura
+                <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                Registrar otra factura
               </button>
-            </form>
+            </div>
           )}
 
         </section>

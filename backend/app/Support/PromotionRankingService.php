@@ -27,9 +27,12 @@ class PromotionRankingService
     public function leaderboardForPhase(int $phaseId, ?int $limit = null): Collection
     {
         $limit ??= $this->winnerSlots();
-        $deliveredPrizeUserIds = PromoWinner::query()
-            ->whereIn('status', ['delivered'])
-            ->orWhereNotNull('prize_delivered_at')
+        $phase = TournamentPhase::findOrFail($phaseId);
+
+        // Exclude winners from OTHER phases (not disqualified) so they can't win twice.
+        $priorWinnerUserIds = PromoWinner::query()
+            ->whereNotIn('status', ['disqualified'])
+            ->where('phase_id', '!=', $phaseId)
             ->pluck('user_id')
             ->all();
 
@@ -42,6 +45,7 @@ class PromotionRankingService
             ->where('phase_id', $phaseId)
             ->groupBy('user_id');
 
+        // Only count invoices issued during this phase's date window.
         $invoiceTotals = RegisteredInvoice::query()
             ->selectRaw("
                 user_id,
@@ -50,6 +54,7 @@ class PromotionRankingService
                 SUM(purchase_amount) as invoice_total_amount
             ")
             ->where('validation_status', 'approved')
+            ->whereBetween('issued_at', [$phase->starts_at, $phase->ends_at])
             ->groupBy('user_id');
 
         $actualGoals = (int) TournamentMatch::query()
@@ -62,7 +67,7 @@ class PromotionRankingService
             ->leftJoinSub($invoiceTotals, 'invoice_totals', fn ($join) => $join->on('users.id', '=', 'invoice_totals.user_id'))
             ->where('users.role', 'client')
             ->whereNull('users.disqualified_at')
-            ->when($deliveredPrizeUserIds !== [], fn ($query) => $query->whereNotIn('users.id', $deliveredPrizeUserIds))
+            ->when($priorWinnerUserIds !== [], fn ($query) => $query->whereNotIn('users.id', $priorWinnerUserIds))
             ->selectRaw("
                 users.id,
                 users.name,
@@ -72,6 +77,8 @@ class PromotionRankingService
                 users.registration_completed_at,
                 users.registration_order_key,
                 users.created_at,
+                COALESCE(prediction_totals.prediction_points, 0) as prediction_points,
+                COALESCE(invoice_totals.invoice_points, 0) as invoice_points,
                 COALESCE(prediction_totals.prediction_points, 0) + COALESCE(invoice_totals.invoice_points, 0) as total_points,
                 COALESCE(prediction_totals.exact_hits, 0) as exact_hits,
                 COALESCE(invoice_totals.invoice_count, 0) as invoice_count,
@@ -89,6 +96,8 @@ class PromotionRankingService
                     'full_name' => $row->name,
                     'email' => $row->email,
                     'phone' => $row->phone,
+                    'prediction_points' => (float) $row->prediction_points,
+                    'invoice_points' => (float) $row->invoice_points,
                     'goals' => (float) $row->total_points,
                     'total_points' => (float) $row->total_points,
                     'exact_hits' => (int) $row->exact_hits,

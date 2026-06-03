@@ -360,6 +360,54 @@ class BackofficeController extends Controller
         ]);
     }
 
+    public function pointsAuditExportCsv(Request $request): StreamedResponse
+    {
+        $filters = [
+            'query' => trim((string) $request->query('query', '')),
+            'source' => (string) $request->query('source', 'all'),
+            'phase_id' => (string) $request->query('phase_id', ''),
+            'impact' => (string) $request->query('impact', 'all'),
+            'rule_code' => trim((string) $request->query('rule_code', '')),
+            'date_from' => (string) $request->query('date_from', ''),
+            'date_to' => (string) $request->query('date_to', ''),
+        ];
+
+        $report = $this->pointsAuditService->report($filters);
+        $rows = $report['rows'];
+        $filename = 'auditoria-puntos-' . now()->format('Y-m-d_H-i') . '.csv';
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM for Excel
+
+            fputcsv($out, [
+                'Fecha', 'Participante', 'ID', 'Correo', 'Origen', 'Fase',
+                'Goles (+/-)', 'Tiros (+/-)', 'Regla', 'Codigo regla', 'Referencia', 'Explicacion',
+            ]);
+
+            foreach ($rows as $row) {
+                fputcsv($out, [
+                    optional($row['occurred_at'])->format('Y-m-d H:i:s') ?? '',
+                    $row['user_name'] ?? '',
+                    $row['user_id'] ?? '',
+                    $row['user_email'] ?? '',
+                    $row['source'] ?? '',
+                    $row['phase_name'] ?? '',
+                    ($row['goals_delta'] > 0 ? '+' : '') . $row['goals_delta'],
+                    ($row['shots_delta'] > 0 ? '+' : '') . $row['shots_delta'],
+                    $row['rule_label'] ?? '',
+                    $row['rule_code'] ?? '',
+                    $row['reference'] ?? '',
+                    $row['reason'] ?? '',
+                ]);
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     public function updatePhase(Request $request, TournamentPhase $phase): RedirectResponse
     {
         $data = $request->validate([

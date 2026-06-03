@@ -7,8 +7,11 @@ use App\Models\InvoiceGoalSetting;
 use App\Models\RegisteredInvoice;
 use App\Models\TournamentPhase;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -60,7 +63,21 @@ class ContestInvoiceRegistrationService
         }
 
         try {
-            $resolvedInvoice = $this->verifier->resolve($cufe);
+            $cacheKey = 'dgi_v2_cufe_' . strtolower($cufe);
+            $cached = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($cufe) {
+                $r = $this->verifier->resolve($cufe);
+                return array_merge($r, ['issued_at' => $r['issued_at']->toIso8601String()]);
+            });
+            $issuedAtRaw = $cached['issued_at'];
+            $resolvedInvoice = array_merge($cached, [
+                'issued_at' => is_string($issuedAtRaw)
+                    ? CarbonImmutable::parse($issuedAtRaw, 'America/Panama')
+                    : CarbonImmutable::now('America/Panama'),
+            ]);
+        } catch (ConnectionException) {
+            throw ValidationException::withMessages([
+                'qr_raw_text' => 'No fue posible conectar con el servicio DGI. Intenta de nuevo en unos segundos.',
+            ]);
         } catch (ValidationException $exception) {
             $this->fraudDetection->flag(
                 user: $user,
@@ -153,7 +170,7 @@ class ContestInvoiceRegistrationService
         $canonicalCufe = strtoupper((string) ($verification['canonical_cufe'] ?? $canonicalCufe));
 
         try {
-            $invoice = DB::transaction(function () use ($user, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($user, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $minimumAmount, $maxInvoiceAgeDays, $settings, $request): RegisteredInvoice {
                 $status = $verification['status'] === 'approved' ? 'accepted' : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
@@ -284,7 +301,23 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        $resolved = $this->verifier->resolve($cufe);
+        try {
+            $cacheKey = 'dgi_v2_cufe_' . strtolower($cufe);
+            $cached = Cache::remember($cacheKey, now()->addMinutes(15), function () use ($cufe) {
+                $r = $this->verifier->resolve($cufe);
+                return array_merge($r, ['issued_at' => $r['issued_at']->toIso8601String()]);
+            });
+            $issuedAtRaw = $cached['issued_at'];
+            $resolved = array_merge($cached, [
+                'issued_at' => is_string($issuedAtRaw)
+                    ? CarbonImmutable::parse($issuedAtRaw, 'America/Panama')
+                    : CarbonImmutable::now('America/Panama'),
+            ]);
+        } catch (ConnectionException) {
+            throw ValidationException::withMessages([
+                'qr_raw_text' => 'No fue posible conectar con el servicio DGI. Intenta de nuevo en unos segundos.',
+            ]);
+        }
 
         return [
             'cufe' => $resolved['cufe'],

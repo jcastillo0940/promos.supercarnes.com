@@ -20,6 +20,8 @@ class CufeParser
         }
 
         $patterns = [
+            // URL DGI Panama: ?chFE=FE01200000032812-2-249262-XXXXXX
+            '/[?&]chFE=([A-Z0-9\-]{16,255})(?:&|$)/i',
             '/[?&](?:cufe|CUFE)=([A-Z0-9\-]{16,255})/i',
             '/(?:cufe|CUFE)[=:\s]+([A-Z0-9\-]{16,255})/i',
             '/(?:codigoGeneracion|codigo-generacion|claveAcceso)[=:\s]+([A-Z0-9\-]{16,255})/i',

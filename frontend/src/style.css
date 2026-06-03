@@ -571,6 +571,7 @@ a {
 .auth-goal-stepper {
   display: flex;
   align-items: stretch;
+  flex-shrink: 0;
   border: 1px solid var(--outline-variant);
   border-radius: 16px;
   overflow: hidden;
@@ -6234,7 +6235,9 @@ a {
   grid-row: 2;
   align-self: center;
   width: min(100%, 390px);
+  min-height: 0;
   max-height: calc(100vh - 190px);
+  overflow-y: auto;
   margin: 0;
   padding: 22px;
   border-color: rgba(255, 255, 255, 0.12);
@@ -6297,6 +6300,21 @@ a {
   border-radius: 3px;
   background: rgba(9, 10, 14, 0.78);
   font-size: 14px;
+}
+
+.auth-goal-stepper {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(9, 10, 14, 0.72);
+  border-radius: 10px;
+}
+
+.auth-goal-stepper > button {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.auth-goal-hint {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .auth-phone-field {

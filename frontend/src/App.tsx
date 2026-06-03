@@ -584,59 +584,6 @@ function formatCurrency(value: number | string | null | undefined) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number.isFinite(amount) ? amount : 0)
 }
 
-function extractInvoiceCufe(value: string) {
-  const trimmedValue = value.trim()
-  if (!trimmedValue) return ''
-
-  try {
-    const parsed = JSON.parse(trimmedValue) as {
-      datos?: { cufe?: string }
-      data?: { cufe?: string }
-      cufe?: string
-    }
-    const jsonCufe = parsed?.datos?.cufe ?? parsed?.data?.cufe ?? parsed?.cufe
-
-    if (typeof jsonCufe === 'string' && jsonCufe.trim()) {
-      return jsonCufe.trim().toUpperCase()
-    }
-  } catch {
-    // Ignorar JSON invalido y seguir con regex.
-  }
-
-  const decodedValue = decodeURIComponent(trimmedValue)
-  const patterns = [
-    /[?&]cufe=([A-Z0-9-]{16,255})/i,
-    /(?:cufe|CUFE)[=:\s"]+([A-Z0-9-]{16,255})/i,
-    /((?:FE|CS)[A-Z0-9-]{16,255})/i,
-    /([A-Z0-9]{8,}-[A-Z0-9-]{8,})/i,
-  ]
-
-  for (const pattern of patterns) {
-    const matches = decodedValue.match(pattern)
-    if (matches?.[1]) {
-      return matches[1].trim().toUpperCase()
-    }
-  }
-
-  return trimmedValue.toUpperCase().replace(/\s+/g, '')
-}
-
-function normalizeInvoiceQrPayload(value: string) {
-  const trimmedValue = value.trim()
-  if (!trimmedValue) return ''
-
-  if (/https?:\/\//i.test(trimmedValue) && /cufe=/i.test(trimmedValue)) {
-    return trimmedValue
-  }
-
-  if (/^cufe=/i.test(trimmedValue)) {
-    return `cufe=${extractInvoiceCufe(trimmedValue)}`
-  }
-
-  const extractedCufe = extractInvoiceCufe(trimmedValue)
-  return extractedCufe ? `cufe=${extractedCufe}` : trimmedValue
-}
-
 function extractInvoiceCufeFromOcrText(value: string) {
   const normalizedText = value
     .toUpperCase()
@@ -1083,12 +1030,12 @@ export function App() {
     issued_at: '',
   })
   const [invoiceSubmitting, setInvoiceSubmitting] = useState(false)
-  const [invoiceResolving, setInvoiceResolving] = useState(false)
   const [resolvedInvoiceData, setResolvedInvoiceData] = useState<ResolvedInvoiceData | null>(null)
   const [invoiceScannerError, setInvoiceScannerError] = useState<string | null>(null)
   const [invoiceScannerDebug, setInvoiceScannerDebug] = useState<InvoiceScannerDebugInfo>(() =>
     buildInvoiceScannerDebugInfo({ lastStage: 'idle' }),
   )
+  const [invoiceScannerActivated, setInvoiceScannerActivated] = useState(false)
   const [invoiceGalleryProcessing, setInvoiceGalleryProcessing] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -1117,7 +1064,7 @@ export function App() {
   const [savingPredictionIds, setSavingPredictionIds] = useState<number[]>([])
   const [now, setNow] = useState(() => Date.now())
   const invoiceScannerRef = useRef<InvoiceScannerRef | null>(null)
-  const lastResolvedInvoiceCufeRef = useRef<string | null>(null)
+
   const googleButtonRef = useRef<HTMLDivElement | null>(null)
   const userMenuRef = useRef<HTMLDivElement | null>(null)
   const mobileUserSidebarRef = useRef<HTMLDivElement | null>(null)
@@ -1513,63 +1460,6 @@ export function App() {
     return () => media.removeEventListener('change', syncSidebar)
   }, [])
 
-  useEffect(() => {
-    if (currentView !== 'facturas') return
-
-    const detectedCufe = extractInvoiceCufe(invoiceForm.rawInput)
-
-    if (!detectedCufe) {
-      lastResolvedInvoiceCufeRef.current = null
-      setResolvedInvoiceData(null)
-      return
-    }
-
-    if (lastResolvedInvoiceCufeRef.current === detectedCufe && resolvedInvoiceData?.cufe === detectedCufe) {
-      return
-    }
-
-    let isCancelled = false
-
-    async function resolveInvoiceData() {
-      setInvoiceResolving(true)
-      setInvoiceScannerError(null)
-
-      try {
-        const response = await api.post<{ data: ResolvedInvoiceData }>('/client/invoices/resolve', {
-          qr_raw_text: detectedCufe,
-        })
-
-        if (isCancelled) return
-
-        const resolvedData = response.data.data
-        lastResolvedInvoiceCufeRef.current = resolvedData.cufe
-        setResolvedInvoiceData(resolvedData)
-        setInvoiceForm((current) => ({
-          ...current,
-          rawInput: resolvedData.cufe,
-          invoice_number: resolvedData.invoice_number,
-          purchase_amount: resolvedData.purchase_amount,
-          issued_at: resolvedData.issued_at,
-        }))
-      } catch (resolutionError) {
-        if (isCancelled) return
-
-        lastResolvedInvoiceCufeRef.current = null
-        setResolvedInvoiceData(null)
-        setInvoiceScannerError(normalizeError(resolutionError))
-      } finally {
-        if (!isCancelled) {
-          setInvoiceResolving(false)
-        }
-      }
-    }
-
-    void resolveInvoiceData()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [currentView, invoiceForm.rawInput, resolvedInvoiceData?.cufe])
 
   useEffect(() => {
     let isMounted = true
@@ -1616,7 +1506,11 @@ export function App() {
   }
 
   useEffect(() => {
-    if (currentView !== 'facturas' || invoiceEntryMode !== 'scan') return
+    if (invoiceEntryMode !== 'scan') setInvoiceScannerActivated(false)
+  }, [invoiceEntryMode])
+
+  useEffect(() => {
+    if (currentView !== 'facturas' || invoiceEntryMode !== 'scan' || !invoiceScannerActivated) return
 
     let isCancelled = false
 
@@ -1687,9 +1581,8 @@ export function App() {
               nativeFormats,
               (decodedText: string) => {
                 if (isCancelled) return
-                setInvoiceForm((current) => ({ ...current, rawInput: decodedText }))
                 setInvoiceScannerDebug((current) => ({ ...current, lastStage: 'decoded-camera', lastError: null }))
-                setInvoiceEntryMode('manual')
+                void stopInvoiceScanner().then(() => handleQrScanRegister(decodedText))
               },
               (errorMessage: string) => {
                 setInvoiceScannerDebug((current) =>
@@ -1725,9 +1618,8 @@ export function App() {
             buildInvoiceCameraScanConfig(),
             (decodedText: string) => {
               if (isCancelled) return
-              setInvoiceForm((current) => ({ ...current, rawInput: decodedText }))
               setInvoiceScannerDebug((current) => ({ ...current, lastStage: 'decoded-camera', lastError: null }))
-              setInvoiceEntryMode('manual')
+              void stopInvoiceScanner().then(() => handleQrScanRegister(decodedText))
             },
             (errorMessage: string) => {
               setInvoiceScannerDebug((current) =>
@@ -1770,7 +1662,7 @@ export function App() {
       isCancelled = true
       void stopInvoiceScanner()
     }
-  }, [currentView, invoiceEntryMode])
+  }, [currentView, invoiceEntryMode, invoiceScannerActivated])
 
   async function handleInvoiceGalleryUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -1794,16 +1686,8 @@ export function App() {
         const result = await scanner.scanFile(file, false)
         scanner.clear()
 
-        setInvoiceForm((current) => ({
-          ...current,
-          rawInput: result,
-        }))
-        setInvoiceEntryMode('manual')
-        setInvoiceScannerDebug((current) => ({
-          ...current,
-          lastStage: 'decoded-gallery',
-          lastError: null,
-        }))
+        setInvoiceScannerDebug((current) => ({ ...current, lastStage: 'decoded-gallery', lastError: null }))
+        await handleQrScanRegister(result)
       } catch (qrError) {
         try {
           scanner.clear()
@@ -1823,16 +1707,8 @@ export function App() {
           throw new Error('OCR no encontro un CUFE con patron FE/CS en la imagen')
         }
 
-        setInvoiceForm((current) => ({
-          ...current,
-          rawInput: extractedCufe,
-        }))
-        setInvoiceEntryMode('manual')
-        setInvoiceScannerDebug((current) => ({
-          ...current,
-          lastStage: 'decoded-ocr',
-          lastError: null,
-        }))
+        setInvoiceScannerDebug((current) => ({ ...current, lastStage: 'decoded-ocr', lastError: null }))
+        await handleQrScanRegister(extractedCufe)
       }
     } catch (galleryError) {
       const message = galleryError instanceof Error ? galleryError.message : 'No se pudo leer la imagen seleccionada.'
@@ -2309,7 +2185,6 @@ export function App() {
   function updateInvoiceForm<K extends keyof InvoiceFormState>(field: K, value: InvoiceFormState[K]) {
     if (field !== 'rawInput') return
 
-    lastResolvedInvoiceCufeRef.current = null
     setResolvedInvoiceData(null)
     setInvoiceForm((current) => ({
       ...current,
@@ -2324,32 +2199,35 @@ export function App() {
     }))
   }
 
-  async function handleInvoiceSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleQrScanRegister(rawText: string) {
     setInvoiceSubmitting(true)
+    setInvoiceScannerError(null)
     setError(null)
-    setMessage(null)
 
     try {
       await api.post('/client/invoices', {
-        qr_raw_text: normalizeInvoiceQrPayload(invoiceForm.rawInput),
-      })
-
-      setMessage('Factura enviada para validacion.')
-      lastResolvedInvoiceCufeRef.current = null
-      setResolvedInvoiceData(null)
-      setInvoiceForm({
-        rawInput: '',
-        invoice_number: '',
-        purchase_amount: '',
-        issued_at: '',
+        qr_raw_text: rawText,
       })
       await bootstrap()
-    } catch (invoiceError) {
-      setError(normalizeError(invoiceError))
+      navigateToView('reglas')
+    } catch (err) {
+      setInvoiceScannerError(normalizeError(err))
     } finally {
       setInvoiceSubmitting(false)
     }
+  }
+
+  function handleInvoiceReset() {
+    setResolvedInvoiceData(null)
+    setInvoiceScannerError(null)
+    setInvoiceForm({ rawInput: '', invoice_number: '', purchase_amount: '', issued_at: '' })
+    setInvoiceScannerActivated(false)
+    setInvoiceEntryMode('scan')
+  }
+
+  async function handleInvoiceSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await handleQrScanRegister(invoiceForm.rawInput)
   }
 
   function renderCancha() {
@@ -2612,14 +2490,29 @@ export function App() {
         invoiceEntryMode={invoiceEntryMode}
         invoiceForm={invoiceForm}
         invoiceGalleryProcessing={invoiceGalleryProcessing}
-        invoiceResolving={invoiceResolving}
+        invoiceScannerActivated={invoiceScannerActivated}
         invoiceScannerError={invoiceScannerError}
         invoiceScannerDebug={invoiceScannerDebug}
         invoiceSubmitting={invoiceSubmitting}
         invoices={invoices}
+        onRegister={(rawCufe) => void handleQrScanRegister(rawCufe)}
+        onActivateScan={async () => {
+          setInvoiceScannerError(null)
+          if (typeof navigator !== 'undefined' && 'mediaDevices' in navigator) {
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+              stream.getTracks().forEach((t) => t.stop())
+            } catch {
+              setInvoiceScannerError('Permiso de camara denegado. Actívalo en la configuracion de tu navegador e intenta de nuevo.')
+              return
+            }
+          }
+          setInvoiceScannerActivated(true)
+        }}
         onFieldChange={updateInvoiceForm}
         onGalleryUpload={handleInvoiceGalleryUpload}
         onModeChange={setInvoiceEntryMode}
+        onReset={handleInvoiceReset}
         onSubmit={handleInvoiceSubmit}
         resolvedInvoiceData={resolvedInvoiceData}
       />
@@ -3136,6 +3029,7 @@ export function App() {
                       <span className="material-symbols-outlined">sports_soccer</span>
                       <span>Pronóstico de desempate</span>
                     </div>
+                    <p className="auth-goal-hint">¿Cuántos goles totales habrá en la fase de grupos del Mundial 2026?</p>
                     <div className="auth-goal-stepper">
                       <button
                         type="button"
@@ -3150,10 +3044,8 @@ export function App() {
                       </button>
                       <input
                         className="auth-goal-input"
-                        type="number"
+                        type="text"
                         inputMode="numeric"
-                        min="0"
-                        max="300"
                         placeholder="0"
                         value={authForm.group_stage_goal_prediction}
                         onChange={(event) => {
@@ -3173,7 +3065,6 @@ export function App() {
                         +
                       </button>
                     </div>
-                    <p className="auth-goal-hint">¿Cuántos goles totales habrá en la fase de grupos del Mundial 2026?</p>
 
                     <div className="auth-section-label">
                       <span className="material-symbols-outlined">store</span>

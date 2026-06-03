@@ -28,9 +28,27 @@
 </div>
 
 <div class="card">
-    <h2>Ranking oficial limitado</h2>
+    <h2>Ranking oficial — {{ $phase ? $phase->name : 'sin fase' }}</h2>
+    @if($phase)
+        <p style="font-size:0.85em;color:#666">
+            Solo se cuentan facturas emitidas entre <strong>{{ \Carbon\Carbon::parse($phase->starts_at)->format('d/m/Y') }}</strong>
+            y <strong>{{ \Carbon\Carbon::parse($phase->ends_at)->format('d/m/Y') }}</strong>.
+            Los ganadores de fases anteriores no aparecen aqui.
+        </p>
+    @endif
     <table>
-        <thead><tr><th>Posicion</th><th>Participante</th><th>Puntos</th><th>Exactos</th><th>Facturas</th><th>Rol</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Pos.</th>
+                <th>Participante</th>
+                <th title="Puntos de pronosticos + facturas en esta fase">Total pts</th>
+                <th title="Puntos de pronosticos en esta fase">Pts Prono.</th>
+                <th title="Puntos de facturas en esta fase">Pts Fact.</th>
+                <th>Exactos</th>
+                <th>Facturas</th>
+                <th>Rol</th>
+            </tr>
+        </thead>
         <tbody>
         @forelse($leaderboard as $row)
             <tr>
@@ -39,13 +57,15 @@
                     <div>{{ $row['full_name'] }}</div>
                     <small>{{ $row['email'] }} | {{ $row['phone'] ?: 'sin telefono' }}</small>
                 </td>
-                <td>{{ $row['goals'] }}</td>
+                <td><strong>{{ number_format($row['total_points'], 2) }}</strong></td>
+                <td>{{ number_format($row['prediction_points'], 2) }}</td>
+                <td>{{ number_format($row['invoice_points'], 2) }}</td>
                 <td>{{ $row['exact_hits'] }}</td>
                 <td>{{ $row['invoice_count'] }}</td>
                 <td>{{ $row['football_role'] }}</td>
             </tr>
         @empty
-            <tr><td colspan="6">Todavia no hay ranking disponible.</td></tr>
+            <tr><td colspan="8">Todavia no hay ranking disponible.</td></tr>
         @endforelse
         </tbody>
     </table>
