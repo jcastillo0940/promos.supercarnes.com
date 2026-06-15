@@ -15,42 +15,42 @@ class InvoiceController extends Controller
     ) {
     }
 
-    public function index(Request $request): JsonResponse
-    {
-        $query = RegisteredInvoice::query()
-            ->where('user_id', $request->user()->id)
-            ->latest('id');
-
-        return response()->json([
-            'data' => $query->paginate(15),
-            'totals' => [
-                'approved_points' => (int) RegisteredInvoice::query()
-                    ->where('user_id', $request->user()->id)
-                    ->where('validation_status', 'approved')
-                    ->sum('points_awarded'),
-                'approved_invoices' => (int) RegisteredInvoice::query()
-                    ->where('user_id', $request->user()->id)
-                    ->where('validation_status', 'approved')
-                    ->count(),
-            ],
-        ]);
-    }
-
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
             'qr_raw_text' => ['required', 'string', 'max:2048'],
             'purchase_amount' => ['required', 'numeric', 'min:0.01'],
-            'branch_id' => ['nullable', 'integer'],
             'invoice_number' => ['nullable', 'string', 'max:80'],
             'issued_at' => ['nullable', 'date'],
+            'document_type' => ['required', 'in:cedula,passport,residente'],
+            'document_number' => ['required', 'string', 'max:40'],
+            'first_name' => ['required', 'string', 'max:80'],
+            'last_name' => ['required', 'string', 'max:80'],
+            'full_name' => ['required', 'string', 'max:150'],
+            'cedula' => ['required', 'string', 'max:40'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'email', 'max:150'],
+            'branch_id' => ['nullable', 'integer'],
         ]);
 
-        $result = $this->registrationService->register($request->user(), $data, $request);
+        $result = $this->registrationService->registerGuest($data, $request);
 
         return response()->json([
             'message' => $result['message'],
             'invoice' => $result['invoice'],
         ], 201);
+    }
+
+    public function resolve(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'qr_raw_text' => ['required', 'string', 'max:2048'],
+        ]);
+
+        $result = $this->registrationService->resolveInvoiceData($data['qr_raw_text']);
+
+        return response()->json([
+            'data' => $result,
+        ]);
     }
 }

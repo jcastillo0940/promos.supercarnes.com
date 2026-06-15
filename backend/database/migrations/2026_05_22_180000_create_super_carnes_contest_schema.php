@@ -344,6 +344,7 @@ return new class extends Migration
                 $table->boolean('is_enabled')->default(true);
                 $table->decimal('goal_value', 10, 2)->default(1);
                 $table->decimal('min_purchase_amount', 10, 2)->default(25);
+                $table->string('invoice_age_policy', 20)->default('none');
                 $table->unsignedTinyInteger('max_invoice_age_days')->default(1);
                 $table->boolean('one_invoice_per_day')->default(false);
                 $table->string('validation_mode', 20)->default('api');
@@ -595,6 +596,7 @@ return new class extends Migration
                 'is_enabled' => true,
                 'goal_value' => 1,
                 'min_purchase_amount' => 25,
+                'invoice_age_policy' => 'none',
                 'max_invoice_age_days' => 1,
                 'one_invoice_per_day' => false,
                 'validation_mode' => 'api',

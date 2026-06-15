@@ -18,7 +18,7 @@ class CampaignManager
 
         if (! $campaign) {
             throw ValidationException::withMessages([
-                'campaign' => 'No hay una campaña activa en este momento.',
+                'campaign' => 'No hay una promocion activa en este momento.',
             ]);
         }
 

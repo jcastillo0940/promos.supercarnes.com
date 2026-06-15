@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'name' => env('CONTEST_NAME', 'Polla Mundialista Super Carnes 2026'),
+    'name' => env('CONTEST_NAME', 'Promo de Facturas Super Carnes 2026'),
     'registration_deadline' => env('CONTEST_REGISTRATION_DEADLINE', '2026-06-10 23:59:59'),
     'winner_announcement_date' => env('CONTEST_WINNER_ANNOUNCEMENT_DATE', '2026-07-20'),
     'winner_slots' => (int) env('CONTEST_WINNER_SLOTS', 20),
@@ -15,4 +15,5 @@ return [
     'recaptcha_secret' => env('RECAPTCHA_SECRET_KEY'),
     'recaptcha_site_key' => env('VITE_RECAPTCHA_SITE_KEY'),
     'block_non_panama_ip' => filter_var(env('CONTEST_BLOCK_NON_PANAMA_IP', false), FILTER_VALIDATE_BOOL),
+    'backoffice_key' => env('CONTEST_BACKOFFICE_KEY'),
 ];

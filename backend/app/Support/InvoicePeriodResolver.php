@@ -5,12 +5,12 @@ namespace App\Support;
 use App\Models\TournamentPhase;
 use Carbon\CarbonInterface;
 
-class TournamentPhaseResolver
+class InvoicePeriodResolver
 {
-    public function phaseForDate(?CarbonInterface $date): ?TournamentPhase
+    public function periodForDate(?CarbonInterface $date): ?TournamentPhase
     {
         if (! $date) {
-            return $this->currentPhase();
+            return $this->currentPeriod();
         }
 
         return TournamentPhase::query()
@@ -18,10 +18,10 @@ class TournamentPhaseResolver
             ->where('ends_at', '>=', $date)
             ->orderBy('stage_order')
             ->first()
-            ?? $this->currentPhase();
+            ?? $this->currentPeriod();
     }
 
-    public function currentPhase(): ?TournamentPhase
+    public function currentPeriod(): ?TournamentPhase
     {
         return TournamentPhase::query()
             ->where('is_active', true)

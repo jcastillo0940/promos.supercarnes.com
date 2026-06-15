@@ -12,6 +12,7 @@ class InvoiceGoalSetting extends Model
         'is_enabled',
         'goal_value',
         'min_purchase_amount',
+        'invoice_age_policy',
         'max_invoice_age_days',
         'one_invoice_per_day',
         'validation_mode',
@@ -24,6 +25,7 @@ class InvoiceGoalSetting extends Model
             'one_invoice_per_day' => 'boolean',
             'goal_value' => 'decimal:2',
             'min_purchase_amount' => 'decimal:2',
+            'invoice_age_policy' => 'string',
             'max_invoice_age_days' => 'integer',
         ];
     }

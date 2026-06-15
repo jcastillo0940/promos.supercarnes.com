@@ -4,6 +4,8 @@ namespace App\Support;
 
 class CufeParser
 {
+    private const CUFE_SHORT_PREFIX = 'FE01200000032812-2-249262-';
+
     public function extract(string $rawText): ?string
     {
         if (strlen($rawText) > 2048) {
@@ -11,16 +13,17 @@ class CufeParser
         }
 
         $decoded = urldecode($rawText);
-        $bare    = strtoupper(trim($decoded));
+        $bare = strtoupper(trim($decoded));
 
-        // Si el texto ya ES el CUFE directamente (p.ej. FE01200000032812-2-249262-...)
-        // debe contener al menos un guion y solo chars alfanuméricos + guiones
+        if (preg_match('/^\d{60}$/', $bare)) {
+            return self::CUFE_SHORT_PREFIX.$bare;
+        }
+
         if (str_contains($bare, '-') && preg_match('/^[A-Z0-9][A-Z0-9\-]{15,254}$/', $bare)) {
             return $bare;
         }
 
         $patterns = [
-            // URL DGI Panama: ?chFE=FE01200000032812-2-249262-XXXXXX
             '/[?&]chFE=([A-Z0-9\-]{16,255})(?:&|$)/i',
             '/[?&](?:cufe|CUFE)=([A-Z0-9\-]{16,255})/i',
             '/(?:cufe|CUFE)[=:\s]+([A-Z0-9\-]{16,255})/i',

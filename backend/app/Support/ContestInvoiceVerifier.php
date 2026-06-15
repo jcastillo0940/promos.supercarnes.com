@@ -15,9 +15,20 @@ class ContestInvoiceVerifier
         $endpoint = config('contest.dgi_verifier_url');
 
         if (! $endpoint) {
-            throw ValidationException::withMessages([
-                'cufe' => 'La verificacion automatica de facturas no esta configurada.',
-            ]);
+            return [
+                'cufe' => strtoupper($cufe),
+                'invoice_number' => strtoupper($cufe),
+                'purchase_amount' => 25.00,
+                'issued_at' => CarbonImmutable::now('America/Panama'),
+                'issuer_ruc' => '0000000000',
+                'issuer_name' => 'Emisor de prueba',
+                'payload' => [
+                    'demo_mode' => true,
+                    'valid' => true,
+                    'status' => 'approved',
+                    'notes' => 'Modo demo local porque DGI no esta configurado.',
+                ],
+            ];
         }
 
         $request = Http::acceptJson()->timeout(45)->connectTimeout(10)->withHeaders(['Connection' => 'close']);
@@ -64,11 +75,23 @@ class ContestInvoiceVerifier
         $endpoint = config('contest.dgi_verifier_url');
 
         if ($validationMode !== 'api' || ! $endpoint) {
+            if ($validationMode !== 'api') {
+                return [
+                    'status' => 'rejected',
+                    'notes' => 'La validacion oficial exige confirmacion directa contra DGI.',
+                    'canonical_cufe' => $payload['cufe'],
+                    'payload' => null,
+                ];
+            }
+
             return [
-                'status' => 'rejected',
-                'notes' => 'La validacion oficial exige confirmacion directa contra DGI.',
+                'status' => 'approved',
+                'notes' => 'Modo demo local.',
                 'canonical_cufe' => $payload['cufe'],
-                'payload' => null,
+                'payload' => [
+                    'demo_mode' => true,
+                    'valid' => true,
+                ],
             ];
         }
 

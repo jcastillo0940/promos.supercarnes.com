@@ -8,12 +8,14 @@ use App\Models\RegisteredInvoice;
 use App\Models\TournamentPhase;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Support\Audit;
 
 class ContestInvoiceRegistrationService
 {
@@ -23,19 +25,12 @@ class ContestInvoiceRegistrationService
         private readonly ContestInvoiceVerifier $verifier,
         private readonly ContestRules $rules,
         private readonly WalletService $walletService,
-        private readonly FraudDetectionService $fraudDetection,
-        private readonly TournamentPhaseResolver $phaseResolver,
+        private readonly InvoicePeriodResolver $phaseResolver,
     ) {
     }
 
-    public function register(User $user, array $data, ?Request $request = null): array
+    public function registerGuest(array $data, ?Request $request = null): array
     {
-        if ($user->disqualified_at) {
-            throw ValidationException::withMessages([
-                'account' => 'Tu cuenta fue descalificada y no puede registrar facturas en el concurso.',
-            ]);
-        }
-
         $campaign = $this->campaignManager->activeOrFail();
         $settings = InvoiceGoalSetting::query()->first();
 
@@ -45,19 +40,10 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
+        $participant = $this->findOrCreateParticipant($data);
+
         $cufe = $this->cufeParser->extract($data['qr_raw_text']);
-
         if (! $cufe) {
-            $this->fraudDetection->flag(
-                user: $user,
-                type: 'invalid_cufe_format',
-                title: 'Intento de registro sin CUFE valido',
-                description: 'El contenido enviado no permitio extraer un CUFE valido.',
-                severity: 'high',
-                evidence: ['raw_text_sample' => substr((string) $data['qr_raw_text'], 0, 180)],
-                request: $request,
-            );
-
             throw ValidationException::withMessages([
                 'qr_raw_text' => 'No fue posible extraer un CUFE valido del QR enviado.',
             ]);
@@ -79,27 +65,8 @@ class ContestInvoiceRegistrationService
             throw ValidationException::withMessages([
                 'qr_raw_text' => 'No fue posible conectar con el servicio DGI. Intenta de nuevo en unos segundos.',
             ]);
-        } catch (ValidationException $exception) {
-            $this->fraudDetection->flag(
-                user: $user,
-                type: 'dgi_invoice_resolution_failed',
-                title: 'CUFE no confirmado por DGI',
-                description: 'DGI rechazo o no confirmo el CUFE durante la resolucion inicial.',
-                severity: 'critical',
-                evidence: [
-                    'cufe' => strtoupper($cufe),
-                    'errors' => $exception->errors(),
-                ],
-                request: $request,
-            );
-
-            Audit::log('invoice.dgi_resolution_failed', 'registered_invoice', null, $user, $request, [
-                'cufe' => strtoupper($cufe),
-                'errors' => $exception->errors(),
-            ]);
-
-            throw $exception;
         }
+
         $canonicalCufe = strtoupper((string) $resolvedInvoice['cufe']);
         $issuedAt = $resolvedInvoice['issued_at'];
         $minimumAmount = $settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount();
@@ -109,20 +76,6 @@ class ContestInvoiceRegistrationService
         $issuerRuc = strtoupper(trim((string) ($resolvedInvoice['issuer_ruc'] ?? '')));
 
         if ($officialIssuerRucs && ! in_array($issuerRuc, array_map(fn ($ruc) => strtoupper(trim((string) $ruc)), $officialIssuerRucs), true)) {
-            $this->fraudDetection->flag(
-                user: $user,
-                type: 'issuer_ruc_mismatch',
-                title: 'Factura no emitida por RUC oficial',
-                description: 'El RUC emisor devuelto por DGI no coincide con los RUC oficiales configurados para Super Carnes.',
-                severity: 'critical',
-                evidence: [
-                    'cufe' => $canonicalCufe,
-                    'issuer_ruc' => $issuerRuc,
-                    'allowed_rucs' => $officialIssuerRucs,
-                ],
-                request: $request,
-            );
-
             throw ValidationException::withMessages([
                 'issuer_ruc' => 'La factura no corresponde a un emisor autorizado de Super Carnes.',
             ]);
@@ -130,32 +83,12 @@ class ContestInvoiceRegistrationService
 
         if ($purchaseAmount <= $minimumAmount) {
             throw ValidationException::withMessages([
-                'purchase_amount' => 'La factura debe ser mayor a $'.number_format($minimumAmount, 2).' para otorgar el punto adicional.',
+                'purchase_amount' => 'La factura debe ser mayor a $'.number_format($minimumAmount, 2).' para ser valida.',
             ]);
         }
 
+        $invoiceAgePolicy = $settings?->invoice_age_policy ?? 'none';
         $maxInvoiceAgeDays = $settings ? (int) $settings->max_invoice_age_days : $this->rules->maxInvoiceAgeDays();
-        $oldestAllowed = $now->copy()->startOfDay()->subDays($maxInvoiceAgeDays);
-
-        if ($issuedAt->lt($oldestAllowed)) {
-            $this->fraudDetection->flag(
-                user: $user,
-                type: 'invoice_outside_allowed_age',
-                title: 'Factura fuera de antiguedad permitida',
-                description: 'La factura excede la antiguedad maxima permitida por los terminos del concurso.',
-                severity: 'medium',
-                evidence: [
-                    'cufe' => $canonicalCufe,
-                    'issued_at' => $issuedAt->toIso8601String(),
-                    'max_invoice_age_days' => $maxInvoiceAgeDays,
-                ],
-                request: $request,
-            );
-
-            throw ValidationException::withMessages([
-                'issued_at' => 'Factura expirada para la promocion.',
-            ]);
-        }
 
         if ($issuedAt->gt($now->copy()->endOfDay())) {
             throw ValidationException::withMessages([
@@ -163,16 +96,47 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        $verification = $this->verifier->verify($user, [
+        if ($invoiceAgePolicy !== 'none') {
+            $oldestAllowed = match ($invoiceAgePolicy) {
+                'same_day' => $now->copy()->startOfDay(),
+                'last_24_hours' => $now->copy()->subHours(24),
+                default => $now->copy()->startOfDay()->subDays(max(0, $maxInvoiceAgeDays)),
+            };
+
+            if ($issuedAt->lt($oldestAllowed)) {
+                throw ValidationException::withMessages([
+                    'issued_at' => 'Factura expirada para la promocion.',
+                ]);
+            }
+        }
+
+        $verification = $this->verifier->verify($participant, [
             'cufe' => $canonicalCufe,
             'purchase_amount' => $purchaseAmount,
             'issued_at' => $issuedAt,
         ], $resolvedInvoice);
         $canonicalCufe = strtoupper((string) ($verification['canonical_cufe'] ?? $canonicalCufe));
-        $invoicePhase = $this->phaseResolver->phaseForDate($issuedAt);
+        $invoicePeriod = $this->phaseResolver->periodForDate($issuedAt);
+
+        if (RegisteredInvoice::query()->where('cufe', $canonicalCufe)->exists()) {
+            throw ValidationException::withMessages([
+                'qr_raw_text' => 'Este CUFE ya fue registrado y no puede participar dos veces.',
+            ]);
+        }
+
+        $duplicateInvoice = RegisteredInvoice::query()
+            ->where('invoice_number', (string) ($resolvedInvoice['invoice_number'] ?? ''))
+            ->where('issuer_ruc', (string) ($resolvedInvoice['issuer_ruc'] ?? ''))
+            ->first();
+
+        if ($duplicateInvoice) {
+            throw ValidationException::withMessages([
+                'qr_raw_text' => 'Esta factura ya fue registrada y no puede participar dos veces.',
+            ]);
+        }
 
         try {
-            $invoice = DB::transaction(function () use ($user, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $minimumAmount, $maxInvoiceAgeDays, $settings, $request, $invoicePhase): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $settings): RegisteredInvoice {
                 $status = $verification['status'] === 'approved' ? 'accepted' : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
@@ -182,7 +146,7 @@ class ContestInvoiceRegistrationService
                 $pointsAwarded = $verification['status'] === 'approved' ? 1 : 0;
 
                 $invoice = RegisteredInvoice::query()->create([
-                    'user_id' => $user->id,
+                    'user_id' => $participant->id,
                     'campaign_id' => $campaign->id,
                     'branch_id' => $data['branch_id'] ?? null,
                     'cufe' => $canonicalCufe,
@@ -204,24 +168,25 @@ class ContestInvoiceRegistrationService
                 ]);
 
                 if ($verification['status'] === 'approved') {
-                    $this->syncDailyInvoiceGoal($user, $invoice, $invoicePhase);
+                    $this->syncDailyInvoiceGoal($participant, $invoice, $invoicePeriod);
                     $this->walletService->creditGoals(
-                        user: $user,
+                        user: $participant,
                         amount: (int) $pointsAwarded,
                         type: 'invoice_goal_awarded',
                         resourceType: 'registered_invoice',
                         resourceId: $invoice->id,
                         campaignId: $campaign->id,
-                        notes: 'Factura validada y punto acreditado.',
+                        notes: 'Factura validada y premio acreditado.',
                         meta: [
                             'source' => 'invoice',
-                            'phase_id' => $invoicePhase?->id,
-                            'phase_slug' => $invoicePhase?->slug,
-                            'phase_name' => $invoicePhase?->name,
+                            'period_id' => $invoicePeriod?->id,
+                            'period_slug' => $invoicePeriod?->slug,
+                            'period_name' => $invoicePeriod?->name,
                             'rule_code' => 'invoice_goal_awarded',
                             'rule_label' => 'Factura aprobada mayor al minimo',
                             'rule_snapshot' => [
                                 'minimum_amount' => $minimumAmount,
+                                'invoice_age_policy' => $invoiceAgePolicy,
                                 'max_invoice_age_days' => $maxInvoiceAgeDays,
                                 'goal_value' => (int) $pointsAwarded,
                                 'validation_mode' => $settings?->validation_mode ?? 'api',
@@ -234,26 +199,9 @@ class ContestInvoiceRegistrationService
                             ],
                         ],
                     );
-                    $this->fraudDetection->inspectApprovedInvoice($user, $invoice, $request);
                 }
 
-                if ($verification['status'] === 'disqualify') {
-                    $this->fraudDetection->flag(
-                        user: $user,
-                        type: 'critical_invoice_validation',
-                        title: 'Factura requiere revision antifraude',
-                        description: (string) $verification['notes'].' El sistema no descalifico automaticamente al participante; requiere decision de auditor.',
-                        severity: 'critical',
-                        invoice: $invoice,
-                        evidence: [
-                            'cufe' => $canonicalCufe,
-                            'validation_status' => $verification['status'],
-                        ],
-                        request: $request,
-                    );
-                }
-
-                Audit::log('invoice.registered', 'registered_invoice', $invoice->id, $user, $request, [
+                Audit::log('invoice.registered', 'registered_invoice', $invoice->id, $participant, null, [
                     'cufe' => $invoice->cufe,
                     'validation_status' => $invoice->validation_status,
                     'points_awarded' => $invoice->points_awarded,
@@ -262,23 +210,9 @@ class ContestInvoiceRegistrationService
                 return $invoice;
             });
         } catch (QueryException $exception) {
-            if ((int) $exception->getCode() === 23000) {
-                $this->fraudDetection->flag(
-                    user: $user,
-                    type: 'duplicate_cufe_attempt',
-                    title: 'Intento de registrar CUFE duplicado',
-                    description: 'El CUFE ya habia sido registrado previamente por otro participante o por la misma cuenta.',
-                    severity: 'high',
-                    evidence: ['cufe' => $canonicalCufe],
-                    request: $request,
-                );
-
-                Audit::log('invoice.duplicate_rejected', 'registered_invoice', null, $user, $request, [
-                    'cufe' => $canonicalCufe,
-                ]);
-
+            if ((int) $exception->getCode() === 23000 || str_contains($exception->getMessage(), 'registered_invoices_cufe_unique')) {
                 throw ValidationException::withMessages([
-                    'cufe' => 'Ese CUFE ya fue registrado previamente por otro participante.',
+                    'qr_raw_text' => 'Esta factura ya fue registrada y no puede participar dos veces.',
                 ]);
             }
 
@@ -294,6 +228,7 @@ class ContestInvoiceRegistrationService
 
     public function resolveInvoiceData(string $rawText): array
     {
+        $settings = InvoiceGoalSetting::query()->first();
         $cufe = $this->cufeParser->extract($rawText);
 
         if (! $cufe) {
@@ -320,13 +255,100 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
+        $minimumAmount = $settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount();
+
         return [
             'cufe' => $resolved['cufe'],
             'invoice_number' => $resolved['invoice_number'],
             'purchase_amount' => number_format((float) $resolved['purchase_amount'], 2, '.', ''),
             'issued_at' => $resolved['issued_at']->toDateString(),
             'issuer_name' => $resolved['issuer_name'],
+            'issuer_ruc' => $resolved['issuer_ruc'] ?? null,
+            'is_valid' => (float) $resolved['purchase_amount'] >= $minimumAmount,
+            'minimum_amount' => $minimumAmount,
         ];
+    }
+
+    private function findOrCreateParticipant(array $data): User
+    {
+        $documentType = strtolower((string) ($data['document_type'] ?? 'cedula'));
+        $documentNumber = $this->normalizeDocumentNumber($documentType, (string) ($data['document_number'] ?? $data['cedula'] ?? ''));
+        $cedula = $documentType === 'cedula' ? $documentNumber : $documentNumber;
+        $firstName = trim((string) ($data['first_name'] ?? ''));
+        $lastName = trim((string) ($data['last_name'] ?? ''));
+        $fullName = trim((string) ($data['full_name'] ?? trim($firstName.' '.$lastName)));
+
+        if ($documentType === 'cedula' && ! preg_match('/^[0-9]-?[0-9]{3}-?[0-9]{4}$/', $cedula) && ! preg_match('/^[0-9]-?[0-9]{3}-?[0-9]{4,5}$/', $cedula) && ! preg_match('/^[0-9]-?[0-9]{1,3}-?[0-9]{1,4}-?[0-9]{1,4}$/', $cedula)) {
+            throw ValidationException::withMessages([
+                'document_number' => 'Debes ingresar una cedula valida.',
+            ]);
+        }
+
+        if ($documentNumber === '') {
+            throw ValidationException::withMessages([
+                'document_number' => 'Debes ingresar un numero de documento valido.',
+            ]);
+        }
+
+        if (RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
+            throw ValidationException::withMessages([
+                'document_number' => 'Este documento ya registro una factura y no puede participar dos veces.',
+            ]);
+        }
+
+        $user = User::query()->firstOrCreate(
+            ['cedula' => $documentNumber],
+            [
+                'name' => $fullName,
+                'document_type' => $documentType,
+                'email' => $data['email'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'role' => 'client',
+                'password' => Hash::make(str()->random(40)),
+                'is_active' => true,
+                'resides_in_panama' => true,
+                'is_employee' => false,
+            ],
+        );
+
+        $user->forceFill([
+            'name' => $fullName,
+            'email' => $data['email'] ?? $user->email,
+            'phone' => $data['phone'] ?? $user->phone,
+            'cedula' => $documentNumber,
+            'document_type' => $documentType,
+            'is_active' => true,
+        ])->save();
+
+        if (! $user->wallet()->exists()) {
+            $this->walletService->creditGoals(
+                user: $user,
+                amount: 0,
+                type: 'wallet_initialized',
+                resourceType: 'user',
+                resourceId: $user->id,
+                campaignId: null,
+                notes: 'Wallet inicializada para participante de promo.',
+                meta: [],
+            );
+        }
+
+        return $user;
+    }
+
+    private function normalizeCedula(string $cedula): string
+    {
+        return strtoupper(preg_replace('/[^A-Z0-9-]/', '', trim($cedula)) ?? '');
+    }
+
+    private function normalizeDocumentNumber(string $documentType, string $documentNumber): string
+    {
+        $trimmed = strtoupper(trim($documentNumber));
+
+        return match ($documentType) {
+            'passport', 'residente' => preg_replace('/[^A-Z0-9-]/', '', $trimmed) ?? '',
+            default => preg_replace('/[^0-9-]/', '', $trimmed) ?? '',
+        };
     }
 
     private function syncDailyInvoiceGoal(User $user, RegisteredInvoice $invoice, ?TournamentPhase $phase): void
@@ -339,7 +361,7 @@ class ContestInvoiceRegistrationService
             'invoice_date' => optional($invoice->issued_at)->toDateString() ?? now()->toDateString(),
             'goal_points_awarded' => 1,
             'validation_status' => 'approved',
-            'validation_notes' => 'Factura aprobada para la polla mundialista.',
+            'validation_notes' => 'Factura aprobada para la promo de facturas.',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -348,9 +370,9 @@ class ContestInvoiceRegistrationService
     private function messageForStatus(string $status): string
     {
         return match ($status) {
-            'approved' => 'Factura validada y punto acreditado.',
-            'pending' => 'Factura recibida. El punto se acreditara cuando la verificacion DGI sea confirmada.',
-            'disqualify' => 'Factura enviada a revision antifraude. No se acreditaron puntos por esta factura.',
+            'approved' => 'Factura validada. Completa el registro para participar.',
+            'pending' => 'Factura recibida. Se revisara la validacion.',
+            'disqualify' => 'Factura enviada a revision antifraude.',
             default => 'Factura rechazada durante la validacion.',
         };
     }
