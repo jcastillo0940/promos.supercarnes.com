@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { QRCodeCanvas } from 'qrcode.react'
 import { api } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData } from './types'
 
@@ -23,6 +24,7 @@ interface InvoiceFormState {
   issued_at: string
   issuer_name: string
   cufe_tail: string
+  dad_reason: string
   document_type: 'cedula' | 'passport' | 'residente'
   document_number: string
   first_name: string
@@ -39,6 +41,7 @@ function emptyForm(): InvoiceFormState {
     issued_at: '',
     issuer_name: '',
     cufe_tail: '',
+    dad_reason: '',
     document_type: 'cedula',
     document_number: '',
     first_name: '',
@@ -64,9 +67,10 @@ export function App() {
   const [resolvingInvoice, setResolvingInvoice] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [resolvedInvoiceData, setResolvedInvoiceData] = useState<ResolvedInvoiceData | null>(null)
+  const [registeredInvoice, setRegisteredInvoice] = useState<RegisteredInvoice | null>(null)
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const steps = useMemo(
     () => [
@@ -119,7 +123,6 @@ export function App() {
       setScannerError(null)
 
       if (!response.data.data.is_valid) {
-        setResolvedInvoiceData(null)
         setInvoiceValidated(false)
         setSubmitError(null)
         setPromoStep(1)
@@ -127,7 +130,6 @@ export function App() {
         return
       }
 
-      setResolvedInvoiceData(response.data.data)
       setInvoiceValidated(true)
       setPromoStep(2)
       setInvoiceForm((current) => ({
@@ -175,15 +177,10 @@ export function App() {
         cedula: invoiceForm.document_number,
         phone: invoiceForm.phone || null,
         email: invoiceForm.email || null,
+        dad_reason: invoiceForm.dad_reason || null,
       })
 
-      setResolvedInvoiceData({
-        cufe: response.data.invoice.cufe,
-        invoice_number: response.data.invoice.invoice_number ?? response.data.invoice.cufe,
-        purchase_amount: String(response.data.invoice.purchase_amount),
-        issued_at: response.data.invoice.issued_at ?? '',
-        issuer_name: response.data.invoice.issuer_name ?? undefined,
-      })
+      setRegisteredInvoice(response.data.invoice)
       setInvoiceValidated(true)
       setPromoStep(3)
     } catch (error) {
@@ -193,6 +190,18 @@ export function App() {
     }
   }
 
+  function downloadQr() {
+    const canvas = qrCanvasRef.current
+    if (!canvas) return
+    const url = canvas.toDataURL('image/png')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `comprobante-super-carnes-${registeredInvoice?.invoice_number ?? Date.now()}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+
   return (
     <div className="promo-shell">
       <div className="promo-ambient" />
@@ -200,7 +209,7 @@ export function App() {
         <section className="promo-hero">
           <div className="promo-hero-copy">
             <div className="promo-brand-mark">
-              <img src="/auth-slogan.webp" alt="Super Carnes" />
+              <img src="/logo_web.jpg" alt="Super Carnes" />
             </div>
             <p className="promo-kicker">Super Carnes 2026</p>
             {invoiceValidated ? <p className="promo-valid-badge">Factura válida</p> : null}
@@ -236,7 +245,7 @@ export function App() {
               <img src="/gaby-torres-celebration.webp" alt="Papa celebrando la promo" />
             </div>
             <div className="promo-ball" aria-hidden="true">
-              <img src="/trionda-ball.svg" alt="" />
+              <img src="/auth-ball-center.png" alt="" />
             </div>
           </div>
         </section>
@@ -248,7 +257,37 @@ export function App() {
             <p>{invoiceValidated ? 'La factura paso y el formulario ya esta disponible.' : 'Escanea tu primera factura DGI para abrir el formulario.'}</p>
           </div>
 
-          {!invoiceValidated ? (
+          {promoStep === 3 && registeredInvoice ? (
+            <div className="promo-panel-card promo-success">
+              <div className="promo-success-check" aria-hidden="true">✓</div>
+              <h3>¡Registro exitoso!</h3>
+              <p className="promo-success-msg">
+                Te has registrado exitosamente. Estate pendiente a nuestras redes sociales donde anunciaremos a los <strong>100 ganadores</strong>.
+              </p>
+
+              <div className="promo-qr-block">
+                <p className="promo-qr-label">Tu comprobante de participación</p>
+                <div className="promo-qr-wrap">
+                  <QRCodeCanvas
+                    ref={qrCanvasRef}
+                    value={registeredInvoice.cufe}
+                    size={160}
+                    bgColor="#ffffff"
+                    fgColor="#10131a"
+                    level="H"
+                    marginSize={2}
+                  />
+                </div>
+                <p className="promo-qr-invoice">
+                  Factura <strong>{registeredInvoice.invoice_number ?? registeredInvoice.cufe.slice(-12)}</strong>
+                </p>
+              </div>
+
+              <button className="promo-primary" type="button" onClick={downloadQr}>
+                Descargar comprobante
+              </button>
+            </div>
+          ) : !invoiceValidated ? (
             <div className="promo-panel-card">
               <div className="promo-mode-switch">
                 <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>
@@ -309,6 +348,8 @@ export function App() {
                 <p>Factura validada</p>
                 <h3>Completa tu registro</h3>
               </div>
+
+              {submitError ? <div className="promo-alert promo-alert-top">{submitError}</div> : null}
 
               <div className="promo-form-grid">
                 <label>
@@ -375,33 +416,30 @@ export function App() {
                   />
                 </label>
                 <label className="promo-form-wide">
-                  Ultimos 60 numeros del CUFE
-                  <input
-                    value={invoiceForm.cufe_tail}
+                  <span className="promo-label-row">
+                    ¿Por qué tu papá merece ganar el Balón Trionda?
+                    <span className="promo-char-count">{invoiceForm.dad_reason.length}/300</span>
+                  </span>
+                  <textarea
+                    className="promo-textarea"
+                    value={invoiceForm.dad_reason}
                     onChange={(e) => setInvoiceForm((current) => ({
                       ...current,
-                      cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60),
+                      dad_reason: e.target.value.slice(0, 300),
                     }))}
-                    maxLength={60}
-                    inputMode="numeric"
-                    placeholder="Escribe solo los ultimos 60 numeros"
+                    maxLength={300}
+                    placeholder="Cuéntanos en tus propias palabras..."
                     required
+                    rows={3}
                   />
                 </label>
               </div>
 
-              {submitError ? <div className="promo-alert">{submitError}</div> : null}
               <button className="promo-primary" type="submit" disabled={submitting}>
                 {submitting ? 'Enviando...' : 'Registrar ahora'}
               </button>
             </form>
           )}
-
-          {resolvedInvoiceData ? (
-            <div className="promo-panel-card promo-last">
-              <p className="promo-panel-label">Ultima validacion</p>
-            </div>
-          ) : null}
         </aside>
       </main>
     </div>

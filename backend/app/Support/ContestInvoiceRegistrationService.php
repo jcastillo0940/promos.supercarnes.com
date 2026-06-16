@@ -136,7 +136,7 @@ class ContestInvoiceRegistrationService
         }
 
         try {
-            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $settings): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings): RegisteredInvoice {
                 $status = $verification['status'] === 'approved' ? 'accepted' : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
@@ -163,6 +163,7 @@ class ContestInvoiceRegistrationService
                     'status' => $status,
                     'validation_status' => $validationStatus,
                     'validation_notes' => $verification['notes'],
+                    'dad_reason' => $data['dad_reason'] ?? null,
                     'dgi_checked_at' => $verification['status'] === 'pending' ? null : now(),
                     'dgi_response_payload' => $verification['payload'],
                 ]);
@@ -296,12 +297,24 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
+        $requestedEmail = isset($data['email']) && $data['email'] !== '' ? $data['email'] : null;
+        $safeEmail = $requestedEmail;
+        if ($safeEmail !== null) {
+            $emailTakenByOther = User::query()
+                ->where('email', $safeEmail)
+                ->where('cedula', '!=', $documentNumber)
+                ->exists();
+            if ($emailTakenByOther) {
+                $safeEmail = null;
+            }
+        }
+
         $user = User::query()->firstOrCreate(
             ['cedula' => $documentNumber],
             [
                 'name' => $fullName,
                 'document_type' => $documentType,
-                'email' => $data['email'] ?? null,
+                'email' => $safeEmail,
                 'phone' => $data['phone'] ?? null,
                 'role' => 'client',
                 'password' => Hash::make(str()->random(40)),
@@ -313,7 +326,7 @@ class ContestInvoiceRegistrationService
 
         $user->forceFill([
             'name' => $fullName,
-            'email' => $data['email'] ?? $user->email,
+            'email' => $safeEmail ?? $user->email,
             'phone' => $data['phone'] ?? $user->phone,
             'cedula' => $documentNumber,
             'document_type' => $documentType,

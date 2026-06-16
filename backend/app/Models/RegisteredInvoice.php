@@ -29,6 +29,7 @@ class RegisteredInvoice extends Model
         'status',
         'validation_status',
         'validation_notes',
+        'dad_reason',
         'dgi_checked_at',
         'last_reverified_at',
         'dgi_response_payload',

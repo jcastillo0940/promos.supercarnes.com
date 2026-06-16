@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureUserRole::class,
             'registration.complete' => \App\Http\Middleware\EnsureRegistrationCompleted::class,
         ]);
+        $middleware->redirectGuestsTo(fn ($request) => route('admin.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

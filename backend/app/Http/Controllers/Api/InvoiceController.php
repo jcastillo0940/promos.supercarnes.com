@@ -31,6 +31,7 @@ class InvoiceController extends Controller
             'phone' => ['required', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:150'],
             'branch_id' => ['nullable', 'integer'],
+            'dad_reason' => ['nullable', 'string', 'max:300'],
         ]);
 
         $result = $this->registrationService->registerGuest($data, $request);

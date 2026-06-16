@@ -14,9 +14,13 @@ class EnsureUserRole
         $user = $request->user();
 
         if (! $user || ! in_array($user->role, $roles, true)) {
-            return new JsonResponse([
-                'message' => 'No tienes permisos para realizar esta acción.',
-            ], 403);
+            if ($request->expectsJson()) {
+                return new JsonResponse([
+                    'message' => 'No tienes permisos para realizar esta acción.',
+                ], 403);
+            }
+
+            return redirect()->route('admin.login');
         }
 
         return $next($request);
