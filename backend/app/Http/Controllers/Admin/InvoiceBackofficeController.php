@@ -4,10 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InvoiceGoalSetting;
+use App\Models\AuditLog;
+use App\Models\PromoWinner;
 use App\Models\RegisteredInvoice;
+use App\Models\User;
 use App\Models\SiteSetting;
+use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class InvoiceBackofficeController extends Controller
@@ -17,12 +23,12 @@ class InvoiceBackofficeController extends Controller
         return view('admin.invoice-backoffice', [
             'settings' => $this->settings(),
             'backofficeKey' => '',
+            'dashboard' => $this->dashboardData(),
         ]);
     }
 
     public function update(Request $request): RedirectResponse
     {
-
         $validated = $request->validate([
             'is_enabled' => ['nullable', 'boolean'],
             'min_purchase_amount' => ['required', 'numeric', 'min:0'],
@@ -60,42 +66,584 @@ class InvoiceBackofficeController extends Controller
 
     public function invoices(Request $request): View
     {
-        $invoices = RegisteredInvoice::with('user')
+        $query = RegisteredInvoice::with('user')
+            ->when($request->filled('name'), function ($query) use ($request) {
+                $term = trim((string) $request->input('name'));
+                $query->whereHas('user', function ($userQuery) use ($term) {
+                    $userQuery->where('full_name', 'like', "%{$term}%")
+                        ->orWhere('name', 'like', "%{$term}%");
+                });
+            })
+            ->when($request->filled('cedula'), function ($query) use ($request) {
+                $term = trim((string) $request->input('cedula'));
+                $query->whereHas('user', fn ($userQuery) => $userQuery->where('cedula', 'like', "%{$term}%"));
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request) {
+                $query->whereDate('created_at', '>=', $request->input('date_from'));
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request) {
+                $query->whereDate('created_at', '<=', $request->input('date_to'));
+            });
+
+        $invoices = $query
             ->orderByDesc('created_at')
             ->paginate(50);
+
+        $invoices->appends($request->only(['name', 'cedula', 'date_from', 'date_to']));
 
         return view('admin.invoices', compact('invoices'));
     }
 
     public function winners(Request $request): View
     {
-        // Primeros 100: únicos por cédula y por número de factura, ordenados por fecha
-        $seen_cedulas  = [];
-        $seen_invoices = [];
-        $winners       = [];
+        $winners = PromoWinner::query()
+            ->with(['user'])
+            ->where('status', 'selected')
+            ->orderBy('selected_at')
+            ->orderBy('id')
+            ->limit(100)
+            ->get();
 
-        RegisteredInvoice::with('user')
+        $selectedUserIds = $winners->pluck('user_id')->all();
+
+        $selectedInvoiceNumbers = RegisteredInvoice::query()
+            ->whereIn('user_id', $selectedUserIds)
+            ->whereNotNull('invoice_number')
+            ->pluck('invoice_number')
+            ->all();
+
+        $availableInvoices = RegisteredInvoice::with('user')
             ->whereNotNull('invoice_number')
             ->whereHas('user', fn ($q) => $q->whereNotNull('cedula'))
-            ->orderBy('created_at')
-            ->chunk(500, function ($batch) use (&$seen_cedulas, &$seen_invoices, &$winners) {
-                foreach ($batch as $inv) {
-                    if (count($winners) >= 100) return false;
+            ->whereNotIn('user_id', $selectedUserIds)
+            ->when(count($selectedInvoiceNumbers) > 0, function ($query) use ($selectedInvoiceNumbers) {
+                $query->whereNotIn('invoice_number', $selectedInvoiceNumbers);
+            })
+            ->orderByDesc('created_at')
+            ->paginate(25, ['*'], 'available_page');
 
-                    $cedula  = $inv->user?->cedula;
-                    $invoice = $inv->invoice_number;
+        return view('admin.winners', [
+            'winners' => $winners,
+            'availableInvoices' => $availableInvoices,
+        ]);
+    }
 
-                    if (! $cedula || ! $invoice) continue;
-                    if (isset($seen_cedulas[$cedula]))  continue;
-                    if (isset($seen_invoices[$invoice])) continue;
+    public function selectWinner(Request $request, RegisteredInvoice $invoice): RedirectResponse
+    {
+        $invoice->loadMissing('user');
 
-                    $seen_cedulas[$cedula]   = true;
-                    $seen_invoices[$invoice] = true;
-                    $winners[] = $inv;
-                }
+        abort_unless($invoice->invoice_number && $invoice->user?->cedula, 422, 'La factura no cumple los criterios mínimos.');
+
+        if (PromoWinner::query()->where('status', 'selected')->where('user_id', $invoice->user_id)->exists()) {
+            return back()->withErrors(['winner' => 'Ese participante ya está marcado como ganador.']);
+        }
+
+        if (PromoWinner::query()->where('status', 'selected')->count() >= 100) {
+            return back()->withErrors(['winner' => 'Ya hay 100 ganadores seleccionados.']);
+        }
+
+        $alreadyUsedInvoice = PromoWinner::query()
+            ->where('status', 'selected')
+            ->whereHas('user.invoices', fn ($query) => $query->where('invoice_number', $invoice->invoice_number))
+            ->exists();
+
+        if ($alreadyUsedInvoice) {
+            return back()->withErrors(['winner' => 'Ese número de factura ya está asociado a un ganador.']);
+        }
+
+        DB::transaction(function () use ($invoice): void {
+            $position = PromoWinner::query()->where('status', 'selected')->count() + 1;
+
+            PromoWinner::query()->create([
+                'phase_id' => 1,
+                'user_id' => $invoice->user_id,
+                'leaderboard_position' => $position,
+                'total_points' => 0,
+                'exact_hits' => 0,
+                'invoice_count' => 1,
+                'invoice_total_amount' => $invoice->purchase_amount,
+                'selection_reason' => 'manual',
+                'status' => 'selected',
+                'ranking_timestamp' => $invoice->created_at,
+                'selected_at' => now(),
+                'created_by' => auth()->id(),
+                'notes' => $invoice->dad_reason,
+            ]);
+        });
+
+        return back()->with('status', 'Ganador agregado correctamente.');
+    }
+
+    public function removeWinner(PromoWinner $winner): RedirectResponse
+    {
+        $winner->delete();
+
+        return back()->with('status', 'Ganador removido correctamente.');
+    }
+
+    public function customerHistory(User $user): View
+    {
+        $user->load([
+            'invoices' => fn ($query) => $query->orderByDesc('created_at'),
+        ]);
+
+        $winner = PromoWinner::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'selected')
+            ->first();
+
+        return view('admin.customer-history', [
+            'user' => $user,
+            'invoices' => $user->invoices,
+            'winner' => $winner,
+        ]);
+    }
+
+    public function markCustomerAsWinner(User $user): RedirectResponse
+    {
+        if (PromoWinner::query()->where('status', 'selected')->count() >= 100) {
+            return back()->withErrors(['winner' => 'Ya hay 100 ganadores seleccionados.']);
+        }
+
+        if (PromoWinner::query()->where('status', 'selected')->where('user_id', $user->id)->exists()) {
+            return back()->with('status', 'Este cliente ya está marcado como ganador.');
+        }
+
+        $invoice = $user->invoices()->whereNotNull('invoice_number')->orderByDesc('created_at')->first();
+
+        if (! $invoice) {
+            return back()->withErrors(['winner' => 'El cliente no tiene facturas elegibles.']);
+        }
+
+        DB::transaction(function () use ($user, $invoice): void {
+            $position = PromoWinner::query()->where('status', 'selected')->count() + 1;
+
+            PromoWinner::query()->create([
+                'phase_id' => 1,
+                'user_id' => $user->id,
+                'leaderboard_position' => $position,
+                'total_points' => 0,
+                'exact_hits' => 0,
+                'invoice_count' => $user->invoices()->count(),
+                'invoice_total_amount' => (float) $user->invoices()->sum('purchase_amount'),
+                'selection_reason' => 'manual',
+                'status' => 'selected',
+                'ranking_timestamp' => $invoice->created_at,
+                'selected_at' => now(),
+                'created_by' => auth()->id(),
+                'notes' => 'Marcado manualmente desde el historial del cliente.',
+            ]);
+        });
+
+        return back()->with('status', 'Cliente marcado como ganador.');
+    }
+
+    public function unmarkCustomerAsWinner(User $user): RedirectResponse
+    {
+        PromoWinner::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'selected')
+            ->delete();
+
+        return back()->with('status', 'Cliente marcado como no ganador.');
+    }
+
+    public function prizeDeliveryIndex(Request $request): View
+    {
+        $winner = null;
+        if ($request->filled('qr') || $request->filled('code')) {
+            $winner = $this->findDeliveryWinner((string) $request->input('qr', $request->input('code', '')));
+        }
+
+        return view('admin.prize-delivery', [
+            'winner' => $winner,
+        ]);
+    }
+
+    public function audit(Request $request): View
+    {
+        $query = AuditLog::query()
+            ->with(['user.branch'])
+            ->whereIn('event_type', [
+                'prize_delivered',
+                'prize_delivery_rejected',
+                'prize_delivery_override',
+            ])
+            ->when($request->filled('from'), fn ($query) => $query->whereDate('created_at', '>=', $request->input('from')))
+            ->when($request->filled('to'), fn ($query) => $query->whereDate('created_at', '<=', $request->input('to')))
+            ->when($request->filled('user'), function ($query) use ($request): void {
+                $term = trim((string) $request->input('user'));
+                $query->whereHas('user', function ($userQuery) use ($term): void {
+                    $userQuery->where('name', 'like', "%{$term}%")
+                        ->orWhere('full_name', 'like', "%{$term}%")
+                        ->orWhere('email', 'like', "%{$term}%");
+                });
+            })
+            ->when($request->filled('cedula'), function ($query) use ($request): void {
+                $term = trim((string) $request->input('cedula'));
+                $query->whereHas('user', fn ($userQuery) => $userQuery->where('cedula', 'like', "%{$term}%"));
+            })
+            ->when($request->filled('branch'), function ($query) use ($request): void {
+                $term = trim((string) $request->input('branch'));
+                $query->whereHas('user.branch', function ($branchQuery) use ($term): void {
+                    $branchQuery->where('name', 'like', "%{$term}%")
+                        ->orWhere('code', 'like', "%{$term}%");
+                });
             });
 
-        return view('admin.winners', ['winners' => $winners]);
+        $entries = $query->orderByDesc('created_at')->paginate(30);
+        $entries->appends($request->only(['from', 'to', 'user', 'cedula', 'branch']));
+
+        $summary = [
+            'delivered' => (clone $query)->where('event_type', 'prize_delivered')->count(),
+            'rejected' => (clone $query)->where('event_type', 'prize_delivery_rejected')->count(),
+            'overrides' => (clone $query)->where('event_type', 'prize_delivery_override')->count(),
+        ];
+
+        return view('admin.audit', [
+            'entries' => $entries,
+            'summary' => $summary,
+        ]);
+    }
+
+    public function prizeDeliveryLookup(Request $request): View|RedirectResponse
+    {
+        $validated = $request->validate([
+            'qr_code' => ['required', 'string', 'max:255'],
+            'cedula' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $winner = $this->findDeliveryWinner($validated['qr_code']);
+
+        if (! $winner) {
+            Audit::log(
+                'prize_delivery_rejected',
+                'promo_winner',
+                null,
+                $request->user(),
+                $request,
+                [
+                    'reason' => 'qr_not_found',
+                    'qr_code' => $validated['qr_code'],
+                    'cedula' => $validated['cedula'] ?? null,
+                ]
+            );
+            return view('admin.prize-delivery-rejected', [
+                'reason' => 'No encontramos un ganador válido para ese QR.',
+                'reason_code' => 'qr_not_found',
+                'qrCode' => $validated['qr_code'],
+                'cedula' => $validated['cedula'] ?? null,
+            ]);
+        }
+
+        if ($winner->delivery_status === 'delivered' || $winner->prize_delivered_at) {
+            Audit::log(
+                'prize_delivery_rejected',
+                'promo_winner',
+                $winner->id,
+                $request->user(),
+                $request,
+                [
+                    'reason' => 'qr_reused',
+                    'qr_code' => $validated['qr_code'],
+                    'cedula' => $validated['cedula'] ?? null,
+                ]
+            );
+            return view('admin.prize-delivery-rejected', [
+                'reason' => 'Ese premio ya fue entregado anteriormente.',
+                'reason_code' => 'qr_reused',
+                'qrCode' => $validated['qr_code'],
+                'winner' => $winner,
+                'cedula' => $validated['cedula'] ?? null,
+            ]);
+        }
+
+        if (! empty($validated['cedula']) && trim((string) $validated['cedula']) !== trim((string) $winner->user?->cedula)) {
+            Audit::log(
+                'prize_delivery_rejected',
+                'promo_winner',
+                $winner->id,
+                $request->user(),
+                $request,
+                [
+                    'reason' => 'cedula_mismatch',
+                    'qr_code' => $validated['qr_code'],
+                    'cedula' => $validated['cedula'],
+                    'winner_cedula' => $winner->user?->cedula,
+                ]
+            );
+            return view('admin.prize-delivery-rejected', [
+                'reason' => 'La cédula no coincide con la del ganador.',
+                'reason_code' => 'cedula_mismatch',
+                'qrCode' => $validated['qr_code'],
+                'winner' => $winner,
+                'cedula' => $validated['cedula'],
+            ]);
+        }
+
+        return view('admin.prize-delivery', [
+            'winner' => $winner,
+        ]);
+    }
+
+    public function prizeDeliveryOverride(Request $request, PromoWinner $winner): RedirectResponse|View
+    {
+        abort_unless($request->user()?->isAdmin(), 403, 'Solo el super admin puede reabrir un rechazo.');
+        abort_unless($winner->status === 'selected', 422, 'Solo se puede reabrir un ganador válido.');
+        abort_if($winner->delivery_status === 'delivered' || $winner->prize_delivered_at, 422, 'El premio ya fue entregado y no puede reabrirse.');
+
+        $validated = $request->validate([
+            'override_reason' => ['required', 'string', 'min:10', 'max:2000'],
+            'corrected_cedula' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        Audit::log(
+            'prize_delivery_override',
+            'promo_winner',
+            $winner->id,
+            $request->user(),
+            $request,
+            [
+                'override_reason' => $validated['override_reason'],
+                'corrected_cedula' => $validated['corrected_cedula'] ?? null,
+                'winner_cedula' => $winner->user?->cedula,
+                'delivery_status' => $winner->delivery_status,
+                'prize_delivered_at' => $winner->prize_delivered_at?->toIso8601String(),
+            ]
+        );
+
+        return view('admin.prize-delivery', [
+            'winner' => $winner->load('user.invoices'),
+            'overrideReason' => $validated['override_reason'],
+            'correctedCedula' => $validated['corrected_cedula'] ?? null,
+        ]);
+    }
+
+    public function prizeDeliveryStore(Request $request, PromoWinner $winner): RedirectResponse
+    {
+        abort_unless($winner->status === 'selected', 422, 'Solo se puede entregar premio a ganadores.');
+
+        $validated = $request->validate([
+            'id_card_photo' => ['required', 'image', 'max:8192'],
+            'delivery_photo' => ['required', 'image', 'max:8192'],
+            'delivery_notes' => ['nullable', 'string', 'max:2000'],
+            'winner_cedula' => ['required', 'string', 'max:40'],
+            'delivery_confirmation' => ['accepted'],
+        ]);
+
+        abort_unless(trim((string) $validated['winner_cedula']) === trim((string) $winner->user?->cedula), 422, 'La cédula no coincide con la del ganador.');
+        abort_if($winner->delivery_status === 'delivered' || $winner->prize_delivered_at, 422, 'Ese premio ya fue entregado previamente.');
+        abort_unless($request->user()?->isSupervisor() || $request->user()?->isAdmin(), 403, 'Solo supervisor o gerente pueden confirmar la entrega.');
+
+        $idCardPath = $request->file('id_card_photo')->store('prize-deliveries/id-card');
+        $deliveryPath = $request->file('delivery_photo')->store('prize-deliveries/delivery');
+
+        $winner->forceFill([
+            'delivery_status' => 'delivered',
+            'delivery_qr_scanned_at' => now(),
+            'id_card_photo_path' => $idCardPath,
+            'delivery_photo_path' => $deliveryPath,
+            'delivery_notes' => $validated['delivery_notes'] ?? null,
+            'delivered_by' => auth()->id(),
+            'prize_delivered_at' => now(),
+        ])->save();
+
+        Audit::log(
+            'prize_delivered',
+            'promo_winner',
+            $winner->id,
+            $request->user(),
+            $request,
+            [
+                'winner_name' => $winner->user?->full_name ?? $winner->user?->name,
+                'cedula' => $winner->user?->cedula,
+                'invoice_number' => optional($winner->user?->invoices?->first())->invoice_number,
+                'id_card_photo_path' => $idCardPath,
+                'delivery_photo_path' => $deliveryPath,
+                'delivery_status' => $winner->delivery_status,
+                'prize_delivered_at' => $winner->prize_delivered_at?->toIso8601String(),
+                'delivered_by_role' => $request->user()?->role,
+            ]
+        );
+
+        return redirect()
+            ->route('admin.prize-delivery')
+            ->with('status', 'Premio marcado como entregado.');
+    }
+
+    public function prizeDeliveryFind(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $validated = $request->validate([
+            'qr_code' => ['required', 'string', 'max:255'],
+            'cedula' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $winner = $this->findDeliveryWinner($validated['qr_code']);
+
+        if (! $winner) {
+            Audit::log(
+                'prize_delivery_rejected',
+                'promo_winner',
+                null,
+                $request->user(),
+                $request,
+                [
+                    'reason' => 'qr_not_found',
+                    'qr_code' => $validated['qr_code'],
+                    'cedula' => $validated['cedula'] ?? null,
+                ]
+            );
+            return response()->json([
+                'found' => false,
+                'message' => 'No encontramos un ganador válido para ese QR.',
+            ], 404);
+        }
+
+        if (! empty($validated['cedula']) && trim((string) $validated['cedula']) !== trim((string) $winner->user?->cedula)) {
+            Audit::log(
+                'prize_delivery_rejected',
+                'promo_winner',
+                $winner->id,
+                $request->user(),
+                $request,
+                [
+                    'reason' => 'cedula_mismatch',
+                    'qr_code' => $validated['qr_code'],
+                    'cedula' => $validated['cedula'],
+                    'winner_cedula' => $winner->user?->cedula,
+                ]
+            );
+            return response()->json([
+                'found' => false,
+                'message' => 'La cédula no coincide con la del ganador.',
+            ], 422);
+        }
+
+        return response()->json([
+            'found' => true,
+            'message' => 'Ganador validado correctamente.',
+            'winner' => [
+                'id' => $winner->id,
+                'name' => $winner->user?->full_name ?? $winner->user?->name ?? '—',
+                'cedula' => $winner->user?->cedula ?? '—',
+                'email' => $winner->user?->email ?? '—',
+                'invoice_number' => optional($winner->user?->invoices?->first())->invoice_number ?? '—',
+                'status_label' => $winner->delivery_status === 'delivered' ? 'Entregado' : 'Pendiente',
+                'delivery_status' => $winner->delivery_status,
+                'prize_delivered_at' => optional($winner->prize_delivered_at)?->format('d/m/Y H:i'),
+                'id_card_photo_url' => $winner->id_card_photo_path ? route('admin.media', ['path' => $winner->id_card_photo_path]) : null,
+                'delivery_photo_url' => $winner->delivery_photo_path ? route('admin.media', ['path' => $winner->delivery_photo_path]) : null,
+                'delivery_notes' => $winner->delivery_notes,
+                'qr_used' => (bool) $winner->prize_delivered_at,
+            ],
+        ]);
+    }
+
+    private function findDeliveryWinner(string $code): ?PromoWinner
+    {
+        $code = trim($code);
+        if ($code === '') {
+            return null;
+        }
+
+        $normalizedCode = preg_replace('/\s+/', '', $code);
+
+        return PromoWinner::query()
+            ->with('user.invoices')
+            ->where('status', 'selected')
+            ->where(function ($query) use ($normalizedCode): void {
+                $query->whereHas('user.invoices', function ($invoiceQuery) use ($normalizedCode): void {
+                    $invoiceQuery->where('cufe', $normalizedCode)
+                        ->orWhere('invoice_number', $normalizedCode);
+                });
+            })
+            ->first();
+    }
+
+    public function media(Request $request, string $path)
+    {
+        abort_unless($request->user()?->isAdmin() || $request->user()?->isSupervisor(), 403);
+
+        $baseDirectory = realpath(storage_path('app'));
+        abort_unless($baseDirectory, 404);
+
+        $relativePath = ltrim($path, '/\\');
+        $resolvedPath = realpath(storage_path('app').DIRECTORY_SEPARATOR.$relativePath);
+        abort_unless($resolvedPath && str_starts_with($resolvedPath, $baseDirectory.DIRECTORY_SEPARATOR), 404);
+        abort_unless(is_file($resolvedPath), 404);
+
+        Audit::log(
+            'prize_media_viewed',
+            'promo_winner',
+            null,
+            $request->user(),
+            $request,
+            [
+                'path' => $relativePath,
+            ]
+        );
+
+        return response()->file($resolvedPath, [
+            'Cache-Control' => 'private, no-store, max-age=0',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function dashboardData(): array
+    {
+        $invoicesByBranch = RegisteredInvoice::query()
+            ->selectRaw('COALESCE(branches.name, "Sin sucursal") as label, COUNT(*) as total')
+            ->leftJoin('branches', 'branches.id', '=', 'registered_invoices.branch_id')
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get()
+            ->map(fn ($row) => ['label' => $row->label, 'total' => (int) $row->total])
+            ->values()
+            ->all();
+
+        $dailyInvoices = RegisteredInvoice::query()
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total, SUM(purchase_amount) as amount')
+            ->whereDate('created_at', '>=', now()->subDays(7)->startOfDay())
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get()
+            ->map(fn ($row) => [
+                'day' => $row->day,
+                'total' => (int) $row->total,
+                'amount' => (float) $row->amount,
+            ])
+            ->values()
+            ->all();
+
+        $winnersCount = PromoWinner::query()->where('status', 'selected')->count();
+        $deliveredCount = PromoWinner::query()->whereNotNull('prize_delivered_at')->count();
+        $participantsCount = RegisteredInvoice::query()->distinct('user_id')->count('user_id');
+        $nonWinnersCount = max($participantsCount - $winnersCount, 0);
+        $totalInvoiceAmount = (float) RegisteredInvoice::query()->sum('purchase_amount');
+        $topBranch = RegisteredInvoice::query()
+            ->selectRaw('COALESCE(branches.name, "Sin sucursal") as label, COUNT(*) as total')
+            ->leftJoin('branches', 'branches.id', '=', 'registered_invoices.branch_id')
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->first();
+
+        return [
+            'kpis' => [
+                'winners' => $winnersCount,
+                'delivered' => $deliveredCount,
+                'participants' => $participantsCount,
+                'non_winners' => $nonWinnersCount,
+                'participation_pct' => $participantsCount > 0 ? round(($winnersCount / $participantsCount) * 100, 1) : 0,
+                'total_invoice_amount' => $totalInvoiceAmount,
+                'top_branch' => $topBranch?->label ?? 'Sin datos',
+                'top_branch_total' => (int) ($topBranch->total ?? 0),
+            ],
+            'charts' => [
+                'branches' => $invoicesByBranch,
+                'daily' => $dailyInvoices,
+            ],
+        ];
     }
 
     private function authorizeAccess(Request $request): void

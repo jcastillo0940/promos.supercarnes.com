@@ -55,29 +55,26 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car', [InvoiceBackofficeController::class, 'update'])->name('admin.invoice-backoffice.update');
     Route::get('/adminrepus1car/facturas', [InvoiceBackofficeController::class, 'invoices'])->name('admin.invoices');
     Route::get('/adminrepus1car/ganadores', [InvoiceBackofficeController::class, 'winners'])->name('admin.winners');
+    Route::get('/adminrepus1car/auditoria', [InvoiceBackofficeController::class, 'audit'])->name('admin.audit');
+    Route::get('/adminrepus1car/media/{path}', [InvoiceBackofficeController::class, 'media'])->where('path', '.*')->name('admin.media');
+    Route::post('/adminrepus1car/ganadores/{invoice}', [InvoiceBackofficeController::class, 'selectWinner'])->name('admin.winners.select');
+    Route::delete('/adminrepus1car/ganadores/{winner}', [InvoiceBackofficeController::class, 'removeWinner'])->name('admin.winners.remove');
+    Route::get('/adminrepus1car/clientes/{user}', [InvoiceBackofficeController::class, 'customerHistory'])->name('admin.customers.history');
+    Route::post('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'markCustomerAsWinner'])->name('admin.customers.mark-winner');
+    Route::delete('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'unmarkCustomerAsWinner'])->name('admin.customers.unmark-winner');
 });
 
-Route::get('/media/{path}', function (string $path) {
-    $baseDirectory = realpath(storage_path('app/public'));
-    abort_unless($baseDirectory, 404);
+Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () {
+    Route::get('/adminrepus1car/entrega-premio', [InvoiceBackofficeController::class, 'prizeDeliveryIndex'])->name('admin.prize-delivery');
+    Route::post('/adminrepus1car/entrega-premio', [InvoiceBackofficeController::class, 'prizeDeliveryLookup'])->name('admin.prize-delivery.lookup');
+    Route::post('/adminrepus1car/entrega-premio/lookup', [InvoiceBackofficeController::class, 'prizeDeliveryFind'])->name('admin.prize-delivery.find');
+    Route::post('/adminrepus1car/entrega-premio/{winner}', [InvoiceBackofficeController::class, 'prizeDeliveryStore'])->name('admin.prize-delivery.store');
+    Route::get('/adminrepus1car/media/{path}', [InvoiceBackofficeController::class, 'media'])->where('path', '.*')->name('admin.media');
+});
 
-    $resolvedPath = realpath($baseDirectory.DIRECTORY_SEPARATOR.$path);
-    abort_unless($resolvedPath && str_starts_with($resolvedPath, $baseDirectory.DIRECTORY_SEPARATOR), 404);
-    abort_unless(File::exists($resolvedPath), 404);
-
-    $extension = strtolower(pathinfo($resolvedPath, PATHINFO_EXTENSION));
-    $mimeTypes = [
-        'png' => 'image/png',
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'webp' => 'image/webp',
-    ];
-
-    return response(File::get($resolvedPath), 200, [
-        'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
-        'Cache-Control' => 'public, max-age=31536000, immutable',
-    ]);
-})->where('path', '.*');
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::post('/adminrepus1car/entrega-premio/{winner}/reabrir', [InvoiceBackofficeController::class, 'prizeDeliveryOverride'])->name('admin.prize-delivery.override');
+});
 
 Route::get('/{any?}', function () use ($frontendDist, $serveFrontendFile) {
     abort_unless($frontendDist, 404, 'Frontend no compilado. Ejecuta npm run build en frontend.');

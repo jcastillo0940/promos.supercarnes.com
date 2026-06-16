@@ -16,6 +16,10 @@ class AdminLoginController extends Controller
             return redirect()->route('admin.invoice-backoffice');
         }
 
+        if (Auth::check() && Auth::user()->isSupervisor()) {
+            return redirect()->route('admin.prize-delivery');
+        }
+
         return view('admin.login');
     }
 
@@ -27,14 +31,16 @@ class AdminLoginController extends Controller
         ]);
 
         if (Auth::attempt($credentials, remember: true)) {
-            if (! Auth::user()->isAdmin()) {
+            $user = Auth::user();
+
+            if (! $user || (! $user->isAdmin() && ! $user->isSupervisor())) {
                 Auth::logout();
-                return back()->withErrors(['email' => 'No tienes permisos de administrador.']);
+                return back()->withErrors(['email' => 'No tienes permisos para acceder al backoffice.']);
             }
 
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.invoice-backoffice'));
+            return redirect()->intended($user->isSupervisor() ? route('admin.prize-delivery') : route('admin.invoice-backoffice'));
         }
 
         return back()->withErrors(['email' => 'Credenciales incorrectas.'])->onlyInput('email');

@@ -23,11 +23,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('invoice-scan', function (Request $request) {
-            $key = 'ip:'.$request->ip();
+            $key = 'invoice-scan:'.$request->ip().':'.substr((string) $request->userAgent(), 0, 120);
 
             return [
-                Limit::perMinute(12)->by($key),
-                Limit::perMinute(30)->by('scan-ip:'.$request->ip()),
+                Limit::perMinute(6)->by($key),
+                Limit::perHour(25)->by($request->ip()),
+                Limit::perDay(120)->by('scan-day:'.$request->ip()),
             ];
         });
     }

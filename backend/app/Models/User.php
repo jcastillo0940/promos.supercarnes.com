@@ -106,6 +106,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isSupervisor(): bool
+    {
+        return in_array($this->role, ['supervisor', 'manager'], true);
+    }
+
     public function isCashier(): bool
     {
         return $this->role === 'cashier';

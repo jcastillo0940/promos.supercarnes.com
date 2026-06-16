@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\SiteSetting;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -95,9 +96,11 @@ class PublicSettingsController extends Controller
         ]);
     }
 
-    public function updateYoutubeId(): JsonResponse
+    public function updateYoutubeId(Request $request): JsonResponse
     {
-        $validated = request()->validate([
+        abort_unless($request->user()?->isAdmin(), 403);
+
+        $validated = $request->validate([
             'youtube_id' => ['required', 'string', 'max:20'],
         ]);
 
