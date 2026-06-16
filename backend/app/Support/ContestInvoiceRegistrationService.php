@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Mail\InvoiceParticipationReceipt;
+use App\Models\Branch;
 use App\Models\DailyInvoiceGoal;
 use App\Models\InvoiceGoalSetting;
 use App\Models\RegisteredInvoice;
@@ -137,8 +138,11 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
+        $branchId = $this->resolveBranchId($resolvedInvoice['issuer_branch_number'] ?? null)
+            ?? ($data['branch_id'] ?? null);
+
         try {
-            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings): RegisteredInvoice {
                 $status = $verification['status'] === 'approved' ? 'accepted' : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
@@ -150,7 +154,7 @@ class ContestInvoiceRegistrationService
                 $invoice = RegisteredInvoice::query()->create([
                     'user_id' => $participant->id,
                     'campaign_id' => $campaign->id,
-                    'branch_id' => $data['branch_id'] ?? null,
+                    'branch_id' => $branchId,
                     'cufe' => $canonicalCufe,
                     'qr_raw_text' => $data['qr_raw_text'],
                     'invoice_number' => $resolvedInvoice['invoice_number'],
@@ -366,6 +370,15 @@ class ContestInvoiceRegistrationService
         }
 
         return $user;
+    }
+
+    private function resolveBranchId(?int $storeNumber): ?int
+    {
+        if (! $storeNumber) {
+            return null;
+        }
+
+        return Branch::query()->where('store_number', $storeNumber)->value('id');
     }
 
     private function normalizeCedula(string $cedula): string

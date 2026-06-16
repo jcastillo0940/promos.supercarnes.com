@@ -22,6 +22,9 @@ class ContestInvoiceVerifier
                 'issued_at' => CarbonImmutable::now('America/Panama'),
                 'issuer_ruc' => '0000000000',
                 'issuer_name' => 'Emisor de prueba',
+                'issuer_address' => null,
+                'issuer_phone' => null,
+                'issuer_branch_number' => null,
                 'payload' => [
                     'demo_mode' => true,
                     'valid' => true,
@@ -56,6 +59,7 @@ class ContestInvoiceVerifier
 
         // La API es la autoridad — si devuelve datos los usamos sin validación adicional
         $datos = data_get($body, 'datos') ?? [];
+        $emisor = $this->parseEmisorBlob((string) ($datos['emisor_nombre'] ?? ''));
 
         return [
             'cufe'             => strtoupper((string) ($datos['cufe'] ?? $cufe)),
@@ -63,8 +67,50 @@ class ContestInvoiceVerifier
             'purchase_amount'  => round((float) ($datos['total_pagado'] ?? 0), 2),
             'issued_at'        => $this->parseInvoiceDate((string) ($datos['fecha_autorizacion'] ?? '')),
             'issuer_ruc'        => (string) ($datos['emisor_ruc'] ?? $datos['ruc_emisor'] ?? $datos['ruc'] ?? ''),
-            'issuer_name'      => (string) ($datos['emisor_nombre'] ?? ''),
+            'issuer_name'      => $emisor['name'],
+            'issuer_address'   => $emisor['address'],
+            'issuer_phone'     => $emisor['phone'],
+            'issuer_branch_number' => $emisor['store_number'],
             'payload'          => $body,
+        ];
+    }
+
+    /**
+     * El campo emisor_nombre que devuelve DGI viene como nombre, dirección y
+     * teléfono concatenados sin separador, ej:
+     * "IMPORTADORA VIRZI S.A.DIRECCIÓNSUPER CARNES NO. 5, CALLE 10A...TELÉFONO994-8514"
+     *
+     * @return array{name: string, address: ?string, phone: ?string, store_number: ?int}
+     */
+    public function parseEmisorBlob(string $raw): array
+    {
+        $raw = trim($raw);
+        $name = $raw;
+        $address = null;
+        $phone = null;
+        $storeNumber = null;
+
+        if ($raw !== '' && preg_match('/^(.*?)DIRECCI[OÓ]N(.*)$/u', $raw, $matches)) {
+            $name = trim($matches[1]);
+            $rest = $matches[2];
+
+            if (preg_match('/^(.*?)TEL[EÉ]FONO(.*)$/u', $rest, $restMatches)) {
+                $address = trim($restMatches[1], " ,.\t\n\r");
+                $phone = trim($restMatches[2]);
+            } else {
+                $address = trim($rest, " ,.\t\n\r");
+            }
+        }
+
+        if ($address && preg_match('/(?:SUPER\s*CARNES|SUCURSAL)\s*NO\.?\s*(\d+)/iu', $address, $storeMatches)) {
+            $storeNumber = (int) $storeMatches[1];
+        }
+
+        return [
+            'name' => $name !== '' ? $name : $raw,
+            'address' => $address,
+            'phone' => $phone,
+            'store_number' => $storeNumber,
         ];
     }
 

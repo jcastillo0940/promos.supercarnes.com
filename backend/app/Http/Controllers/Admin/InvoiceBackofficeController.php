@@ -23,6 +23,12 @@ class InvoiceBackofficeController extends Controller
         return view('admin.invoice-backoffice', [
             'settings' => $this->settings(),
             'backofficeKey' => '',
+        ]);
+    }
+
+    public function dashboard(Request $request): View
+    {
+        return view('admin.dashboard', [
             'dashboard' => $this->dashboardData(),
         ]);
     }
@@ -66,7 +72,7 @@ class InvoiceBackofficeController extends Controller
 
     public function invoices(Request $request): View
     {
-        $query = RegisteredInvoice::with('user')
+        $query = RegisteredInvoice::with(['user', 'branch'])
             ->when($request->filled('name'), function ($query) use ($request) {
                 $term = trim((string) $request->input('name'));
                 $query->whereHas('user', function ($userQuery) use ($term) {

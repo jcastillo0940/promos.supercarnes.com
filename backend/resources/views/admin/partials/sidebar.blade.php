@@ -3,6 +3,9 @@
         <p class="sidebar-title">Navegación</p>
         <nav class="sidebar-nav">
             @if(auth()->user()?->isAdmin())
+                <a href="{{ route('admin.dashboard') }}" @class(['active' => request()->routeIs('admin.dashboard')])>
+                    Dashboard
+                </a>
                 <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice')])>
                     Configuración
                 </a>

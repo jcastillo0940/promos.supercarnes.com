@@ -60,137 +60,133 @@
             <div class="notice">
                 Usa la cámara del celular o un lector externo. El sistema solo permite continuar si el código pertenece a un ganador activo.
             </div>
-
-            <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
-                <div class="page-section stack">
-                    <div class="sidebar-title">Vista previa de archivos</div>
-                    <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                        <div class="field">
-                            <label for="id_card_photo">Fotografía de la cédula</label>
-                            <input id="id_card_photo" name="id_card_photo" type="file" accept="image/*" capture="environment" form="delivery-form">
-                            <img id="id-card-preview" alt="Vista previa cédula" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
-                        </div>
-                        <div class="field">
-                            <label for="delivery_photo">Fotografía entregando el premio</label>
-                            <input id="delivery_photo" name="delivery_photo" type="file" accept="image/*" capture="environment" form="delivery-form">
-                            <img id="delivery-preview" alt="Vista previa entrega" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
-    <div class="page-card">
-        <div class="page-title">
-            <div>
-                <h1 id="winner-card-title">{{ $winner ? 'Ganador validado' : 'Esperando QR' }}</h1>
-                <p id="winner-card-subtitle">{{ $winner ? 'Revisa los datos antes de marcar la entrega.' : 'Escanea el QR del correo para cargar al ganador en vivo.' }}</p>
-            </div>
-        </div>
-
-        <div class="page-section">
-            <div class="table-shell">
-                <table class="wide">
-                    <tbody>
-                        <tr>
-                            <th>Nombre</th>
-                            <td id="winner-name">{{ $winner->user?->full_name ?? $winner->user?->name ?? '—' }}</td>
-                            <th>Cédula</th>
-                            <td id="winner-cedula">{{ $winner->user?->cedula ?? '—' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Correo</th>
-                            <td id="winner-email">{{ $winner->user?->email ?? '—' }}</td>
-                            <th>Estado</th>
-                            <td><span id="delivery-state" class="badge {{ $winner && $winner->delivery_status === 'delivered' ? 'badge-green' : 'badge-yellow' }}">{{ $winner && $winner->delivery_status === 'delivered' ? 'Entregado' : 'Pendiente' }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Factura</th>
-                            <td id="winner-invoice">{{ $winner ? (optional($winner->user?->invoices?->first())->invoice_number ?? '—') : '—' }}</td>
-                            <th>Premio</th>
-                            <td id="winner-prize">{{ $winner->notes ?? 'Balón Trionda' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Entregado</th>
-                            <td id="delivered-at">{{ $winner->prize_delivered_at?->format('d/m/Y H:i') ?? 'Pendiente' }}</td>
-                            <th>Observaciones</th>
-                            <td id="winner-notes">{{ $winner->delivery_notes ?? '—' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
-            @if($winner && $winner->prize_delivered_at)
-                <div class="success">Este premio ya fue marcado como entregado el {{ $winner->prize_delivered_at->format('d/m/Y H:i') }}.</div>
-            @endif
-
-            @if($winner)
-                <form id="delivery-form" method="POST" action="{{ route('admin.prize-delivery.store', $winner) }}" enctype="multipart/form-data" class="stack">
-                    @csrf
-                    <input type="hidden" name="winner_cedula" id="winner_cedula" value="{{ $winner->user?->cedula ?? '' }}">
-                    <div class="field">
-                        <label for="delivery_notes">Observaciones</label>
-                        <textarea id="delivery_notes" name="delivery_notes" rows="4" style="width:100%;padding:.8rem;border:1px solid #cbd5e1;border-radius:10px;"></textarea>
-                    </div>
-                    <div class="field" style="display:flex;align-items:flex-start;gap:.75rem;">
-                        <input id="delivery_confirmation" name="delivery_confirmation" type="checkbox" value="1" style="width:18px;height:18px;margin-top:.2rem;">
-                        <label for="delivery_confirmation" style="margin:0;font-weight:600;line-height:1.4;">
-                            Confirmo que validé la cédula física, comparé la identidad del ganador y autorizo la entrega.
-                        </label>
-                    </div>
-                    <div class="responsive-actions">
-                        <button class="btn btn-green" type="submit">Marcar premio entregado</button>
-                    </div>
-                </form>
-            @else
-                <div class="empty">Cuando un QR válido se detecte, aquí aparecerán los datos completos del ganador.</div>
-            @endif
-        </div>
-    </div>
-
-    @if($winner)
+    <div id="winner-result" class="stack" @if(! $winner) style="display:none;" @endif>
         <div class="page-card">
             <div class="page-title">
                 <div>
-                    <h1>Evidencias guardadas</h1>
-                    <p>Miniaturas y enlaces de la evidencia ya registrada.</p>
+                    <h1 id="winner-card-title">{{ $winner ? 'Ganador validado' : 'Esperando QR' }}</h1>
+                    <p id="winner-card-subtitle">{{ $winner ? 'Revisa los datos antes de marcar la entrega.' : 'Escanea el QR del correo para cargar al ganador en vivo.' }}</p>
                 </div>
             </div>
+
             <div class="page-section">
-                <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                    <div class="field">
-                        <label>Foto de la cédula</label>
-                        @if($winner->id_card_photo_path)
-                            <a href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">
-                                <img id="evidence-id-card" src="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" alt="Cédula" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
-                            </a>
-                            <div style="margin-top:.5rem;">
-                                <a id="evidence-id-card-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
-                            </div>
-                        @else
-                            <div class="empty" style="padding:1rem;">Aún no se ha cargado la foto de la cédula.</div>
-                        @endif
-                    </div>
-                    <div class="field">
-                        <label>Foto de entrega</label>
-                        @if($winner->delivery_photo_path)
-                            <a href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">
-                                <img id="evidence-delivery" src="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" alt="Entrega" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
-                            </a>
-                            <div style="margin-top:.5rem;">
-                                <a id="evidence-delivery-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
-                            </div>
-                        @else
-                            <div class="empty" style="padding:1rem;">Aún no se ha cargado la foto de entrega.</div>
-                        @endif
-                    </div>
+                <div class="table-shell">
+                    <table class="wide">
+                        <tbody>
+                            <tr>
+                                <th>Nombre</th>
+                                <td id="winner-name">{{ $winner->user?->full_name ?? $winner->user?->name ?? '—' }}</td>
+                                <th>Cédula</th>
+                                <td id="winner-cedula">{{ $winner->user?->cedula ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Correo</th>
+                                <td id="winner-email">{{ $winner->user?->email ?? '—' }}</td>
+                                <th>Estado</th>
+                                <td><span id="delivery-state" class="badge {{ $winner && $winner->delivery_status === 'delivered' ? 'badge-green' : 'badge-yellow' }}">{{ $winner && $winner->delivery_status === 'delivered' ? 'Entregado' : 'Pendiente' }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Factura</th>
+                                <td id="winner-invoice">{{ $winner ? (optional($winner->user?->invoices?->first())->invoice_number ?? '—') : '—' }}</td>
+                                <th>Premio</th>
+                                <td id="winner-prize">{{ $winner->notes ?? 'Balón Trionda' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Entregado</th>
+                                <td id="delivered-at">{{ $winner?->prize_delivered_at?->format('d/m/Y H:i') ?? 'Pendiente' }}</td>
+                                <th>Observaciones</th>
+                                <td id="winner-notes">{{ $winner->delivery_notes ?? '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+
+            <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                @if($winner && $winner->prize_delivered_at)
+                    <div class="success">Este premio ya fue marcado como entregado el {{ $winner->prize_delivered_at->format('d/m/Y H:i') }}.</div>
+                @endif
+
+                @if($winner)
+                    <form id="delivery-form" method="POST" action="{{ route('admin.prize-delivery.store', $winner) }}" enctype="multipart/form-data" class="stack">
+                        @csrf
+                        <input type="hidden" name="winner_cedula" id="winner_cedula" value="{{ $winner->user?->cedula ?? '' }}">
+                        <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                            <div class="field">
+                                <label for="id_card_photo">Fotografía de la cédula</label>
+                                <input id="id_card_photo" name="id_card_photo" type="file" accept="image/*" capture="environment">
+                                <img id="id-card-preview" alt="Vista previa cédula" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                            </div>
+                            <div class="field">
+                                <label for="delivery_photo">Fotografía entregando el premio</label>
+                                <input id="delivery_photo" name="delivery_photo" type="file" accept="image/*" capture="environment">
+                                <img id="delivery-preview" alt="Vista previa entrega" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="delivery_notes">Observaciones</label>
+                            <textarea id="delivery_notes" name="delivery_notes" rows="4" style="width:100%;padding:.8rem;border:1px solid #cbd5e1;border-radius:10px;"></textarea>
+                        </div>
+                        <div class="field" style="display:flex;align-items:flex-start;gap:.75rem;">
+                            <input id="delivery_confirmation" name="delivery_confirmation" type="checkbox" value="1" style="width:18px;height:18px;margin-top:.2rem;">
+                            <label for="delivery_confirmation" style="margin:0;font-weight:600;line-height:1.4;">
+                                Confirmo que validé la cédula física, comparé la identidad del ganador y autorizo la entrega.
+                            </label>
+                        </div>
+                        <div class="responsive-actions">
+                            <button class="btn btn-green" type="submit">Marcar premio entregado</button>
+                        </div>
+                    </form>
+                @else
+                    <div class="empty">Confirma los datos y presiona «Buscar ganador» para habilitar la entrega.</div>
+                @endif
             </div>
         </div>
-    @endif
+
+        @if($winner)
+            <div class="page-card">
+                <div class="page-title">
+                    <div>
+                        <h1>Evidencias guardadas</h1>
+                        <p>Miniaturas y enlaces de la evidencia ya registrada.</p>
+                    </div>
+                </div>
+                <div class="page-section">
+                    <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                        <div class="field">
+                            <label>Foto de la cédula</label>
+                            @if($winner->id_card_photo_path)
+                                <a href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">
+                                    <img id="evidence-id-card" src="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" alt="Cédula" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                </a>
+                                <div style="margin-top:.5rem;">
+                                    <a id="evidence-id-card-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
+                                </div>
+                            @else
+                                <div class="empty" style="padding:1rem;">Aún no se ha cargado la foto de la cédula.</div>
+                            @endif
+                        </div>
+                        <div class="field">
+                            <label>Foto de entrega</label>
+                            @if($winner->delivery_photo_path)
+                                <a href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">
+                                    <img id="evidence-delivery" src="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" alt="Entrega" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                </a>
+                                <div style="margin-top:.5rem;">
+                                    <a id="evidence-delivery-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
+                                </div>
+                            @else
+                                <div class="empty" style="padding:1rem;">Aún no se ha cargado la foto de entrega.</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
 @endsection
 
 @push('scripts')
@@ -204,6 +200,7 @@
     const input = document.getElementById('qr_code');
     const cedulaLookup = document.getElementById('cedula_lookup');
     const lookupUrl = @json(route('admin.prize-delivery.find'));
+    const resultWrapper = document.getElementById('winner-result');
     const form = document.getElementById('delivery-form');
     const idCardInput = document.getElementById('id_card_photo');
     const deliveryInput = document.getElementById('delivery_photo');
@@ -241,6 +238,7 @@
 
     const updateWinnerCard = (winner) => {
         if (!winner) return;
+        if (resultWrapper) resultWrapper.style.display = '';
         if (prizeTitle) {
             prizeTitle.textContent = `Ganador validado: ${winner.name}`;
         }
@@ -260,6 +258,14 @@
         if (deliveredAt) {
             deliveredAt.textContent = winner.prize_delivered_at || 'Pendiente';
         }
+        const winnerName = document.getElementById('winner-name');
+        if (winnerName) winnerName.textContent = winner.name || '—';
+        const winnerCedulaCell = document.getElementById('winner-cedula');
+        if (winnerCedulaCell) winnerCedulaCell.textContent = winner.cedula || '—';
+        const winnerEmail = document.getElementById('winner-email');
+        if (winnerEmail) winnerEmail.textContent = winner.email || '—';
+        const winnerInvoice = document.getElementById('winner-invoice');
+        if (winnerInvoice) winnerInvoice.textContent = winner.invoice_number || '—';
         const evidenceId = document.getElementById('evidence-id-card');
         const evidenceDelivery = document.getElementById('evidence-delivery');
         if (evidenceId && winner.id_card_photo_url) evidenceId.src = winner.id_card_photo_url;
@@ -338,6 +344,7 @@
                 const raw = codes[0].rawValue || '';
                 if (raw) {
                     input.value = raw;
+                    input.dispatchEvent(new Event('input'));
                     setStatus('Código detectado. Ya puedes buscar al ganador.');
                     stopCamera();
                     return;

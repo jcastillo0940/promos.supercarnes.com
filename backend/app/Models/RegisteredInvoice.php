@@ -58,6 +58,11 @@ class RegisteredInvoice extends Model
         return $this->belongsTo(Campaign::class);
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function fraudFlags(): HasMany
     {
         return $this->hasMany(FraudFlag::class);

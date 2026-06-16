@@ -66,7 +66,7 @@
                     <table class="wide">
                         <thead>
                             <tr>
-                                <th>#</th><th>Usuario</th><th>N° Factura</th><th>Emisor</th><th>Monto</th><th>Puntos</th><th>Estado</th><th>Validación DGI</th><th>Fecha</th><th>Acciones</th>
+                                <th>#</th><th>Usuario</th><th>N° Factura</th><th>Emisor</th><th>Sucursal</th><th>Monto</th><th>Puntos</th><th>Estado</th><th>Validación DGI</th><th>Fecha</th><th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,6 +76,7 @@
                                     <td data-label="Usuario"><strong>{{ $inv->user?->full_name ?? '—' }}</strong><br><span style="color:#64748b">{{ $inv->user?->email ?? '—' }}</span></td>
                                     <td data-label="N° Factura">{{ $inv->invoice_number ?? '—' }}</td>
                                     <td data-label="Emisor">{{ $inv->issuer_name ?? '—' }}<br><span style="color:#64748b">{{ $inv->issuer_ruc ?? '' }}</span></td>
+                                    <td data-label="Sucursal">{{ $inv->branch?->name ?? '—' }}</td>
                                     <td data-label="Monto">${{ number_format((float)$inv->purchase_amount, 2) }}</td>
                                     <td data-label="Puntos">{{ $inv->points_awarded ?? 0 }}</td>
                                     <td data-label="Estado">
