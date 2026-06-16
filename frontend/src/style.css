@@ -8222,3 +8222,555 @@ a {
     animation: none;
   }
 }
+
+.promo-stepper-mobile {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .promo-shell {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .promo-swoosh {
+    top: -38px;
+    left: auto;
+    right: -96px;
+    width: 230px;
+    height: 500px;
+    border-radius: 70% 0 0 70%;
+    transform: rotate(39deg);
+  }
+
+  .promo-layout {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100vh;
+    height: auto;
+    gap: 18px;
+    padding: clamp(22px, 6vw, 36px) clamp(18px, 6vw, 34px) 28px;
+  }
+
+  .promo-hero {
+    display: block;
+    position: relative;
+    min-height: clamp(460px, 118vw, 620px);
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .promo-hero-copy {
+    position: relative;
+    z-index: 3;
+    max-width: min(68vw, 430px);
+    padding: 0;
+  }
+
+  .promo-brand-mark {
+    width: clamp(64px, 18vw, 92px);
+    height: clamp(64px, 18vw, 92px);
+    margin: 0 0 clamp(28px, 8vw, 46px);
+  }
+
+  .promo-brand-mark img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .promo-kicker {
+    margin-bottom: 12px;
+    font-size: clamp(13px, 3.6vw, 18px);
+    letter-spacing: 0.24em;
+  }
+
+  .promo-hero h1 {
+    font-size: clamp(42px, 12.6vw, 72px);
+    line-height: 0.86;
+  }
+
+  .promo-prize-line {
+    gap: 10px;
+    margin: 22px 0 18px;
+  }
+
+  .promo-prize-line > span {
+    width: clamp(38px, 10vw, 50px);
+    height: clamp(38px, 10vw, 50px);
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .promo-prize-line strong {
+    max-width: 260px;
+    font-size: clamp(19px, 5.2vw, 27px);
+    line-height: 1.15;
+  }
+
+  .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) {
+    max-width: min(66vw, 330px);
+    font-size: clamp(16px, 4.6vw, 22px);
+    line-height: 1.42;
+  }
+
+  .promo-hero .promo-stepper-desktop {
+    display: none;
+  }
+
+  .promo-art {
+    display: block;
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: min(-26vw, -92px);
+    bottom: auto;
+    width: min(78vw, 420px);
+    height: 100%;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .promo-dad {
+    position: absolute;
+    right: clamp(56px, 14vw, 116px);
+    bottom: 0;
+    width: clamp(178px, 50vw, 286px);
+    height: min(100%, clamp(410px, 114vw, 610px));
+  }
+
+  .promo-ball {
+    position: absolute;
+    right: clamp(-10px, -2vw, 0px);
+    bottom: clamp(34px, 11vw, 78px);
+    width: clamp(150px, 43vw, 250px);
+    height: clamp(150px, 43vw, 250px);
+  }
+
+  .promo-panel {
+    width: min(100%, 690px);
+    margin: -4px auto 0;
+    padding: clamp(22px, 5.2vw, 34px);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(5, 18, 67, 0.96), rgba(3, 13, 48, 0.96));
+  }
+
+  .promo-panel-label {
+    font-size: 0;
+    letter-spacing: 0;
+  }
+
+  .promo-panel-label::before {
+    content: '● PROMOCIÓN ACTIVA';
+    color: #38f27a;
+    font-size: clamp(13px, 3.6vw, 18px);
+    font-weight: 1000;
+    letter-spacing: 0.11em;
+  }
+
+  .promo-panel-highlight {
+    margin-bottom: 22px;
+  }
+
+  .promo-panel-highlight h2 {
+    font-size: clamp(27px, 7.2vw, 38px);
+    line-height: 1.05;
+  }
+
+  .promo-panel-highlight > p:last-child {
+    font-size: 0;
+    margin-top: 8px;
+  }
+
+  .promo-panel-highlight > p:last-child::after {
+    content: 'Promoción válida del 15 may al 15 jun 2026.';
+    color: rgba(255, 255, 255, 0.86);
+    font-size: clamp(16px, 4.4vw, 22px);
+    line-height: 1.25;
+  }
+
+  .promo-mode-switch {
+    margin-bottom: 18px;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .promo-mode-switch button {
+    min-height: clamp(54px, 13vw, 66px);
+    font-size: clamp(13px, 3.8vw, 18px);
+  }
+
+  .promo-scan-frame {
+    min-height: clamp(170px, 43vw, 240px);
+    padding: clamp(24px, 7vw, 34px);
+  }
+
+  .promo-scan-frame > span {
+    font-size: clamp(34px, 9vw, 48px);
+  }
+
+  .promo-scan-frame p {
+    width: min(100%, 330px);
+    font-size: clamp(14px, 3.9vw, 18px);
+  }
+
+  .promo-primary {
+    min-height: clamp(56px, 13vw, 66px);
+    font-size: clamp(14px, 4vw, 18px);
+    border-radius: 8px;
+  }
+
+  .promo-security-note {
+    margin-top: 18px;
+  }
+
+  .promo-security-note span {
+    font-size: clamp(34px, 9vw, 44px);
+  }
+
+  .promo-security-note p {
+    font-size: clamp(14px, 4vw, 18px);
+  }
+
+  .promo-stepper-mobile {
+    display: flex;
+    width: min(100%, 610px);
+    margin: 10px auto 0;
+  }
+
+  .promo-stepper-mobile .promo-step span {
+    width: clamp(48px, 13vw, 66px);
+    height: clamp(48px, 13vw, 66px);
+    font-size: clamp(21px, 6vw, 30px);
+  }
+
+  .promo-stepper-mobile .promo-step::before {
+    top: clamp(24px, 6.6vw, 33px);
+  }
+
+  .promo-stepper-mobile .promo-step strong {
+    max-width: 120px;
+    font-size: clamp(14px, 4vw, 20px);
+    line-height: 1.12;
+  }
+
+  .promo-info-strip {
+    width: min(100%, 690px);
+    min-height: 0;
+    margin: 4px auto 0;
+    padding: clamp(18px, 5vw, 28px);
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+
+  .promo-info-strip article {
+    min-height: 0;
+    grid-template-columns: clamp(86px, 26vw, 132px) 1fr;
+    gap: clamp(16px, 5vw, 26px);
+    padding: 0;
+  }
+
+  .promo-info-strip article:nth-child(n+2) {
+    display: none;
+  }
+
+  .promo-info-strip img {
+    width: clamp(78px, 25vw, 124px);
+    height: clamp(78px, 25vw, 124px);
+  }
+
+  .promo-info-strip strong {
+    font-size: clamp(20px, 5.8vw, 30px);
+  }
+
+  .promo-info-strip p {
+    font-size: clamp(16px, 4.8vw, 24px);
+    line-height: 1.28;
+  }
+}
+
+@media (max-width: 420px) {
+  .promo-layout {
+    padding-inline: 18px;
+  }
+
+  .promo-hero {
+    min-height: 452px;
+  }
+
+  .promo-hero-copy {
+    max-width: 72vw;
+  }
+
+  .promo-hero h1 {
+    font-size: clamp(39px, 12.2vw, 51px);
+  }
+
+  .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) {
+    display: none;
+  }
+
+  .promo-art {
+    right: -118px;
+    width: 330px;
+  }
+
+  .promo-dad {
+    right: 76px;
+    width: 194px;
+  }
+
+  .promo-ball {
+    right: 18px;
+    width: 154px;
+    height: 154px;
+  }
+
+  .promo-panel {
+    padding: 22px 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .promo-swoosh {
+    z-index: 0;
+    top: -90px;
+    right: -142px;
+    width: 210px;
+    height: 420px;
+    opacity: 0.9;
+  }
+
+  .promo-layout {
+    position: relative;
+    z-index: 2;
+    gap: 12px;
+    padding-top: 22px;
+  }
+
+  .promo-hero {
+    min-height: clamp(300px, 82vw, 380px);
+    overflow: visible;
+  }
+
+  .promo-hero-copy {
+    max-width: 64vw;
+  }
+
+  .promo-brand-mark {
+    width: clamp(52px, 14vw, 68px);
+    height: clamp(52px, 14vw, 68px);
+    margin-bottom: clamp(24px, 7vw, 34px);
+  }
+
+  .promo-kicker {
+    margin-bottom: 9px;
+    font-size: clamp(12px, 3.3vw, 15px);
+    letter-spacing: 0.2em;
+  }
+
+  .promo-hero h1 {
+    font-size: clamp(34px, 10.4vw, 49px);
+    line-height: 0.88;
+  }
+
+  .promo-prize-line {
+    margin: 16px 0 12px;
+  }
+
+  .promo-prize-line > span {
+    width: 34px;
+    height: 34px;
+    font-size: 20px;
+  }
+
+  .promo-prize-line strong {
+    max-width: 190px;
+    font-size: clamp(16px, 4.4vw, 20px);
+  }
+
+  .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) {
+    max-width: 210px;
+    font-size: clamp(13px, 3.7vw, 16px);
+    line-height: 1.35;
+  }
+
+  .promo-art {
+    z-index: 1;
+    top: 44px;
+    right: -92px;
+    width: 250px;
+    height: 300px;
+    overflow: visible;
+  }
+
+  .promo-dad {
+    right: 64px;
+    bottom: 0;
+    width: 132px;
+    height: 278px;
+  }
+
+  .promo-ball {
+    right: 4px;
+    bottom: 80px;
+    width: 118px;
+    height: 118px;
+  }
+
+  .promo-panel {
+    margin-top: -2px;
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .promo-panel-label::before {
+    content: '● PROMOCIÓN ACTIVA';
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+
+  .promo-panel-highlight {
+    margin-bottom: 14px;
+  }
+
+  .promo-panel-highlight h2 {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .promo-panel-highlight > p:last-child::after {
+    content: 'Promoción válida del 15 may al 15 jun 2026.';
+    font-size: 14px;
+  }
+
+  .promo-mode-switch {
+    margin-bottom: 12px;
+  }
+
+  .promo-mode-switch button {
+    min-height: 46px;
+    font-size: 12px;
+  }
+
+  .promo-scan,
+  .promo-manual,
+  .promo-form {
+    gap: 12px;
+  }
+
+  .promo-scan-frame {
+    min-height: 128px;
+    padding: 20px 14px;
+    border-radius: 12px;
+  }
+
+  .promo-scan-frame::before,
+  .promo-scan-frame::after {
+    inset: 12px;
+    border-width: 3px;
+  }
+
+  .promo-scan-frame > span {
+    font-size: 30px;
+  }
+
+  .promo-scan-frame p {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .promo-primary {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .promo-security-note {
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .promo-security-note span {
+    font-size: 30px;
+  }
+
+  .promo-security-note p {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .promo-stepper-mobile {
+    margin-top: 12px;
+  }
+
+  .promo-stepper-mobile .promo-step span {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+
+  .promo-stepper-mobile .promo-step::before {
+    top: 21px;
+  }
+
+  .promo-stepper-mobile .promo-step strong {
+    max-width: 86px;
+    font-size: 12px;
+  }
+
+  .promo-info-strip {
+    margin-top: 2px;
+    padding: 16px;
+  }
+
+  .promo-info-strip article {
+    grid-template-columns: 72px 1fr;
+    gap: 14px;
+  }
+
+  .promo-info-strip img {
+    width: 66px;
+    height: 66px;
+  }
+
+  .promo-info-strip strong {
+    font-size: 17px;
+  }
+
+  .promo-info-strip p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .promo-layout {
+    padding: 20px 18px 24px;
+  }
+
+  .promo-hero {
+    min-height: 318px;
+  }
+
+  .promo-hero-copy {
+    max-width: 66vw;
+  }
+
+  .promo-art {
+    top: 44px;
+    right: -100px;
+    width: 244px;
+    height: 286px;
+  }
+
+  .promo-dad {
+    right: 70px;
+    width: 124px;
+    height: 258px;
+  }
+
+  .promo-ball {
+    right: 10px;
+    bottom: 82px;
+    width: 110px;
+    height: 110px;
+  }
+}

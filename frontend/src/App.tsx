@@ -226,7 +226,7 @@ export function App() {
               Escanea el QR o ingresa el CUFE de tu factura para validar la compra y abrir el formulario de participación.
             </p>
 
-            <div className="promo-stepper">
+            <div className="promo-stepper promo-stepper-desktop">
               {steps.map((step) => (
                 <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
                   <span>{step.id}</span>
@@ -448,6 +448,15 @@ export function App() {
             <p>Tus datos están protegidos y se utilizan únicamente para validar tu participación.</p>
           </div>
         </aside>
+
+        <div className="promo-stepper promo-stepper-mobile" aria-label="Pasos de participación">
+          {steps.map((step) => (
+            <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
+              <span>{step.id}</span>
+              <strong>{step.title}</strong>
+            </div>
+          ))}
+        </div>
 
         <section className="promo-info-strip" aria-label="Informacion de la promocion">
           <article>
