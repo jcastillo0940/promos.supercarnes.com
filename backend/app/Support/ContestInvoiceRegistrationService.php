@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Mail\InvoiceParticipationReceipt;
 use App\Models\DailyInvoiceGoal;
 use App\Models\InvoiceGoalSetting;
 use App\Models\RegisteredInvoice;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use App\Support\Audit;
 
@@ -220,11 +222,26 @@ class ContestInvoiceRegistrationService
             throw $exception;
         }
 
+        $this->sendParticipationReceipt($invoice);
+
         return [
             'invoice' => $invoice,
             'verification_status' => $verification['status'],
             'message' => $this->messageForStatus($verification['status']),
         ];
+    }
+
+    private function sendParticipationReceipt(RegisteredInvoice $invoice): void
+    {
+        if (! $invoice->user?->email) {
+            return;
+        }
+
+        try {
+            Mail::to($invoice->user->email)->send(new InvoiceParticipationReceipt($invoice));
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function resolveInvoiceData(string $rawText): array
@@ -305,7 +322,9 @@ class ContestInvoiceRegistrationService
                 ->where('cedula', '!=', $documentNumber)
                 ->exists();
             if ($emailTakenByOther) {
-                $safeEmail = null;
+                throw ValidationException::withMessages([
+                    'email' => 'Este correo ya esta registrado con otro documento.',
+                ]);
             }
         }
 
