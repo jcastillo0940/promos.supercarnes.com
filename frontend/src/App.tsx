@@ -75,7 +75,7 @@ export function App() {
   const steps = useMemo(
     () => [
       { id: 1, title: 'Escanea o ingresa CUFE' },
-      { id: 2, title: 'Factura valida' },
+      { id: 2, title: 'Factura válida' },
       { id: 3, title: 'Completa tu registro' },
     ],
     [],
@@ -205,6 +205,7 @@ export function App() {
   return (
     <div className="promo-shell">
       <div className="promo-ambient" />
+      <div className="promo-swoosh" aria-hidden="true" />
       <main className="promo-layout">
         <section className="promo-hero">
           <div className="promo-hero-copy">
@@ -214,9 +215,13 @@ export function App() {
             <p className="promo-kicker">Super Carnes 2026</p>
             {invoiceValidated ? <p className="promo-valid-badge">Factura válida</p> : null}
             <h1>
-              Registra tu
+              <span className="promo-title-line">Registra tu</span>
               <span>factura</span>
             </h1>
+            <div className="promo-prize-line">
+              <span className="material-symbols-outlined" aria-hidden="true">redeem</span>
+              <strong>¡Gana un balón <mark>Trionda</mark> para Papá!</strong>
+            </div>
             <p>
               Escanea el QR o ingresa el CUFE de tu factura para validar la compra y abrir el formulario de participación.
             </p>
@@ -232,15 +237,6 @@ export function App() {
           </div>
 
           <div className="promo-art">
-            <div className="promo-paper">
-              <span>Factura DGI</span>
-              <div className="promo-paper-lines">
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-            </div>
             <div className="promo-dad">
               <img src="/gaby-torres-celebration.webp" alt="Papa celebrando la promo" />
             </div>
@@ -301,9 +297,16 @@ export function App() {
               {entryMode === 'scan' ? (
                 <div className="promo-scan">
                   {!scannerOn ? (
-                    <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
-                      Activar escaneo de QR
-                    </button>
+                    <>
+                      <div className="promo-scan-frame">
+                        <span className="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span>
+                        <p>Coloca el código QR de tu factura DGI dentro del marco para escanear.</p>
+                      </div>
+                      <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
+                        <span className="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span>
+                        Activar escáner de QR
+                      </button>
+                    </>
                   ) : (
                     <div id={QR_READER_ELEMENT_ID} className="promo-scanner" />
                   )}
@@ -440,7 +443,35 @@ export function App() {
               </button>
             </form>
           )}
+          <div className="promo-security-note">
+            <span className="material-symbols-outlined" aria-hidden="true">shield_lock</span>
+            <p>Tus datos están protegidos y se utilizan únicamente para validar tu participación.</p>
+          </div>
         </aside>
+
+        <section className="promo-info-strip" aria-label="Informacion de la promocion">
+          <article>
+            <img src="/auth-ball-center.png" alt="" />
+            <div>
+              <strong>100 ganadores</strong>
+              <p>Podrás ser uno de los 100 felices ganadores de un balón Trionda para Papá.</p>
+            </div>
+          </article>
+          <article>
+            <span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+            <div>
+              <strong>Vigencia de la promoción</strong>
+              <p>Del 15 de mayo al 15 de junio de 2026. Aplica para compras en tiendas Super Carnes a nivel nacional.</p>
+            </div>
+          </article>
+          <article>
+            <span className="material-symbols-outlined" aria-hidden="true">description</span>
+            <div>
+              <strong>¿Cómo participar?</strong>
+              <p>Realiza tu compra, escanea el QR o ingresa el CUFE de tu factura DGI y completa tu registro. ¡Así de fácil!</p>
+            </div>
+          </article>
+        </section>
       </main>
     </div>
   )
