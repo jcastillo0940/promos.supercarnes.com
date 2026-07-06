@@ -23,9 +23,7 @@ class CampaignController extends Controller
 
     public function show(string $slug): JsonResponse
     {
-        $campaign = Campaign::query()
-            ->where('slug', $slug)
-            ->firstOrFail();
+        $campaign = Campaign::query()->where('slug', $slug)->firstOrFail();
 
         return response()->json([
             'data' => $campaign,

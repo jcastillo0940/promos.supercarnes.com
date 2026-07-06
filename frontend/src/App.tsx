@@ -32,6 +32,11 @@ interface InvoiceFormState {
   last_name: string
   phone: string
   email: string
+  entrepreneur_name: string
+  entrepreneur_province: string
+  entrepreneur_type: string
+  entrepreneur_story: string
+  entrepreneur_reason: string
 }
 
 const QR_READER_ELEMENT_ID = 'dgi-qr-reader'
@@ -57,6 +62,11 @@ function emptyForm(): InvoiceFormState {
     last_name: '',
     phone: '',
     email: '',
+    entrepreneur_name: '',
+    entrepreneur_province: '',
+    entrepreneur_type: '',
+    entrepreneur_story: '',
+    entrepreneur_reason: '',
   }
 }
 
@@ -201,6 +211,8 @@ function PromoLanding({
   const [submitting, setSubmitting] = useState(false)
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
+  const [campaignTotal, setCampaignTotal] = useState(0)
+  const [campaignThreshold] = useState(campaign?.slug === 'del-sueno-al-puesto' ? 300 : 0)
 
   const steps = useMemo(
     () => [
@@ -292,8 +304,9 @@ function PromoLanding({
     try {
       const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
       const fullName = `${invoiceForm.first_name.trim()} ${invoiceForm.last_name.trim()}`.trim()
-      await api.post<{ invoice: RegisteredInvoice; message?: string }>('/invoices/scan', {
+      const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_threshold?: number }>('/invoices/scan', {
         qr_raw_text: rawText,
+        campaign_slug: campaign?.slug ?? null,
         purchase_amount: Number(invoiceForm.purchase_amount || 0),
         invoice_number: invoiceForm.invoice_number || null,
         issued_at: invoiceForm.issued_at || null,
@@ -305,8 +318,16 @@ function PromoLanding({
         cedula: invoiceForm.document_number,
         phone: invoiceForm.phone || null,
         email: invoiceForm.email || null,
+        entrepreneur_name: invoiceForm.entrepreneur_name || null,
+        entrepreneur_province: invoiceForm.entrepreneur_province || null,
+        entrepreneur_type: invoiceForm.entrepreneur_type || null,
+        entrepreneur_story: invoiceForm.entrepreneur_story || null,
+        entrepreneur_reason: invoiceForm.entrepreneur_reason || null,
       })
 
+      if (typeof response.data.campaign_total === 'number') {
+        setCampaignTotal(response.data.campaign_total)
+      }
       setInvoiceValidated(true)
       setPromoStep(3)
     } catch (error) {
@@ -332,6 +353,18 @@ function PromoLanding({
               <span>Super Carnes</span>
             </h1>
             <p>{campaign?.description ?? 'Ingresa a la promoción y registra tu factura.'}</p>
+            {campaign?.slug === 'del-sueno-al-puesto' ? (
+              <div className="promo-tracker">
+                <div className="promo-tracker-head">
+                  <strong>Acumulado</strong>
+                  <span>${Math.min(campaignTotal, campaignThreshold || 300).toFixed(2)} / ${(campaignThreshold || 300).toFixed(2)}</span>
+                </div>
+                <div className="promo-tracker-bar">
+                  <i style={{ width: `${Math.min(100, ((campaignTotal / (campaignThreshold || 300)) * 100))}%` }} />
+                </div>
+                <p>{campaignTotal >= (campaignThreshold || 300) ? 'Ya puedes participar en la selección principal.' : `Te faltan $${Math.max((campaignThreshold || 300) - campaignTotal, 0).toFixed(2)} para llegar al límite.`}</p>
+              </div>
+            ) : null}
             <div className="promo-stepper">
               {steps.map((step) => (
                 <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
@@ -464,6 +497,34 @@ function PromoLanding({
                   Correo
                   <input value={invoiceForm.email} onChange={(e) => setInvoiceForm((current) => ({ ...current, email: e.target.value.trim() }))} type="email" placeholder="correo@dominio.com" required />
                 </label>
+                {campaign?.slug === 'del-sueno-al-puesto' ? (
+                  <>
+                    <label>
+                      Nombre del emprendimiento
+                      <input value={invoiceForm.entrepreneur_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_name: e.target.value }))} placeholder="Nombre del emprendimiento" required />
+                    </label>
+                    <label>
+                      Provincia del emprendimiento
+                      <input value={invoiceForm.entrepreneur_province} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_province: e.target.value }))} placeholder="Provincia" required />
+                    </label>
+                    <label>
+                      Sucursal de Super Carnes más cercana
+                      <input value={invoiceForm.entrepreneur_type} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_type: e.target.value }))} placeholder="Sucursal más cercana" required />
+                    </label>
+                    <label>
+                      Tipo de emprendimiento
+                      <input value={invoiceForm.entrepreneur_reason} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_reason: e.target.value }))} placeholder="Comida, artesanías, belleza..." required />
+                    </label>
+                    <label className="promo-form-wide">
+                      Historia del emprendimiento
+                      <textarea value={invoiceForm.entrepreneur_story} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_story: e.target.value }))} rows={4} required />
+                    </label>
+                    <label className="promo-form-wide">
+                      ¿Por qué deben ganar la tolda?
+                      <textarea value={invoiceForm.entrepreneur_reason} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_reason: e.target.value }))} rows={4} required />
+                    </label>
+                  </>
+                ) : null}
                 <label className="promo-form-wide">
                   Ultimos 60 numeros del CUFE
                   <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />

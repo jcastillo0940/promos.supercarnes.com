@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Mail\InvoiceParticipationReceipt;
 use App\Models\Branch;
+use App\Models\Campaign;
 use App\Models\DailyInvoiceGoal;
 use App\Models\InvoiceGoalSetting;
 use App\Models\RegisteredInvoice;
@@ -34,7 +35,9 @@ class ContestInvoiceRegistrationService
 
     public function registerGuest(array $data, ?Request $request = null): array
     {
-        $campaign = $this->campaignManager->activeOrFail();
+        $campaign = ! empty($data['campaign_slug'])
+            ? $this->campaignManager->bySlugOrFail((string) $data['campaign_slug'])
+            : $this->campaignManager->activeOrFail();
         $settings = InvoiceGoalSetting::query()->first();
 
         if (! $campaign->invoice_scan_enabled || ($settings && ! $settings->is_enabled)) {
@@ -141,15 +144,30 @@ class ContestInvoiceRegistrationService
         $branchId = $this->resolveBranchId($resolvedInvoice['issuer_branch_number'] ?? null)
             ?? ($data['branch_id'] ?? null);
 
+        if ($campaign->slug !== 'del-sueno-al-puesto' && $this->dreamPromoBalance($participant) < 300 && $this->dreamPromoInvoiceExists($participant)) {
+            throw ValidationException::withMessages([
+                'campaign_slug' => 'Este participante debe completar la promo Del sueño al puesto antes de entrar a otras promociones.',
+            ]);
+        }
+
+        $dreamThreshold = (float) ($campaign->entry_threshold_amount ?? 0);
+        $campaignQualified = true;
+        if ($campaign->slug === 'del-sueno-al-puesto') {
+            $totalAfter = $this->dreamPromoBalance($participant) + $purchaseAmount;
+            $campaignQualified = $totalAfter >= ($dreamThreshold > 0 ? $dreamThreshold : 300);
+        }
+
         try {
-            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings): RegisteredInvoice {
-                $status = $verification['status'] === 'approved' ? 'accepted' : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings, $campaignQualified): RegisteredInvoice {
+                $status = $verification['status'] === 'approved'
+                    ? ($campaignQualified ? 'accepted' : 'pending_threshold')
+                    : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
                     'pending' => 'pending',
                     default => 'rejected',
                 };
-                $pointsAwarded = $verification['status'] === 'approved' ? 1 : 0;
+                $pointsAwarded = $verification['status'] === 'approved' && $campaignQualified ? 1 : 0;
 
                 $invoice = RegisteredInvoice::query()->create([
                     'user_id' => $participant->id,
@@ -174,7 +192,11 @@ class ContestInvoiceRegistrationService
                     'dgi_response_payload' => $verification['payload'],
                 ]);
 
-                if ($verification['status'] === 'approved') {
+                if ($campaign->slug === 'del-sueno-al-puesto' && $campaignQualified) {
+                    $participant->forceFill(['dream_promo_qualified_at' => now()])->save();
+                }
+
+                if ($verification['status'] === 'approved' && $campaignQualified) {
                     $this->syncDailyInvoiceGoal($participant, $invoice, $invoicePeriod);
                     $this->walletService->creditGoals(
                         user: $participant,
@@ -197,6 +219,7 @@ class ContestInvoiceRegistrationService
                                 'max_invoice_age_days' => $maxInvoiceAgeDays,
                                 'goal_value' => (int) $pointsAwarded,
                                 'validation_mode' => $settings?->validation_mode ?? 'api',
+                                'entry_threshold_amount' => $campaign->entry_threshold_amount,
                             ],
                             'invoice' => [
                                 'invoice_number' => $invoice->invoice_number,
@@ -211,8 +234,8 @@ class ContestInvoiceRegistrationService
                 Audit::log('invoice.registered', 'registered_invoice', $invoice->id, $participant, null, [
                     'cufe' => $invoice->cufe,
                     'validation_status' => $invoice->validation_status,
-                    'points_awarded' => $invoice->points_awarded,
-                ]);
+                'points_awarded' => $invoice->points_awarded,
+            ]);
 
                 return $invoice;
             });
@@ -228,10 +251,20 @@ class ContestInvoiceRegistrationService
 
         $this->sendParticipationReceipt($invoice);
 
+        $campaignTotal = (float) RegisteredInvoice::query()
+            ->where('user_id', $participant->id)
+            ->where('campaign_id', $campaign->id)
+            ->sum('purchase_amount');
+
         return [
             'invoice' => $invoice,
             'verification_status' => $verification['status'],
-            'message' => $this->messageForStatus($verification['status']),
+            'message' => $campaign->slug === 'del-sueno-al-puesto' && ! $campaignQualified
+                ? 'Factura guardada. Sigue acumulando hasta llegar a $300 para activar tu participación.'
+                : $this->messageForStatus($verification['status']),
+            'campaign_total' => $campaignTotal,
+            'campaign_threshold' => (float) ($campaign->entry_threshold_amount ?? 0),
+            'campaign_qualified' => $campaignQualified,
         ];
     }
 
@@ -344,6 +377,12 @@ class ContestInvoiceRegistrationService
                 'is_active' => true,
                 'resides_in_panama' => true,
                 'is_employee' => false,
+                'entrepreneur_name' => $data['entrepreneur_name'] ?? null,
+                'entrepreneur_province' => $data['entrepreneur_province'] ?? null,
+                'nearest_branch_id' => $data['nearest_branch_id'] ?? null,
+                'entrepreneur_type' => $data['entrepreneur_type'] ?? null,
+                'entrepreneur_story' => $data['entrepreneur_story'] ?? null,
+                'entrepreneur_reason' => $data['entrepreneur_reason'] ?? null,
             ],
         );
 
@@ -354,6 +393,12 @@ class ContestInvoiceRegistrationService
             'cedula' => $documentNumber,
             'document_type' => $documentType,
             'is_active' => true,
+            'entrepreneur_name' => $data['entrepreneur_name'] ?? $user->entrepreneur_name,
+            'entrepreneur_province' => $data['entrepreneur_province'] ?? $user->entrepreneur_province,
+            'nearest_branch_id' => $data['nearest_branch_id'] ?? $user->nearest_branch_id,
+            'entrepreneur_type' => $data['entrepreneur_type'] ?? $user->entrepreneur_type,
+            'entrepreneur_story' => $data['entrepreneur_story'] ?? $user->entrepreneur_story,
+            'entrepreneur_reason' => $data['entrepreneur_reason'] ?? $user->entrepreneur_reason,
         ])->save();
 
         if (! $user->wallet()->exists()) {
@@ -370,6 +415,22 @@ class ContestInvoiceRegistrationService
         }
 
         return $user;
+    }
+
+    private function dreamPromoBalance(User $user): float
+    {
+        return (float) RegisteredInvoice::query()
+            ->where('user_id', $user->id)
+            ->whereHas('campaign', fn ($query) => $query->where('slug', 'del-sueno-al-puesto'))
+            ->sum('purchase_amount');
+    }
+
+    private function dreamPromoInvoiceExists(User $user): bool
+    {
+        return RegisteredInvoice::query()
+            ->where('user_id', $user->id)
+            ->whereHas('campaign', fn ($query) => $query->where('slug', 'del-sueno-al-puesto'))
+            ->exists();
     }
 
     private function resolveBranchId(?int $storeNumber): ?int

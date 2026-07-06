@@ -52,6 +52,43 @@
     <div class="page-card">
         <div class="page-title">
             <div>
+                <h1>Perfil de emprendimiento</h1>
+                <p>Datos cargados por el participante para la promo Del sueño al puesto.</p>
+            </div>
+        </div>
+        <div class="page-section">
+            <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                <div class="field">
+                    <label>Nombre del emprendimiento</label>
+                    <div>{{ $user->entrepreneur_name ?? '—' }}</div>
+                </div>
+                <div class="field">
+                    <label>Provincia</label>
+                    <div>{{ $user->entrepreneur_province ?? '—' }}</div>
+                </div>
+                <div class="field">
+                    <label>Sucursal cercana</label>
+                    <div>{{ optional($user->branch)->name ?? '—' }}</div>
+                </div>
+                <div class="field">
+                    <label>Tipo de emprendimiento</label>
+                    <div>{{ $user->entrepreneur_type ?? '—' }}</div>
+                </div>
+            </div>
+            <div class="field" style="margin-top:1rem;">
+                <label>Historia del emprendimiento</label>
+                <div style="white-space:pre-wrap;">{{ $user->entrepreneur_story ?? '—' }}</div>
+            </div>
+            <div class="field" style="margin-top:1rem;">
+                <label>Por qué deben ganar la tolda</label>
+                <div style="white-space:pre-wrap;">{{ $user->entrepreneur_reason ?? '—' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-card">
+        <div class="page-title">
+            <div>
                 <h1>Historia de facturas</h1>
                 <p>{{ count($invoices) }} registro(s)</p>
             </div>
@@ -63,11 +100,12 @@
                 <div class="table-shell">
                     <table class="wide">
                         <thead>
-                            <tr><th>Factura</th><th>Monto</th><th>Puntos</th><th>Estado</th><th>Fecha</th><th>Notas</th></tr>
+                            <tr><th>Promo</th><th>Factura</th><th>Monto</th><th>Puntos</th><th>Estado</th><th>Fecha</th><th>Notas</th></tr>
                         </thead>
                         <tbody>
                             @foreach($invoices as $invoice)
                                 <tr>
+                                    <td data-label="Promo">{{ $invoice->campaign?->name ?? '—' }}</td>
                                     <td data-label="Factura">{{ $invoice->invoice_number ?? '—' }}</td>
                                     <td data-label="Monto">${{ number_format((float) $invoice->purchase_amount, 2) }}</td>
                                     <td data-label="Puntos">{{ $invoice->points_awarded ?? 0 }}</td>
@@ -86,6 +124,32 @@
                     </table>
                 </div>
             @endif
+        </div>
+    </div>
+
+    <div class="page-card">
+        <div class="page-title">
+            <div>
+                <h1>Acumulado por promo</h1>
+                <p>Resumen rápido para ver en cuál promoción participa o ya fue elegido.</p>
+            </div>
+        </div>
+        <div class="page-section">
+            <div class="table-shell">
+                <table class="wide">
+                    <thead>
+                        <tr><th>Promo</th><th>Total acumulado</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($campaigns as $campaign)
+                            <tr>
+                                <td>{{ $campaign->name }}</td>
+                                <td>${{ number_format((float) ($campaignTotals[$campaign->id] ?? 0), 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 @endsection

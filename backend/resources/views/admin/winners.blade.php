@@ -27,6 +27,26 @@
 
     <div class="stack">
         <div class="page-card">
+            <div class="page-section">
+                <form method="GET" action="{{ route('admin.winners') }}" class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                    <div class="field">
+                        <label for="campaign_id">Promoción</label>
+                        <select id="campaign_id" name="campaign_id">
+                            <option value="">Todas</option>
+                            @foreach($campaigns as $campaign)
+                                <option value="{{ $campaign->id }}" @selected((string) request('campaign_id') === (string) $campaign->id)>{{ $campaign->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="responsive-actions" style="align-self:end;">
+                        <button class="btn btn-red" type="submit">Filtrar</button>
+                        <a class="btn btn-gray" href="{{ route('admin.winners') }}">Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="page-card">
             <div class="page-title">
                 <div>
                     <h1>Ganadores seleccionados</h1>
@@ -83,13 +103,14 @@
                     <div class="table-shell">
                         <table class="wide">
                             <thead>
-                                <tr><th>Nombre</th><th>Cédula</th><th>Factura</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr>
+                                <tr><th>Nombre</th><th>Cédula</th><th>Promo</th><th>Factura</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr>
                             </thead>
                             <tbody>
                                 @foreach($availableInvoices as $inv)
                                     <tr>
                                         <td data-label="Nombre"><strong>{{ $inv->user?->full_name ?? '—' }}</strong></td>
                                         <td data-label="Cédula">{{ $inv->user?->cedula ?? '—' }}</td>
+                                        <td data-label="Promo">{{ $inv->campaign?->name ?? '—' }}</td>
                                         <td data-label="Factura">{{ $inv->invoice_number ?? '—' }}</td>
                                         <td data-label="Monto">${{ number_format((float) $inv->purchase_amount, 2) }}</td>
                                         <td data-label="Fecha">{{ $inv->created_at?->format('d/m/Y H:i') ?? '—' }}</td>

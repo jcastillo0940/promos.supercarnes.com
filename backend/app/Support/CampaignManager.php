@@ -49,4 +49,9 @@ class CampaignManager
 
         return $campaign;
     }
+
+    public function dreamCampaignOrFail(): Campaign
+    {
+        return $this->bySlugOrFail('del-sueno-al-puesto');
+    }
 }

@@ -20,6 +20,8 @@ class Campaign extends Model
         'ends_at',
         'invoice_min_amount_for_shot',
         'amount_per_point',
+        'entry_threshold_amount',
+        'entry_requires_approval',
         'points_per_block',
         'daily_max_points',
         'daily_max_invoices',
@@ -42,6 +44,8 @@ class Campaign extends Model
             'redemption_enabled' => 'boolean',
             'invoice_min_amount_for_shot' => 'decimal:2',
             'amount_per_point' => 'decimal:2',
+            'entry_threshold_amount' => 'decimal:2',
+            'entry_requires_approval' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

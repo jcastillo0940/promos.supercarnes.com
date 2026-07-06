@@ -34,7 +34,16 @@
         </div>
 
         <div class="page-section" style="border-top:1px solid #e5e7eb;">
-            <form method="GET" action="{{ route('admin.invoices') }}" class="form-grid" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+            <form method="GET" action="{{ route('admin.invoices') }}" class="form-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+                <div class="field">
+                    <label for="campaign_id">Promoción</label>
+                    <select id="campaign_id" name="campaign_id">
+                        <option value="">Todas</option>
+                        @foreach($campaigns as $campaign)
+                            <option value="{{ $campaign->id }}" @selected((string) request('campaign_id') === (string) $campaign->id)>{{ $campaign->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="field">
                     <label for="name">Nombre</label>
                     <input id="name" name="name" type="text" value="{{ request('name') }}" placeholder="Buscar por nombre">

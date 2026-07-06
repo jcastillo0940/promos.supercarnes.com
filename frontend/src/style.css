@@ -6770,6 +6770,39 @@ a {
   border: 1px solid rgba(255,255,255,.08);
 }
 
+.promo-tracker {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.14);
+  display: grid;
+  gap: 12px;
+}
+
+.promo-tracker-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.promo-tracker-bar {
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(8, 13, 24, .35);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+.promo-tracker-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd045, #ff8f1f);
+}
+
 .promo-back {
   margin-bottom: 18px;
   width: fit-content;
@@ -7097,6 +7130,18 @@ a {
 .promo-form {
   display: grid;
   gap: 14px;
+}
+
+.promo-form textarea,
+.promo-manual textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: #0c1728;
+  color: #fff;
+  resize: vertical;
 }
 
 .promo-scanner {

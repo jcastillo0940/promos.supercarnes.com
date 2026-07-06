@@ -45,6 +45,13 @@ class User extends Authenticatable
         'email_otp_expires_at',
         'email_otp_verified_at',
         'last_login_at',
+        'entrepreneur_name',
+        'entrepreneur_province',
+        'nearest_branch_id',
+        'entrepreneur_type',
+        'entrepreneur_story',
+        'entrepreneur_reason',
+        'dream_promo_qualified_at',
     ];
 
     protected $hidden = [
@@ -68,6 +75,7 @@ class User extends Authenticatable
             'predictions_completed_at' => 'datetime',
             'group_stage_goal_prediction' => 'integer',
             'disqualified_at' => 'datetime',
+            'dream_promo_qualified_at' => 'datetime',
         ];
     }
 

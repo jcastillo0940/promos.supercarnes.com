@@ -104,7 +104,10 @@ class InvoiceBackofficeController extends Controller
 
     public function invoices(Request $request): View
     {
-        $query = RegisteredInvoice::with(['user', 'branch'])
+        $query = RegisteredInvoice::with(['user', 'branch', 'campaign'])
+            ->when($request->filled('campaign_id'), function ($query) use ($request) {
+                $query->where('campaign_id', (int) $request->input('campaign_id'));
+            })
             ->when($request->filled('name'), function ($query) use ($request) {
                 $term = trim((string) $request->input('name'));
                 $query->whereHas('user', function ($userQuery) use ($term) {
@@ -127,15 +130,23 @@ class InvoiceBackofficeController extends Controller
             ->orderByDesc('created_at')
             ->paginate(50);
 
-        $invoices->appends($request->only(['name', 'cedula', 'date_from', 'date_to']));
+        $invoices->appends($request->only(['campaign_id', 'name', 'cedula', 'date_from', 'date_to']));
 
-        return view('admin.invoices', compact('invoices'));
+        return view('admin.invoices', [
+            'invoices' => $invoices,
+            'campaigns' => Campaign::query()->orderBy('name')->get(),
+        ]);
     }
 
     public function winners(Request $request): View
     {
+        $campaignId = $request->filled('campaign_id') ? (int) $request->input('campaign_id') : null;
+
         $winners = PromoWinner::query()
             ->with(['user'])
+            ->when($campaignId, function ($query) use ($campaignId) {
+                $query->whereHas('user.invoices', fn ($invoiceQuery) => $invoiceQuery->where('campaign_id', $campaignId));
+            })
             ->where('status', 'selected')
             ->orderBy('selected_at')
             ->orderBy('id')
@@ -150,7 +161,9 @@ class InvoiceBackofficeController extends Controller
             ->pluck('invoice_number')
             ->all();
 
-        $availableInvoices = RegisteredInvoice::with('user')
+        $availableInvoices = RegisteredInvoice::with(['user', 'campaign'])
+            ->with('campaign')
+            ->when($campaignId, fn ($query) => $query->where('campaign_id', $campaignId))
             ->whereNotNull('invoice_number')
             ->whereHas('user', fn ($q) => $q->whereNotNull('cedula'))
             ->whereNotIn('user_id', $selectedUserIds)
@@ -163,6 +176,8 @@ class InvoiceBackofficeController extends Controller
         return view('admin.winners', [
             'winners' => $winners,
             'availableInvoices' => $availableInvoices,
+            'campaigns' => Campaign::query()->orderBy('name')->get(),
+            'selectedCampaignId' => $campaignId,
         ]);
     }
 
@@ -222,6 +237,7 @@ class InvoiceBackofficeController extends Controller
     public function customerHistory(User $user): View
     {
         $user->load([
+            'invoices.campaign',
             'invoices' => fn ($query) => $query->orderByDesc('created_at'),
         ]);
 
@@ -230,10 +246,18 @@ class InvoiceBackofficeController extends Controller
             ->where('status', 'selected')
             ->first();
 
+        $campaignTotals = RegisteredInvoice::query()
+            ->where('user_id', $user->id)
+            ->selectRaw('campaign_id, SUM(purchase_amount) as total')
+            ->groupBy('campaign_id')
+            ->pluck('total', 'campaign_id');
+
         return view('admin.customer-history', [
             'user' => $user,
             'invoices' => $user->invoices,
             'winner' => $winner,
+            'campaignTotals' => $campaignTotals,
+            'campaigns' => Campaign::query()->orderBy('name')->get(),
         ]);
     }
 
