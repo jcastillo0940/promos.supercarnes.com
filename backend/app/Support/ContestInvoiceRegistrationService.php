@@ -46,7 +46,7 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        $participant = $this->findOrCreateParticipant($data);
+        $participant = $this->findOrCreateParticipant($data, $campaign);
 
         $cufe = $this->cufeParser->extract($data['qr_raw_text']);
         if (! $cufe) {
@@ -144,30 +144,33 @@ class ContestInvoiceRegistrationService
         $branchId = $this->resolveBranchId($resolvedInvoice['issuer_branch_number'] ?? null)
             ?? ($data['branch_id'] ?? null);
 
-        if ($campaign->slug !== 'del-sueno-al-puesto' && $this->dreamPromoBalance($participant) < 300 && $this->dreamPromoInvoiceExists($participant)) {
+        $thresholdAmount = $this->campaignThresholdAmount($campaign);
+        $dreamCampaign = $this->campaignManager->dreamCampaignOrFail();
+        if (! $this->usesThresholdParticipation($campaign) && $this->campaignBalance($participant, $dreamCampaign) < $this->campaignThresholdAmount($dreamCampaign) && $this->campaignInvoiceExists($participant, $dreamCampaign)) {
             throw ValidationException::withMessages([
                 'campaign_slug' => 'Este participante debe completar la promo Del sueño al puesto antes de entrar a otras promociones.',
             ]);
         }
 
-        $dreamThreshold = (float) ($campaign->entry_threshold_amount ?? 0);
         $campaignQualified = true;
-        if ($campaign->slug === 'del-sueno-al-puesto') {
-            $totalAfter = $this->dreamPromoBalance($participant) + $purchaseAmount;
-            $campaignQualified = $totalAfter >= ($dreamThreshold > 0 ? $dreamThreshold : 300);
+        if ($this->usesThresholdParticipation($campaign)) {
+            $totalAfter = $this->campaignBalance($participant, $campaign) + $purchaseAmount;
+            $campaignQualified = $totalAfter >= $thresholdAmount;
         }
 
         try {
-            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings, $campaignQualified): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings, $campaignQualified, $thresholdAmount): RegisteredInvoice {
                 $status = $verification['status'] === 'approved'
-                    ? ($campaignQualified ? 'accepted' : 'pending_threshold')
+                    ? ($this->usesThresholdParticipation($campaign) && ! $campaignQualified ? 'pending_threshold' : 'accepted')
                     : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
                 $validationStatus = match ($verification['status']) {
                     'approved' => 'approved',
                     'pending' => 'pending',
                     default => 'rejected',
                 };
-                $pointsAwarded = $verification['status'] === 'approved' && $campaignQualified ? 1 : 0;
+                $pointsAwarded = $this->usesThresholdParticipation($campaign)
+                    ? 0
+                    : ($verification['status'] === 'approved' && $campaignQualified ? 1 : 0);
 
                 $invoice = RegisteredInvoice::query()->create([
                     'user_id' => $participant->id,
@@ -192,11 +195,11 @@ class ContestInvoiceRegistrationService
                     'dgi_response_payload' => $verification['payload'],
                 ]);
 
-                if ($campaign->slug === 'del-sueno-al-puesto' && $campaignQualified) {
+                if ($this->usesThresholdParticipation($campaign) && $campaignQualified && $campaign->slug === 'del-sueno-al-puesto') {
                     $participant->forceFill(['dream_promo_qualified_at' => now()])->save();
                 }
 
-                if ($verification['status'] === 'approved' && $campaignQualified) {
+                if (! $this->usesThresholdParticipation($campaign) && $verification['status'] === 'approved' && $campaignQualified) {
                     $this->syncDailyInvoiceGoal($participant, $invoice, $invoicePeriod);
                     $this->walletService->creditGoals(
                         user: $participant,
@@ -259,11 +262,13 @@ class ContestInvoiceRegistrationService
         return [
             'invoice' => $invoice,
             'verification_status' => $verification['status'],
-            'message' => $campaign->slug === 'del-sueno-al-puesto' && ! $campaignQualified
-                ? 'Factura guardada. Sigue acumulando hasta llegar a $300 para activar tu participación.'
+            'message' => $this->usesThresholdParticipation($campaign)
+                ? ($campaignQualified
+                    ? 'Participación activa. Puedes seguir registrando facturas.'
+                    : 'Factura guardada. Sigue acumulando hasta llegar a $'.number_format($thresholdAmount, 2).' para activar tu participación.')
                 : $this->messageForStatus($verification['status']),
             'campaign_total' => $campaignTotal,
-            'campaign_threshold' => (float) ($campaign->entry_threshold_amount ?? 0),
+            'campaign_threshold' => $thresholdAmount,
             'campaign_qualified' => $campaignQualified,
         ];
     }
@@ -324,7 +329,7 @@ class ContestInvoiceRegistrationService
         ];
     }
 
-    private function findOrCreateParticipant(array $data): User
+    private function findOrCreateParticipant(array $data, Campaign $campaign): User
     {
         $documentType = strtolower((string) ($data['document_type'] ?? 'cedula'));
         $documentNumber = $this->normalizeDocumentNumber($documentType, (string) ($data['document_number'] ?? $data['cedula'] ?? ''));
@@ -345,7 +350,7 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        if (RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
+        if (! $this->usesThresholdParticipation($campaign) && RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
             throw ValidationException::withMessages([
                 'document_number' => 'Este documento ya registro una factura y no puede participar dos veces.',
             ]);
@@ -417,19 +422,31 @@ class ContestInvoiceRegistrationService
         return $user;
     }
 
-    private function dreamPromoBalance(User $user): float
+    private function usesThresholdParticipation(Campaign $campaign): bool
+    {
+        return $campaign->participation_mode === 'threshold_form' || $campaign->slug === 'del-sueno-al-puesto';
+    }
+
+    private function campaignThresholdAmount(Campaign $campaign): float
+    {
+        $amount = (float) ($campaign->entry_threshold_amount ?? 0);
+
+        return $amount > 0 ? $amount : 300.0;
+    }
+
+    private function campaignBalance(User $user, Campaign $campaign): float
     {
         return (float) RegisteredInvoice::query()
             ->where('user_id', $user->id)
-            ->whereHas('campaign', fn ($query) => $query->where('slug', 'del-sueno-al-puesto'))
+            ->where('campaign_id', $campaign->id)
             ->sum('purchase_amount');
     }
 
-    private function dreamPromoInvoiceExists(User $user): bool
+    private function campaignInvoiceExists(User $user, Campaign $campaign): bool
     {
         return RegisteredInvoice::query()
             ->where('user_id', $user->id)
-            ->whereHas('campaign', fn ($query) => $query->where('slug', 'del-sueno-al-puesto'))
+            ->whereHas('campaign', fn ($query) => $query->where('slug', $campaign->slug))
             ->exists();
     }
 
@@ -477,6 +494,7 @@ class ContestInvoiceRegistrationService
     {
         return match ($status) {
             'approved' => 'Factura validada. Completa el registro para participar.',
+            'pending_threshold' => 'Factura guardada. Sigue acumulando hasta completar el monto requerido.',
             'pending' => 'Factura recibida. Se revisara la validacion.',
             'disqualify' => 'Factura enviada a revision antifraude.',
             default => 'Factura rechazada durante la validacion.',

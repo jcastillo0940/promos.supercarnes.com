@@ -12,6 +12,7 @@ class Campaign extends Model
         'slug',
         'description',
         'status',
+        'participation_mode',
         'is_listed',
         'hero_image_url',
         'card_image_url',

@@ -84,6 +84,7 @@ class InvoiceBackofficeController extends Controller
             'campaigns.*.slug' => ['required', 'string', 'max:120'],
             'campaigns.*.description' => ['nullable', 'string'],
             'campaigns.*.status' => ['required', 'in:draft,active,paused,archived'],
+            'campaigns.*.participation_mode' => ['required', 'in:points,threshold_form'],
             'campaigns.*.is_listed' => ['nullable', 'boolean'],
             'campaigns.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'campaigns.*.hero_image_url' => ['nullable', 'string', 'max:255'],
@@ -106,12 +107,19 @@ class InvoiceBackofficeController extends Controller
 
         foreach ($payload['campaigns'] as $campaignData) {
             $campaign = Campaign::query()->findOrFail($campaignData['id']);
+            $mode = $campaignData['participation_mode'] ?? $campaign->participation_mode ?? 'points';
+            $thresholdAmount = $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount;
+
+            if ($mode === 'threshold_form' && ($thresholdAmount === null || $thresholdAmount === '')) {
+                $thresholdAmount = 300;
+            }
 
             $campaign->forceFill([
                 'name' => $campaignData['name'],
                 'slug' => $campaignData['slug'],
                 'description' => $campaignData['description'] ?? null,
                 'status' => $campaignData['status'],
+                'participation_mode' => $mode,
                 'is_listed' => (bool) ($campaignData['is_listed'] ?? false),
                 'sort_order' => (int) ($campaignData['sort_order'] ?? 0),
                 'hero_image_url' => $campaignData['hero_image_url'] ?? null,
@@ -128,8 +136,10 @@ class InvoiceBackofficeController extends Controller
                 'major_prizes_enabled' => (bool) ($campaignData['major_prizes_enabled'] ?? false),
                 'invoice_scan_enabled' => (bool) ($campaignData['invoice_scan_enabled'] ?? false),
                 'redemption_enabled' => (bool) ($campaignData['redemption_enabled'] ?? false),
-                'entry_threshold_amount' => $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount,
-                'entry_requires_approval' => (bool) ($campaignData['entry_requires_approval'] ?? false),
+                'entry_threshold_amount' => $thresholdAmount,
+                'entry_requires_approval' => $mode === 'threshold_form'
+                    ? (bool) ($campaignData['entry_requires_approval'] ?? false)
+                    : (bool) ($campaignData['entry_requires_approval'] ?? false),
             ])->save();
         }
 
@@ -147,6 +157,7 @@ class InvoiceBackofficeController extends Controller
             'slug' => ['nullable', 'string', 'max:120', 'alpha_dash', Rule::unique('campaigns', 'slug')],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,active,paused,archived'],
+            'participation_mode' => ['required', 'in:points,threshold_form'],
             'is_listed' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'starts_at' => ['nullable', 'date'],
@@ -168,6 +179,12 @@ class InvoiceBackofficeController extends Controller
         ]);
 
         $slug = $validated['slug'] ?: str($validated['name'])->slug()->toString();
+        $mode = $validated['participation_mode'];
+        $thresholdAmount = $validated['entry_threshold_amount'] ?? null;
+
+        if ($mode === 'threshold_form' && ($thresholdAmount === null || $thresholdAmount === '')) {
+            $thresholdAmount = 300;
+        }
 
         if (Campaign::query()->where('slug', $slug)->exists()) {
             return back()
@@ -180,6 +197,7 @@ class InvoiceBackofficeController extends Controller
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
             'status' => $validated['status'],
+            'participation_mode' => $mode,
             'is_listed' => $request->boolean('is_listed'),
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
             'starts_at' => $validated['starts_at'] ?? now(),
@@ -196,7 +214,7 @@ class InvoiceBackofficeController extends Controller
             'major_prizes_enabled' => $request->boolean('major_prizes_enabled'),
             'invoice_scan_enabled' => $request->boolean('invoice_scan_enabled', true),
             'redemption_enabled' => $request->boolean('redemption_enabled'),
-            'entry_threshold_amount' => $validated['entry_threshold_amount'] ?? null,
+            'entry_threshold_amount' => $thresholdAmount,
             'entry_requires_approval' => $request->boolean('entry_requires_approval'),
         ]);
 

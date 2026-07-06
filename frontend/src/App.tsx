@@ -7,6 +7,7 @@ import type { RegisteredInvoice, ResolvedInvoiceData } from './types'
 type EntryMode = 'scan' | 'manual'
 type PromoStep = 1 | 2 | 3
 type CampaignStatus = 'draft' | 'active' | 'paused' | 'archived'
+type ParticipationMode = 'points' | 'threshold_form'
 
 interface Campaign {
   id: number
@@ -14,9 +15,17 @@ interface Campaign {
   slug: string
   description?: string | null
   status: CampaignStatus
+  participation_mode?: ParticipationMode | null
+  entry_threshold_amount?: number | string | null
   is_listed?: boolean
   hero_image_url?: string | null
   card_image_url?: string | null
+}
+
+interface BranchOption {
+  id: number
+  name: string
+  code: string
 }
 
 interface InvoiceFormState {
@@ -32,6 +41,7 @@ interface InvoiceFormState {
   last_name: string
   phone: string
   email: string
+  nearest_branch_id: string
   entrepreneur_name: string
   entrepreneur_province: string
   entrepreneur_type: string
@@ -62,6 +72,7 @@ function emptyForm(): InvoiceFormState {
     last_name: '',
     phone: '',
     email: '',
+    nearest_branch_id: '',
     entrepreneur_name: '',
     entrepreneur_province: '',
     entrepreneur_type: '',
@@ -180,9 +191,10 @@ function PromoCatalog({
               <button key={campaign.id} type="button" className="promo-card" onClick={() => onOpen(campaign.slug)}>
                 <div className="promo-card-image" style={campaign.card_image_url ? { backgroundImage: `url(${campaign.card_image_url})` } : undefined} />
                 <div className="promo-card-body">
-                  <span>{campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
+                  <span>{campaign.participation_mode === 'threshold_form' ? 'Umbral de participación' : campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
                   <strong>{campaign.name}</strong>
                   <p>{campaign.description ?? 'Abre esta promoción para participar.'}</p>
+                  {campaign.participation_mode === 'threshold_form' ? <p>Se activa al acumular ${Number(campaign.entry_threshold_amount ?? 300).toFixed(2)} en facturas.</p> : null}
                   <em>/{campaign.slug}</em>
                 </div>
               </button>
@@ -201,6 +213,10 @@ function PromoLanding({
   campaign: Campaign | null
   onBack: () => void
 }) {
+  if (campaign?.participation_mode === 'threshold_form') {
+    return <ThresholdPromoLanding campaign={campaign} onBack={onBack} />
+  }
+
   const [entryMode, setEntryMode] = useState<EntryMode>('scan')
   const [promoStep, setPromoStep] = useState<PromoStep>(1)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(emptyForm())
@@ -318,6 +334,7 @@ function PromoLanding({
         cedula: invoiceForm.document_number,
         phone: invoiceForm.phone || null,
         email: invoiceForm.email || null,
+        nearest_branch_id: invoiceForm.nearest_branch_id ? Number(invoiceForm.nearest_branch_id) : null,
         entrepreneur_name: invoiceForm.entrepreneur_name || null,
         entrepreneur_province: invoiceForm.entrepreneur_province || null,
         entrepreneur_type: invoiceForm.entrepreneur_type || null,
@@ -537,6 +554,449 @@ function PromoLanding({
               </button>
             </form>
           )}
+        </aside>
+      </main>
+    </div>
+  )
+}
+
+function ThresholdPromoLanding({
+  campaign,
+  onBack,
+}: {
+  campaign: Campaign | null
+  onBack: () => void
+}) {
+  const [entryMode, setEntryMode] = useState<EntryMode>('scan')
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(emptyForm())
+  const [scannerOn, setScannerOn] = useState(false)
+  const [scannerError, setScannerError] = useState<string | null>(null)
+  const [resolvingInvoice, setResolvingInvoice] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [invoiceValidated, setInvoiceValidated] = useState(false)
+  const [manualTouched, setManualTouched] = useState(false)
+  const [campaignTotal, setCampaignTotal] = useState(0)
+  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([])
+  const [branchError, setBranchError] = useState<string | null>(null)
+
+  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 300)
+  const campaignQualified = campaignTotal >= thresholdAmount
+  const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
+
+  const steps = useMemo(
+    () => [
+      { id: 1, title: 'Llena tu perfil' },
+      { id: 2, title: 'Suma facturas' },
+      { id: 3, title: 'Activa tu participación' },
+    ],
+    [],
+  )
+
+  useEffect(() => {
+    if (!scannerOn || entryMode !== 'scan') return undefined
+
+    let scanner: Html5Qrcode | null = null
+    let stopped = false
+
+    async function start() {
+      try {
+        scanner = createInvoiceScanner()
+        await scanner.start({ facingMode: 'environment' }, { fps: 12, disableFlip: true }, async (decodedText) => {
+          if (stopped) return
+          await resolveInvoice(decodedText)
+          await scanner?.stop().catch(() => undefined)
+          await scanner?.clear()
+          setScannerOn(false)
+        }, () => undefined)
+      } catch (error) {
+        setScannerError(normalizeError(error))
+      }
+    }
+
+    void start()
+
+    return () => {
+      stopped = true
+      if (!scanner) return
+      void scanner.stop().catch(() => undefined).finally(() => {
+        void scanner?.clear()
+      })
+    }
+  }, [entryMode, scannerOn])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadBranches() {
+      try {
+        const response = await api.get<{ data: BranchOption[] }>('/public/branches')
+        if (!cancelled) {
+          setBranchOptions(response.data.data ?? [])
+          setBranchError(null)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setBranchError(normalizeError(error))
+        }
+      }
+    }
+
+    void loadBranches()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (campaign?.participation_mode !== 'threshold_form') return undefined
+
+    const documentNumber = invoiceForm.document_number.trim()
+    if (!documentNumber) {
+      setCampaignTotal(0)
+      return undefined
+    }
+
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      void api
+        .get<{ data: { campaign_total?: number; campaign_threshold?: number; campaign_qualified?: boolean } }>(`/campaigns/${campaign?.slug}/progress`, {
+          params: { document_number: documentNumber },
+        })
+        .then((response) => {
+          if (!cancelled) {
+            setCampaignTotal(Number(response.data.data.campaign_total ?? 0))
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setCampaignTotal(0)
+          }
+        })
+    }, 450)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [campaign?.slug, campaign?.participation_mode, invoiceForm.document_number])
+
+  async function resolveInvoice(rawText: string) {
+    try {
+      setResolvingInvoice(true)
+      const response = await api.post<{ data: ResolvedInvoiceData & { is_valid?: boolean; minimum_amount?: number } }>('/invoices/resolve', {
+        qr_raw_text: rawText,
+      })
+
+      setScannerError(null)
+
+      if (!response.data.data.is_valid) {
+        setInvoiceValidated(false)
+        setSubmitSuccess(null)
+        setSubmitError(null)
+        setScannerError(`La factura no supera el monto minimo de $${(response.data.data.minimum_amount ?? 25).toFixed(2)}.`)
+        return
+      }
+
+      setInvoiceValidated(true)
+      setSubmitSuccess(null)
+      setInvoiceForm((current) => ({
+        ...current,
+        rawInput: rawText,
+        cufe_tail: rawText.slice(-60),
+        invoice_number: response.data.data.invoice_number ?? current.invoice_number,
+        purchase_amount: response.data.data.purchase_amount ?? current.purchase_amount,
+        issued_at: response.data.data.issued_at ?? current.issued_at,
+        issuer_name: response.data.data.issuer_name ?? current.issuer_name,
+      }))
+    } catch (error) {
+      setScannerError(normalizeError(error))
+    } finally {
+      setResolvingInvoice(false)
+    }
+  }
+
+  async function validateManualCufe() {
+    const rawTail = invoiceForm.cufe_tail.trim().replace(/\D/g, '').slice(0, 60)
+    if (!rawTail) return
+    await resolveInvoice(`${CUFE_SHORT_PREFIX}${rawTail}`)
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setSubmitError(null)
+    setSubmitSuccess(null)
+
+    try {
+      const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
+      const fullName = `${invoiceForm.first_name.trim()} ${invoiceForm.last_name.trim()}`.trim()
+      const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_threshold?: number; campaign_qualified?: boolean }>('/invoices/scan', {
+        qr_raw_text: rawText,
+        campaign_slug: campaign?.slug ?? null,
+        purchase_amount: Number(invoiceForm.purchase_amount || 0),
+        invoice_number: invoiceForm.invoice_number || null,
+        issued_at: invoiceForm.issued_at || null,
+        document_type: invoiceForm.document_type,
+        document_number: invoiceForm.document_number,
+        first_name: invoiceForm.first_name,
+        last_name: invoiceForm.last_name,
+        full_name: fullName,
+        cedula: invoiceForm.document_number,
+        phone: invoiceForm.phone || null,
+        email: invoiceForm.email || null,
+        nearest_branch_id: invoiceForm.nearest_branch_id ? Number(invoiceForm.nearest_branch_id) : null,
+        entrepreneur_name: invoiceForm.entrepreneur_name || null,
+        entrepreneur_province: invoiceForm.entrepreneur_province || null,
+        entrepreneur_type: invoiceForm.entrepreneur_type || null,
+        entrepreneur_story: invoiceForm.entrepreneur_story || null,
+        entrepreneur_reason: invoiceForm.entrepreneur_reason || null,
+      })
+
+      if (typeof response.data.campaign_total === 'number') {
+        setCampaignTotal(response.data.campaign_total)
+      }
+
+      setSubmitSuccess(response.data.message ?? (response.data.campaign_qualified ? 'Participación activa.' : 'Factura registrada.'))
+      setInvoiceValidated(false)
+      setScannerError(null)
+      setInvoiceForm((current) => ({
+        ...current,
+        rawInput: '',
+        invoice_number: '',
+        purchase_amount: '',
+        issued_at: '',
+        issuer_name: '',
+        cufe_tail: '',
+      }))
+    } catch (error) {
+      setSubmitError(normalizeError(error))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="promo-shell">
+      <div className="promo-ambient" />
+      <main className="promo-layout promo-layout-threshold">
+        <section className="promo-hero">
+          <div className="promo-hero-copy">
+            <button className="promo-back" type="button" onClick={onBack}>
+              Volver a promociones
+            </button>
+            <p className="promo-kicker">/{campaign?.slug ?? 'promo'}</p>
+            {campaignQualified ? <p className="promo-valid-badge">Participación activa</p> : null}
+            <h1>
+              {campaign?.name ?? 'Promocion'}
+              <span>Super Carnes</span>
+            </h1>
+            <p>{campaign?.description ?? 'Completa tus datos y acumula facturas hasta activar tu participación.'}</p>
+            <div className="promo-tracker">
+              <div className="promo-tracker-head">
+                <strong>Acumulado</strong>
+                <span>${Math.min(campaignTotal, thresholdAmount).toFixed(2)} / {thresholdAmount.toFixed(2)}</span>
+              </div>
+              <div className="promo-tracker-bar">
+                <i style={{ width: `${Math.min(100, (campaignTotal / thresholdAmount) * 100)}%` }} />
+              </div>
+              <p>{campaignQualified ? 'Ya alcanzaste el monto requerido. Tu participación está activa.' : `Te faltan $${remainingAmount.toFixed(2)} para activar tu participación.`}</p>
+            </div>
+            <div className="promo-stepper">
+              {steps.map((step) => (
+                <div key={step.id} className={`promo-step ${campaignQualified || step.id <= (invoiceValidated ? 2 : 1) ? 'is-active' : ''}`}>
+                  <span>{step.id}</span>
+                  <strong>{step.title}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="promo-art">
+            <div className="promo-paper">
+              <span>Umbral $300</span>
+              <div className="promo-paper-lines">
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+            </div>
+            <div className="promo-dad">
+              <img src={campaign?.hero_image_url || '/gaby-torres-celebration.webp'} alt={campaign?.name ?? 'Promocion'} />
+            </div>
+            <div className="promo-ball" aria-hidden="true">
+              <img src="/trionda-ball.svg" alt="" />
+            </div>
+          </div>
+        </section>
+
+        <aside className="promo-panel">
+          <div className="promo-panel-card promo-panel-highlight">
+            <p className="promo-panel-label">Promo de emprendimiento</p>
+            <h2>{campaignQualified ? 'Tu participación está habilitada' : 'Acumula facturas hasta llegar al monto requerido'}</h2>
+            <p>{campaignQualified ? 'Ya puedes seguir enviando facturas y el equipo puede revisar tus historias.' : 'El formulario está disponible desde el inicio. Sigue cargando facturas hasta completar el umbral.'}</p>
+          </div>
+
+          <form className="promo-panel-card promo-form promo-form-compact" onSubmit={handleSubmit}>
+            <div className="promo-form-head">
+              <p>Registro inicial</p>
+              <h3>Completa tu perfil de emprendimiento</h3>
+            </div>
+
+            <div className="promo-rule">
+              <strong>Cómo funciona</strong>
+              <div className="promo-last">
+                <span>1. Llena tus datos y cuenta tu historia.</span>
+                <span>2. Registra facturas por CUFE hasta acumular ${thresholdAmount.toFixed(2)}.</span>
+                <span>3. Al llegar al monto, tu participación queda activa.</span>
+              </div>
+            </div>
+
+            <div className="promo-mode-switch">
+              <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>
+                Escanear QR
+              </button>
+              <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>
+                Ingresar CUFE
+              </button>
+            </div>
+
+            {entryMode === 'scan' ? (
+              <div className="promo-scan">
+                {!scannerOn ? (
+                  <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
+                    Activar escaneo de QR
+                  </button>
+                ) : (
+                  <div id={QR_READER_ELEMENT_ID} className="promo-scanner" />
+                )}
+                {scannerError ? <div className="promo-alert">{scannerError}</div> : null}
+              </div>
+            ) : (
+              <div className="promo-manual">
+                <label>
+                  Ultimos 60 numeros del CUFE
+                  <input
+                    value={invoiceForm.cufe_tail}
+                    onChange={(e) => {
+                      setManualTouched(true)
+                      setInvoiceForm((current) => ({
+                        ...current,
+                        cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60),
+                      }))
+                    }}
+                    maxLength={60}
+                    inputMode="numeric"
+                    placeholder="Escribe solo los ultimos 60 numeros"
+                  />
+                </label>
+                <button className="promo-primary" type="button" disabled={invoiceForm.cufe_tail.length < 10} onClick={() => void validateManualCufe()}>
+                  {resolvingInvoice ? 'Validando...' : 'Validar CUFE'}
+                </button>
+                {scannerError ? <div className="promo-alert">{scannerError}</div> : null}
+                {resolvingInvoice ? (
+                  <div className="promo-loading" role="status" aria-live="polite">
+                    <span className="promo-spinner" />
+                    <span>Estamos validando la factura</span>
+                  </div>
+                ) : !scannerError ? (
+                  <p className="promo-help">{manualTouched ? 'Listo. Espera un momento.' : 'Escribe los ultimos 60 numeros del CUFE y toca validar.'}</p>
+                ) : null}
+              </div>
+            )}
+
+            {invoiceValidated ? (
+              <div className="promo-rule">
+                <strong>Factura cargada</strong>
+                <div className="promo-last">
+                  <span>Factura: {invoiceForm.invoice_number || '—'}</span>
+                  <span>Monto: ${Number(invoiceForm.purchase_amount || 0).toFixed(2)}</span>
+                  <span>Fecha: {invoiceForm.issued_at || '—'}</span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="promo-form-grid">
+              <label>
+                Tipo de documento
+                <select
+                  className="promo-select"
+                  value={invoiceForm.document_type}
+                  onChange={(e) => setInvoiceForm((current) => ({ ...current, document_type: e.target.value as InvoiceFormState['document_type'], document_number: '' }))}
+                  required
+                >
+                  <option value="cedula">Cédula</option>
+                  <option value="passport">Pasaporte</option>
+                  <option value="residente">Carnet de residente</option>
+                </select>
+              </label>
+              <label>
+                N° documento
+                <input value={invoiceForm.document_number} onChange={(e) => setInvoiceForm((current) => ({ ...current, document_number: sanitizeDocumentNumber(current.document_type, e.target.value) }))} placeholder={documentPlaceholder(invoiceForm.document_type)} required />
+              </label>
+              <label>
+                Nombre
+                <input value={invoiceForm.first_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, first_name: sanitizeName(e.target.value) }))} placeholder="Nombre(s)" required />
+              </label>
+              <label>
+                Apellidos
+                <input value={invoiceForm.last_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, last_name: sanitizeName(e.target.value) }))} placeholder="Apellido(s)" required />
+              </label>
+              <label>
+                Teléfono
+                <input value={invoiceForm.phone} onChange={(e) => setInvoiceForm((current) => ({ ...current, phone: sanitizePanamaPhone(e.target.value) }))} placeholder="6XXX-XXXX" inputMode="tel" required />
+              </label>
+              <label>
+                Correo
+                <input value={invoiceForm.email} onChange={(e) => setInvoiceForm((current) => ({ ...current, email: e.target.value.trim() }))} type="email" placeholder="correo@dominio.com" required />
+              </label>
+              <label>
+                Nombre del emprendimiento
+                <input value={invoiceForm.entrepreneur_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_name: e.target.value }))} placeholder="Nombre del emprendimiento" required />
+              </label>
+              <label>
+                Provincia del emprendimiento
+                <input value={invoiceForm.entrepreneur_province} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_province: e.target.value }))} placeholder="Provincia" required />
+              </label>
+              <label>
+                Sucursal de Super Carnes más cercana
+                <select value={invoiceForm.nearest_branch_id} onChange={(e) => setInvoiceForm((current) => ({ ...current, nearest_branch_id: e.target.value }))} required>
+                  <option value="">Selecciona una sucursal</option>
+                  {branchOptions.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.name} {branch.code ? `(${branch.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {branchError ? <small className="promo-help">{branchError}</small> : null}
+              </label>
+              <label>
+                Tipo de emprendimiento
+                <input value={invoiceForm.entrepreneur_type} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_type: e.target.value }))} placeholder="Comida, artesanías, belleza..." required />
+              </label>
+              <label className="promo-form-wide">
+                Historia del emprendimiento
+                <textarea value={invoiceForm.entrepreneur_story} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_story: e.target.value }))} rows={4} required />
+              </label>
+              <label className="promo-form-wide">
+                ¿Por qué deben ganar la tolda?
+                <textarea value={invoiceForm.entrepreneur_reason} onChange={(e) => setInvoiceForm((current) => ({ ...current, entrepreneur_reason: e.target.value }))} rows={4} required />
+              </label>
+              <label className="promo-form-wide">
+                Ultimos 60 numeros del CUFE
+                <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />
+              </label>
+            </div>
+
+            {submitError ? <div className="promo-alert">{submitError}</div> : null}
+            {submitSuccess ? <div className="promo-success-msg">{submitSuccess}</div> : null}
+            <button className="promo-primary" type="submit" disabled={submitting || !invoiceValidated}>
+              {submitting ? 'Enviando...' : invoiceValidated ? 'Registrar factura y seguir acumulando' : 'Valida la factura para continuar'}
+            </button>
+          </form>
         </aside>
       </main>
     </div>

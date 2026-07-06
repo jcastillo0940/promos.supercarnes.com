@@ -111,6 +111,13 @@
                                         </select>
                                     </div>
                                     <div class="field">
+                                        <label for="new_campaign_participation_mode">Modo de participación</label>
+                                        <select id="new_campaign_participation_mode" name="participation_mode">
+                                            <option value="points" @selected(old('participation_mode', 'points') === 'points')>Puntos y ranking</option>
+                                            <option value="threshold_form" @selected(old('participation_mode') === 'threshold_form')>Umbral de formulario</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
                                         <label for="new_campaign_sort_order">Orden</label>
                                         <input id="new_campaign_sort_order" name="sort_order" type="number" min="0" max="9999" value="{{ old('sort_order', 0) }}">
                                     </div>
@@ -165,6 +172,7 @@
                                     <div class="field">
                                         <label for="new_campaign_entry_threshold_amount">Límite de participación</label>
                                         <input id="new_campaign_entry_threshold_amount" name="entry_threshold_amount" type="number" min="0" step="0.01" value="{{ old('entry_threshold_amount') }}" placeholder="300">
+                                        <small class="small">Usa este valor para promos como Del sueño al puesto. No activa puntos ni ranking.</small>
                                     </div>
                                     <div class="field">
                                         <label>&nbsp;</label>
@@ -223,13 +231,28 @@
                                             <label>Orden</label>
                                             <input type="number" name="campaigns[{{ $loop->index }}][sort_order]" value="{{ old("campaigns.$loop->index.sort_order", $campaign->sort_order ?? 0) }}">
                                         </div>
-                                        <div class="field">
-                                            <label>Status</label>
-                                            <select name="campaigns[{{ $loop->index }}][status]">
-                                                <option value="draft" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'draft')>Draft</option>
-                                                <option value="active" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'active')>Active</option>
+                                    <div class="field">
+                                        <label>Status</label>
+                                        <select name="campaigns[{{ $loop->index }}][status]">
+                                            <option value="draft" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'draft')>Draft</option>
+                                            <option value="active" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'active')>Active</option>
                                                 <option value="paused" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'paused')>Paused</option>
-                                                <option value="archived" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'archived')>Archived</option>
+                                            <option value="archived" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'archived')>Archived</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label>Tipo de promo</label>
+                                        <div style="min-height:44px;display:flex;align-items:center;">
+                                            <span class="badge badge-{{ ($campaign->participation_mode ?? 'points') === 'threshold_form' ? 'yellow' : 'green' }}">
+                                                {{ ($campaign->participation_mode ?? 'points') === 'threshold_form' ? 'Umbral de formulario' : 'Puntos y ranking' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Modo de participación</label>
+                                        <select name="campaigns[{{ $loop->index }}][participation_mode]">
+                                            <option value="points" @selected(old("campaigns.$loop->index.participation_mode", $campaign->participation_mode ?? 'points') === 'points')>Puntos y ranking</option>
+                                            <option value="threshold_form" @selected(old("campaigns.$loop->index.participation_mode", $campaign->participation_mode ?? 'points') === 'threshold_form')>Umbral de formulario</option>
                                             </select>
                                         </div>
                                         <div class="field">

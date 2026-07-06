@@ -105,13 +105,16 @@
                         <tbody>
                             @foreach($invoices as $invoice)
                                 <tr>
+                                    @php
+                                        $isThresholdPromo = $invoice->campaign?->participation_mode === 'threshold_form';
+                                    @endphp
                                     <td data-label="Promo">{{ $invoice->campaign?->name ?? '—' }}</td>
                                     <td data-label="Factura">{{ $invoice->invoice_number ?? '—' }}</td>
                                     <td data-label="Monto">${{ number_format((float) $invoice->purchase_amount, 2) }}</td>
-                                    <td data-label="Puntos">{{ $invoice->points_awarded ?? 0 }}</td>
+                                    <td data-label="Puntos">{{ $isThresholdPromo ? '—' : ($invoice->points_awarded ?? 0) }}</td>
                                     <td data-label="Estado">
                                         @php
-                                            $statusMap = ['approved' => ['green', 'Aprobada'], 'pending' => ['gray', 'Pendiente'], 'rejected' => ['red', 'Rechazada']];
+                                            $statusMap = ['approved' => ['green', 'Aprobada'], 'pending' => ['gray', 'Pendiente'], 'pending_threshold' => ['yellow', 'Pendiente de umbral'], 'rejected' => ['red', 'Rechazada']];
                                             [$color, $label] = $statusMap[$invoice->status] ?? ['gray', $invoice->status ?? '—'];
                                         @endphp
                                         <span class="badge badge-{{ $color }}">{{ $label }}</span>
@@ -142,9 +145,22 @@
                     </thead>
                     <tbody>
                         @foreach($campaigns as $campaign)
+                            @php
+                                $total = (float) ($campaignTotals[$campaign->id] ?? 0);
+                                $thresholdAmount = (float) ($campaign->entry_threshold_amount ?? 0);
+                                $thresholdReached = $campaign->participation_mode === 'threshold_form' && $thresholdAmount > 0 && $total >= $thresholdAmount;
+                            @endphp
                             <tr>
                                 <td>{{ $campaign->name }}</td>
-                                <td>${{ number_format((float) ($campaignTotals[$campaign->id] ?? 0), 2) }}</td>
+                                <td>
+                                    ${{ number_format($total, 2) }}
+                                    @if($campaign->participation_mode === 'threshold_form')
+                                        <div style="margin-top:.3rem;">
+                                            <span class="badge badge-{{ $thresholdReached ? 'green' : 'yellow' }}">{{ $thresholdReached ? 'Activa' : 'Pendiente' }}</span>
+                                            <small style="display:block;color:#64748b;margin-top:.25rem;">Meta ${{ number_format($thresholdAmount > 0 ? $thresholdAmount : 300, 2) }}</small>
+                                        </div>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

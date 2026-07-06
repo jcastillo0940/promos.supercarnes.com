@@ -10,5 +10,7 @@ Route::post('invoices/scan', [InvoiceController::class, 'store'])->middleware('t
 
 Route::get('campaigns', [CampaignController::class, 'index']);
 Route::get('campaigns/{slug}', [CampaignController::class, 'show']);
+Route::get('campaigns/{slug}/progress', [CampaignController::class, 'progress']);
 
 Route::get('public/settings', [PublicSettingsController::class, 'index']);
+Route::get('public/branches', [PublicSettingsController::class, 'branches']);

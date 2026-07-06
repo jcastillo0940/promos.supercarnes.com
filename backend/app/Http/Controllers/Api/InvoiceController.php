@@ -35,7 +35,7 @@ class InvoiceController extends Controller
             'campaign_slug' => ['nullable', 'string', 'max:120'],
             'entrepreneur_name' => ['nullable', 'string', 'max:180'],
             'entrepreneur_province' => ['nullable', 'string', 'max:120'],
-            'nearest_branch_id' => ['nullable', 'integer'],
+            'nearest_branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'entrepreneur_type' => ['nullable', 'string', 'max:120'],
             'entrepreneur_story' => ['nullable', 'string'],
             'entrepreneur_reason' => ['nullable', 'string'],

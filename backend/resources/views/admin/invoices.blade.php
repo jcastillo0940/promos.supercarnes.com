@@ -81,16 +81,19 @@
                         <tbody>
                             @foreach($invoices as $inv)
                                 <tr>
+                                    @php
+                                        $isThresholdPromo = $inv->campaign?->participation_mode === 'threshold_form';
+                                    @endphp
                                     <td data-label="#">{{ $inv->id }}</td>
                                     <td data-label="Usuario"><strong>{{ $inv->user?->full_name ?? '—' }}</strong><br><span style="color:#64748b">{{ $inv->user?->email ?? '—' }}</span></td>
                                     <td data-label="N° Factura">{{ $inv->invoice_number ?? '—' }}</td>
                                     <td data-label="Emisor">{{ $inv->issuer_name ?? '—' }}<br><span style="color:#64748b">{{ $inv->issuer_ruc ?? '' }}</span></td>
                                     <td data-label="Sucursal">{{ $inv->branch?->name ?? '—' }}</td>
                                     <td data-label="Monto">${{ number_format((float)$inv->purchase_amount, 2) }}</td>
-                                    <td data-label="Puntos">{{ $inv->points_awarded ?? 0 }}</td>
+                                    <td data-label="Puntos">{{ $isThresholdPromo ? '—' : ($inv->points_awarded ?? 0) }}</td>
                                     <td data-label="Estado">
                                         @php
-                                            $statusMap = ['approved' => ['green', 'Aprobada'], 'pending' => ['yellow', 'Pendiente'], 'rejected' => ['red', 'Rechazada']];
+                                            $statusMap = ['approved' => ['green', 'Aprobada'], 'pending' => ['yellow', 'Pendiente'], 'pending_threshold' => ['yellow', 'Pendiente de umbral'], 'rejected' => ['red', 'Rechazada']];
                                             [$color, $label] = $statusMap[$inv->status] ?? ['gray', $inv->status ?? '—'];
                                         @endphp
                                         <span class="badge badge-{{ $color }}">{{ $label }}</span>
