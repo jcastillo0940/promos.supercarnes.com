@@ -20,6 +20,13 @@ use Illuminate\View\View;
 
 class InvoiceBackofficeController extends Controller
 {
+    public function dashboard(): View
+    {
+        return view('admin.dashboard', [
+            'dashboard' => $this->dashboardData(),
+        ]);
+    }
+
     public function index(Request $request): View
     {
         return view('admin.invoice-backoffice', [
