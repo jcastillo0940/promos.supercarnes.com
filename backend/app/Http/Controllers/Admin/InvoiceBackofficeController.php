@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Campaign;
 use App\Models\InvoiceGoalSetting;
 use App\Models\AuditLog;
 use App\Models\PromoWinner;
@@ -22,14 +23,8 @@ class InvoiceBackofficeController extends Controller
     {
         return view('admin.invoice-backoffice', [
             'settings' => $this->settings(),
-            'backofficeKey' => '',
-        ]);
-    }
-
-    public function dashboard(Request $request): View
-    {
-        return view('admin.dashboard', [
-            'dashboard' => $this->dashboardData(),
+            'campaigns' => Campaign::query()->orderByDesc('status')->orderBy('sort_order')->orderByDesc('starts_at')->get(),
+            'backofficeKey' => (string) config('contest.backoffice_key', ''),
         ]);
     }
 
@@ -68,6 +63,43 @@ class InvoiceBackofficeController extends Controller
         return redirect()
             ->route('admin.invoice-backoffice')
             ->with('status', 'Configuracion guardada.');
+    }
+
+    public function updateCampaigns(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+
+        $payload = $request->validate([
+            'campaigns' => ['required', 'array'],
+            'campaigns.*.id' => ['required', 'integer', 'exists:campaigns,id'],
+            'campaigns.*.name' => ['required', 'string', 'max:150'],
+            'campaigns.*.slug' => ['required', 'string', 'max:120'],
+            'campaigns.*.description' => ['nullable', 'string'],
+            'campaigns.*.status' => ['required', 'in:draft,active,paused,archived'],
+            'campaigns.*.is_listed' => ['nullable', 'boolean'],
+            'campaigns.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'campaigns.*.hero_image_url' => ['nullable', 'string', 'max:255'],
+            'campaigns.*.card_image_url' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        foreach ($payload['campaigns'] as $campaignData) {
+            $campaign = Campaign::query()->findOrFail($campaignData['id']);
+
+            $campaign->forceFill([
+                'name' => $campaignData['name'],
+                'slug' => $campaignData['slug'],
+                'description' => $campaignData['description'] ?? null,
+                'status' => $campaignData['status'],
+                'is_listed' => (bool) ($campaignData['is_listed'] ?? false),
+                'sort_order' => (int) ($campaignData['sort_order'] ?? 0),
+                'hero_image_url' => $campaignData['hero_image_url'] ?? null,
+                'card_image_url' => $campaignData['card_image_url'] ?? null,
+            ])->save();
+        }
+
+        return redirect()
+            ->route('admin.invoice-backoffice')
+            ->with('status', 'Promociones actualizadas.');
     }
 
     public function invoices(Request $request): View

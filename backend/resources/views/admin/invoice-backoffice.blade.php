@@ -77,6 +77,65 @@
                     </div>
                 </div>
             </form>
+
+            <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;margin-top:18px;">
+                <div class="page-section">
+                    <p class="sidebar-title">Promociones</p>
+                    <p class="small">Edita el slug para cada promoción. Ejemplo: <code>/dia-del-padre</code>.</p>
+
+                    <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.update') }}">
+                        @csrf
+                        <div class="stack">
+                            @foreach ($campaigns as $campaign)
+                                <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
+                                    <input type="hidden" name="campaigns[{{ $loop->index }}][id]" value="{{ $campaign->id }}">
+                                    <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                                        <div class="field">
+                                            <label>Nombre</label>
+                                            <input type="text" name="campaigns[{{ $loop->index }}][name]" value="{{ old("campaigns.$loop->index.name", $campaign->name) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Slug</label>
+                                            <input type="text" name="campaigns[{{ $loop->index }}][slug]" value="{{ old("campaigns.$loop->index.slug", $campaign->slug) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Orden</label>
+                                            <input type="number" name="campaigns[{{ $loop->index }}][sort_order]" value="{{ old("campaigns.$loop->index.sort_order", $campaign->sort_order ?? 0) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Status</label>
+                                            <select name="campaigns[{{ $loop->index }}][status]">
+                                                <option value="draft" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'draft')>Draft</option>
+                                                <option value="active" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'active')>Active</option>
+                                                <option value="paused" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'paused')>Paused</option>
+                                                <option value="archived" @selected(old("campaigns.$loop->index.status", $campaign->status) === 'archived')>Archived</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label>Imagen card</label>
+                                            <input type="text" name="campaigns[{{ $loop->index }}][card_image_url]" value="{{ old("campaigns.$loop->index.card_image_url", $campaign->card_image_url) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Imagen hero</label>
+                                            <input type="text" name="campaigns[{{ $loop->index }}][hero_image_url]" value="{{ old("campaigns.$loop->index.hero_image_url", $campaign->hero_image_url) }}">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Descripción</label>
+                                        <input type="text" name="campaigns[{{ $loop->index }}][description]" value="{{ old("campaigns.$loop->index.description", $campaign->description) }}">
+                                    </div>
+                                    <label>
+                                        <input type="checkbox" name="campaigns[{{ $loop->index }}][is_listed]" value="1" @checked(old("campaigns.$loop->index.is_listed", $campaign->is_listed ?? true))>
+                                        Mostrar en el catálogo
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <button type="submit" class="btn btn-red">Guardar promociones</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 @endsection

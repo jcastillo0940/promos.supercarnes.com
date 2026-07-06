@@ -75,6 +75,7 @@ Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () 
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/entrega-premio/{winner}/reabrir', [InvoiceBackofficeController::class, 'prizeDeliveryOverride'])->name('admin.prize-delivery.override');
+    Route::post('/adminrepus1car/campaigns', [InvoiceBackofficeController::class, 'updateCampaigns'])->name('admin.invoice-backoffice.campaigns.update');
 });
 
 Route::get('/{any?}', function () use ($frontendDist, $serveFrontendFile) {

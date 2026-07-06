@@ -24,4 +24,29 @@ class CampaignManager
 
         return $campaign;
     }
+
+    public function visible(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Campaign::query()
+            ->where('is_listed', true)
+            ->orderByDesc('status')
+            ->orderBy('sort_order')
+            ->orderByDesc('starts_at')
+            ->get();
+    }
+
+    public function bySlugOrFail(string $slug): Campaign
+    {
+        $campaign = Campaign::query()
+            ->where('slug', $slug)
+            ->first();
+
+        if (! $campaign) {
+            throw ValidationException::withMessages([
+                'campaign' => 'No encontramos esa promocion.',
+            ]);
+        }
+
+        return $campaign;
+    }
 }

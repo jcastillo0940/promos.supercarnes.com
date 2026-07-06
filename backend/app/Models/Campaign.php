@@ -9,8 +9,13 @@ class Campaign extends Model
 {
     protected $fillable = [
         'name',
+        'slug',
         'description',
         'status',
+        'is_listed',
+        'hero_image_url',
+        'card_image_url',
+        'sort_order',
         'starts_at',
         'ends_at',
         'invoice_min_amount_for_shot',
@@ -30,12 +35,14 @@ class Campaign extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'is_listed' => 'boolean',
             'games_enabled' => 'boolean',
             'major_prizes_enabled' => 'boolean',
             'invoice_scan_enabled' => 'boolean',
             'redemption_enabled' => 'boolean',
             'invoice_min_amount_for_shot' => 'decimal:2',
             'amount_per_point' => 'decimal:2',
+            'sort_order' => 'integer',
         ];
     }
 

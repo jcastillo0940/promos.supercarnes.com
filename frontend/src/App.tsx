@@ -1,12 +1,38 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
-import { QRCodeCanvas } from 'qrcode.react'
 import { api } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData } from './types'
 
 type EntryMode = 'scan' | 'manual'
 type PromoStep = 1 | 2 | 3
+type CampaignStatus = 'draft' | 'active' | 'paused' | 'archived'
+
+interface Campaign {
+  id: number
+  name: string
+  slug: string
+  description?: string | null
+  status: CampaignStatus
+  is_listed?: boolean
+  hero_image_url?: string | null
+  card_image_url?: string | null
+}
+
+interface InvoiceFormState {
+  rawInput: string
+  invoice_number: string
+  purchase_amount: string
+  issued_at: string
+  issuer_name: string
+  cufe_tail: string
+  document_type: 'cedula' | 'passport' | 'residente'
+  document_number: string
+  first_name: string
+  last_name: string
+  phone: string
+  email: string
+}
 
 const QR_READER_ELEMENT_ID = 'dgi-qr-reader'
 const CUFE_SHORT_PREFIX = 'FE01200000032812-2-249262-'
@@ -17,22 +43,6 @@ const INVOICE_SCANNER_FORMATS = [
   Html5QrcodeSupportedFormats.AZTEC,
 ]
 
-interface InvoiceFormState {
-  rawInput: string
-  invoice_number: string
-  purchase_amount: string
-  issued_at: string
-  issuer_name: string
-  cufe_tail: string
-  dad_reason: string
-  document_type: 'cedula' | 'passport' | 'residente'
-  document_number: string
-  first_name: string
-  last_name: string
-  phone: string
-  email: string
-}
-
 function emptyForm(): InvoiceFormState {
   return {
     rawInput: '',
@@ -41,7 +51,6 @@ function emptyForm(): InvoiceFormState {
     issued_at: '',
     issuer_name: '',
     cufe_tail: '',
-    dad_reason: '',
     document_type: 'cedula',
     document_number: '',
     first_name: '',
@@ -59,6 +68,129 @@ function createInvoiceScanner() {
 }
 
 export function App() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true)
+  const [campaignError, setCampaignError] = useState<string | null>(null)
+  const [path, setPath] = useState(window.location.pathname)
+
+  useEffect(() => {
+    const onPopState = () => setPath(window.location.pathname)
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadCampaigns() {
+      try {
+        setLoadingCampaigns(true)
+        const response = await api.get<{ data: Campaign[] }>('/campaigns')
+        if (!cancelled) {
+          setCampaigns(response.data.data ?? [])
+          setCampaignError(null)
+        }
+      } catch (error) {
+        if (!cancelled) setCampaignError(normalizeError(error))
+      } finally {
+        if (!cancelled) setLoadingCampaigns(false)
+      }
+    }
+
+    void loadCampaigns()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectedSlug = useMemo(() => {
+    const current = path.replace(/\/+$/, '')
+    if (!current || current === '/') return null
+    return current.split('/').filter(Boolean)[0] ?? null
+  }, [path])
+
+  const selectedCampaign = useMemo(() => campaigns.find((campaign) => campaign.slug === selectedSlug) ?? null, [campaigns, selectedSlug])
+
+  if (selectedSlug && !selectedCampaign && !loadingCampaigns) {
+    return <PromoNotFound onBack={() => goHome(setPath)} />
+  }
+
+  if (!selectedSlug) {
+    return (
+      <PromoCatalog
+        campaigns={campaigns}
+        loading={loadingCampaigns}
+        error={campaignError}
+        onOpen={(slug) => openPath(`/${slug}`, setPath)}
+      />
+    )
+  }
+
+  return <PromoLanding campaign={selectedCampaign} onBack={() => goHome(setPath)} />
+}
+
+function goHome(setPath: (value: string) => void) {
+  window.history.pushState({}, '', '/')
+  setPath(window.location.pathname)
+}
+
+function openPath(path: string, setPath: (value: string) => void) {
+  window.history.pushState({}, '', path)
+  setPath(window.location.pathname)
+}
+
+function PromoCatalog({
+  campaigns,
+  loading,
+  error,
+  onOpen,
+}: {
+  campaigns: Campaign[]
+  loading: boolean
+  error: string | null
+  onOpen: (slug: string) => void
+}) {
+  return (
+    <div className="promo-shell promo-shell-catalog">
+      <div className="promo-ambient" />
+      <main className="promo-catalog-layout">
+        <header className="promo-catalog-header">
+          <p className="promo-kicker">Promociones Super Carnes</p>
+          <h1>Elige una promo activa</h1>
+          <p>Si solo hay una, verás una sola tarjeta. Si hay varias, se adaptan en cuadrícula.</p>
+        </header>
+
+        {loading ? <div className="promo-state">Cargando promociones...</div> : null}
+        {error ? <div className="promo-alert">{error}</div> : null}
+
+        {!loading && campaigns.length === 0 ? (
+          <div className="promo-state">No hay promociones visibles por ahora.</div>
+        ) : (
+          <section className="promo-grid">
+            {campaigns.map((campaign) => (
+              <button key={campaign.id} type="button" className="promo-card" onClick={() => onOpen(campaign.slug)}>
+                <div className="promo-card-image" style={campaign.card_image_url ? { backgroundImage: `url(${campaign.card_image_url})` } : undefined} />
+                <div className="promo-card-body">
+                  <span>{campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
+                  <strong>{campaign.name}</strong>
+                  <p>{campaign.description ?? 'Abre esta promoción para participar.'}</p>
+                  <em>/{campaign.slug}</em>
+                </div>
+              </button>
+            ))}
+          </section>
+        )}
+      </main>
+    </div>
+  )
+}
+
+function PromoLanding({
+  campaign,
+  onBack,
+}: {
+  campaign: Campaign | null
+  onBack: () => void
+}) {
   const [entryMode, setEntryMode] = useState<EntryMode>('scan')
   const [promoStep, setPromoStep] = useState<PromoStep>(1)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(emptyForm())
@@ -67,15 +199,13 @@ export function App() {
   const [resolvingInvoice, setResolvingInvoice] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [registeredInvoice, setRegisteredInvoice] = useState<RegisteredInvoice | null>(null)
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const steps = useMemo(
     () => [
       { id: 1, title: 'Escanea o ingresa CUFE' },
-      { id: 2, title: 'Factura válida' },
+      { id: 2, title: 'Factura valida' },
       { id: 3, title: 'Completa tu registro' },
     ],
     [],
@@ -151,9 +281,7 @@ export function App() {
   async function validateManualCufe() {
     const rawTail = invoiceForm.cufe_tail.trim().replace(/\D/g, '').slice(0, 60)
     if (!rawTail) return
-
-    const rawText = `${CUFE_SHORT_PREFIX}${rawTail}`
-    await resolveInvoice(rawText)
+    await resolveInvoice(`${CUFE_SHORT_PREFIX}${rawTail}`)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -164,7 +292,7 @@ export function App() {
     try {
       const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
       const fullName = `${invoiceForm.first_name.trim()} ${invoiceForm.last_name.trim()}`.trim()
-      const response = await api.post<{ invoice: RegisteredInvoice; message?: string }>('/invoices/scan', {
+      await api.post<{ invoice: RegisteredInvoice; message?: string }>('/invoices/scan', {
         qr_raw_text: rawText,
         purchase_amount: Number(invoiceForm.purchase_amount || 0),
         invoice_number: invoiceForm.invoice_number || null,
@@ -177,10 +305,8 @@ export function App() {
         cedula: invoiceForm.document_number,
         phone: invoiceForm.phone || null,
         email: invoiceForm.email || null,
-        dad_reason: invoiceForm.dad_reason || null,
       })
 
-      setRegisteredInvoice(response.data.invoice)
       setInvoiceValidated(true)
       setPromoStep(3)
     } catch (error) {
@@ -190,43 +316,23 @@ export function App() {
     }
   }
 
-  function downloadQr() {
-    const canvas = qrCanvasRef.current
-    if (!canvas) return
-    const url = canvas.toDataURL('image/png')
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `comprobante-super-carnes-${registeredInvoice?.invoice_number ?? Date.now()}.png`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
-
   return (
     <div className="promo-shell">
       <div className="promo-ambient" />
-      <div className="promo-swoosh" aria-hidden="true" />
       <main className="promo-layout">
         <section className="promo-hero">
           <div className="promo-hero-copy">
-            <div className="promo-brand-mark">
-              <img src="/logo_web.jpg" alt="Super Carnes" />
-            </div>
-            <p className="promo-kicker">Super Carnes 2026</p>
-            {invoiceValidated ? <p className="promo-valid-badge">Factura válida</p> : null}
+            <button className="promo-back" type="button" onClick={onBack}>
+              Volver a promociones
+            </button>
+            <p className="promo-kicker">/{campaign?.slug ?? 'promo'}</p>
+            {invoiceValidated ? <p className="promo-valid-badge">Factura valida</p> : null}
             <h1>
-              <span className="promo-title-line">Registra tu</span>
-              <span>factura</span>
+              {campaign?.name ?? 'Promocion'}
+              <span>Super Carnes</span>
             </h1>
-            <div className="promo-prize-line">
-              <span className="material-symbols-outlined" aria-hidden="true">redeem</span>
-              <strong>¡Gana un balón <mark>Trionda</mark> para Papá!</strong>
-            </div>
-            <p>
-              Escanea el QR o ingresa el CUFE de tu factura para validar la compra y abrir el formulario de participación.
-            </p>
-
-            <div className="promo-stepper promo-stepper-desktop">
+            <p>{campaign?.description ?? 'Ingresa a la promoción y registra tu factura.'}</p>
+            <div className="promo-stepper">
               {steps.map((step) => (
                 <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
                   <span>{step.id}</span>
@@ -237,53 +343,32 @@ export function App() {
           </div>
 
           <div className="promo-art">
+            <div className="promo-paper">
+              <span>Promo activa</span>
+              <div className="promo-paper-lines">
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+            </div>
             <div className="promo-dad">
-              <img src="/gaby-torres-celebration.webp" alt="Papa celebrando la promo" />
+              <img src={campaign?.hero_image_url || '/gaby-torres-celebration.webp'} alt={campaign?.name ?? 'Promocion'} />
             </div>
             <div className="promo-ball" aria-hidden="true">
-              <img src="/auth-ball-center.png" alt="" />
+              <img src="/trionda-ball.svg" alt="" />
             </div>
           </div>
         </section>
 
         <aside className="promo-panel">
           <div className="promo-panel-card promo-panel-highlight">
-            <p className="promo-panel-label">Marcador de facturas</p>
-            <h2>Participacion activa</h2>
-            <p>{invoiceValidated ? 'La factura paso y el formulario ya esta disponible.' : 'Escanea tu primera factura DGI para abrir el formulario.'}</p>
+            <p className="promo-panel-label">Promoción activa</p>
+            <h2>{campaign?.status === 'active' ? 'Lista para participar' : 'Promoción disponible'}</h2>
+            <p>{invoiceValidated ? 'La factura pasó y el formulario ya está disponible.' : 'Escanea tu factura DGI para comenzar.'}</p>
           </div>
 
-          {promoStep === 3 && registeredInvoice ? (
-            <div className="promo-panel-card promo-success">
-              <div className="promo-success-check" aria-hidden="true">✓</div>
-              <h3>¡Registro exitoso!</h3>
-              <p className="promo-success-msg">
-                Te has registrado exitosamente. Estate pendiente a nuestras redes sociales donde anunciaremos a los <strong>100 ganadores</strong>.
-              </p>
-
-              <div className="promo-qr-block">
-                <p className="promo-qr-label">Tu comprobante de participación</p>
-                <div className="promo-qr-wrap">
-                  <QRCodeCanvas
-                    ref={qrCanvasRef}
-                    value={registeredInvoice.cufe}
-                    size={160}
-                    bgColor="#ffffff"
-                    fgColor="#10131a"
-                    level="H"
-                    marginSize={2}
-                  />
-                </div>
-                <p className="promo-qr-invoice">
-                  Factura <strong>{registeredInvoice.invoice_number ?? registeredInvoice.cufe.slice(-12)}</strong>
-                </p>
-              </div>
-
-              <button className="promo-primary" type="button" onClick={downloadQr}>
-                Descargar comprobante
-              </button>
-            </div>
-          ) : !invoiceValidated ? (
+          {!invoiceValidated ? (
             <div className="promo-panel-card">
               <div className="promo-mode-switch">
                 <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>
@@ -297,16 +382,9 @@ export function App() {
               {entryMode === 'scan' ? (
                 <div className="promo-scan">
                   {!scannerOn ? (
-                    <>
-                      <div className="promo-scan-frame">
-                        <span className="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span>
-                        <p>Coloca el código QR de tu factura DGI dentro del marco para escanear.</p>
-                      </div>
-                      <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
-                        <span className="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span>
-                        Activar escáner de QR
-                      </button>
-                    </>
+                    <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
+                      Activar escaneo de QR
+                    </button>
                   ) : (
                     <div id={QR_READER_ELEMENT_ID} className="promo-scanner" />
                   )}
@@ -352,8 +430,6 @@ export function App() {
                 <h3>Completa tu registro</h3>
               </div>
 
-              {submitError ? <div className="promo-alert promo-alert-top">{submitError}</div> : null}
-
               <div className="promo-form-grid">
                 <label>
                   Tipo de documento
@@ -370,117 +446,54 @@ export function App() {
                 </label>
                 <label>
                   N° documento
-                  <input
-                    value={invoiceForm.document_number}
-                    onChange={(e) => setInvoiceForm((current) => ({
-                      ...current,
-                      document_number: sanitizeDocumentNumber(current.document_type, e.target.value),
-                    }))}
-                    placeholder={documentPlaceholder(invoiceForm.document_type)}
-                    required
-                  />
+                  <input value={invoiceForm.document_number} onChange={(e) => setInvoiceForm((current) => ({ ...current, document_number: sanitizeDocumentNumber(current.document_type, e.target.value) }))} placeholder={documentPlaceholder(invoiceForm.document_type)} required />
                 </label>
                 <label>
                   Nombre
-                  <input
-                    value={invoiceForm.first_name}
-                    onChange={(e) => setInvoiceForm((current) => ({ ...current, first_name: sanitizeName(e.target.value) }))}
-                    placeholder="Nombre(s)"
-                    required
-                  />
+                  <input value={invoiceForm.first_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, first_name: sanitizeName(e.target.value) }))} placeholder="Nombre(s)" required />
                 </label>
                 <label>
                   Apellidos
-                  <input
-                    value={invoiceForm.last_name}
-                    onChange={(e) => setInvoiceForm((current) => ({ ...current, last_name: sanitizeName(e.target.value) }))}
-                    placeholder="Apellido(s)"
-                    required
-                  />
+                  <input value={invoiceForm.last_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, last_name: sanitizeName(e.target.value) }))} placeholder="Apellido(s)" required />
                 </label>
                 <label>
                   Telefono
-                  <input
-                    value={invoiceForm.phone}
-                    onChange={(e) => setInvoiceForm((current) => ({ ...current, phone: sanitizePanamaPhone(e.target.value) }))}
-                    placeholder="6XXX-XXXX"
-                    inputMode="tel"
-                    required
-                  />
+                  <input value={invoiceForm.phone} onChange={(e) => setInvoiceForm((current) => ({ ...current, phone: sanitizePanamaPhone(e.target.value) }))} placeholder="6XXX-XXXX" inputMode="tel" required />
                 </label>
                 <label>
                   Correo
-                  <input
-                    value={invoiceForm.email}
-                    onChange={(e) => setInvoiceForm((current) => ({ ...current, email: e.target.value.trim() }))}
-                    type="email"
-                    placeholder="correo@dominio.com"
-                    required
-                  />
+                  <input value={invoiceForm.email} onChange={(e) => setInvoiceForm((current) => ({ ...current, email: e.target.value.trim() }))} type="email" placeholder="correo@dominio.com" required />
                 </label>
                 <label className="promo-form-wide">
-                  <span className="promo-label-row">
-                    ¿Por qué tu papá merece ganar el Balón Trionda?
-                    <span className="promo-char-count">{invoiceForm.dad_reason.length}/300</span>
-                  </span>
-                  <textarea
-                    className="promo-textarea"
-                    value={invoiceForm.dad_reason}
-                    onChange={(e) => setInvoiceForm((current) => ({
-                      ...current,
-                      dad_reason: e.target.value.slice(0, 300),
-                    }))}
-                    maxLength={300}
-                    placeholder="Cuéntanos en tus propias palabras..."
-                    required
-                    rows={3}
-                  />
+                  Ultimos 60 numeros del CUFE
+                  <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />
                 </label>
               </div>
 
+              {submitError ? <div className="promo-alert">{submitError}</div> : null}
               <button className="promo-primary" type="submit" disabled={submitting}>
                 {submitting ? 'Enviando...' : 'Registrar ahora'}
               </button>
             </form>
           )}
-          <div className="promo-security-note">
-            <span className="material-symbols-outlined" aria-hidden="true">shield_lock</span>
-            <p>Tus datos están protegidos y se utilizan únicamente para validar tu participación.</p>
-          </div>
         </aside>
+      </main>
+    </div>
+  )
+}
 
-        <div className="promo-stepper promo-stepper-mobile" aria-label="Pasos de participación">
-          {steps.map((step) => (
-            <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
-              <span>{step.id}</span>
-              <strong>{step.title}</strong>
-            </div>
-          ))}
+function PromoNotFound({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="promo-shell promo-shell-catalog">
+      <div className="promo-ambient" />
+      <main className="promo-catalog-layout">
+        <div className="promo-state">
+          <h1>Promocion no encontrada</h1>
+          <p>Puede estar desactivada o el slug no existe.</p>
+          <button className="promo-primary" type="button" onClick={onBack}>
+            Volver a promociones
+          </button>
         </div>
-
-        <section className="promo-info-strip" aria-label="Informacion de la promocion">
-          <article>
-            <img src="/auth-ball-center.png" alt="" />
-            <div>
-              <strong>100 ganadores</strong>
-              <p>Podrás ser uno de los 100 felices ganadores de un balón Trionda para Papá.</p>
-            </div>
-          </article>
-          <article>
-            <span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>
-            <div>
-              <strong>Vigencia de la promoción</strong>
-              <p>Del 15 de mayo al 15 de junio de 2026. Aplica para compras en tiendas Super Carnes a nivel nacional.</p>
-            </div>
-          </article>
-          <article>
-            <span className="material-symbols-outlined" aria-hidden="true">description</span>
-            <div>
-              <strong>¿Cómo participar?</strong>
-              <p>Realiza tu compra, escanea el QR o ingresa el CUFE de tu factura DGI y completa tu registro. ¡Así de fácil!</p>
-            </div>
-          </article>
-        </section>
       </main>
     </div>
   )
@@ -497,30 +510,32 @@ function documentPlaceholder(type: InvoiceFormState['document_type']) {
   }
 }
 
-function sanitizeDocumentNumber(type: InvoiceFormState['document_type'], value: string) {
-  const raw = value.trim().toUpperCase()
-  if (type === 'passport' || type === 'residente') {
-    return raw.replace(/[^A-Z0-9-]/g, '').slice(0, 40)
-  }
-  return raw.replace(/[^0-9-]/g, '').slice(0, 20)
+function sanitizeName(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñÜü\s'.-]/g, '')
 }
 
-function sanitizeName(value: string) {
-  return value
-    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .trimStart()
+function sanitizeDocumentNumber(type: InvoiceFormState['document_type'], value: string) {
+  if (type === 'passport' || type === 'residente') {
+    return value.toUpperCase().replace(/[^A-Z0-9-]/g, '')
+  }
+  return value.replace(/[^0-9-]/g, '')
 }
 
 function sanitizePanamaPhone(value: string) {
-  const cleaned = value.replace(/\D/g, '').slice(0, 8)
-  if (cleaned.length <= 4) return cleaned
-  return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`
+  return value.replace(/[^0-9-]/g, '').slice(0, 9)
 }
 
 function normalizeError(error: unknown) {
-  if (typeof error !== 'object' || !error) return 'Ocurrio un error inesperado.'
-  const candidate = error as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }
-  const firstError = candidate.response?.data?.errors ? Object.values(candidate.response.data.errors)[0]?.[0] : null
-  return firstError ?? candidate.response?.data?.message ?? 'Ocurrio un error inesperado.'
+  if (typeof error === 'object' && error && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } }).response
+    const message = response?.data?.message
+    if (message) return message
+    const errors = response?.data?.errors
+    if (errors) {
+      const firstKey = Object.keys(errors)[0]
+      return firstKey ? errors[firstKey]?.[0] ?? 'Ocurrio un error inesperado.' : 'Ocurrio un error inesperado.'
+    }
+  }
+  if (error instanceof Error) return error.message
+  return 'Ocurrio un error inesperado.'
 }
