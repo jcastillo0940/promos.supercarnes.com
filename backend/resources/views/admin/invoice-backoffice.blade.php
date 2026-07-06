@@ -85,6 +85,7 @@
 
                     <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.store') }}" style="margin:18px 0 24px;">
                         @csrf
+                        <input type="hidden" name="key" value="{{ $backofficeKey }}">
                         <div class="page-card" style="box-shadow:none;border:1px solid #cbd5e1;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);">
                             <div class="page-section stack">
                                 <div>
@@ -204,6 +205,7 @@
 
                     <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.update') }}">
                         @csrf
+                        <input type="hidden" name="key" value="{{ $backofficeKey }}">
                         <div class="stack">
                             @foreach ($campaigns as $campaign)
                                 <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
