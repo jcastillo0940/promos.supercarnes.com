@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class InvoiceBackofficeController extends Controller
@@ -80,6 +81,20 @@ class InvoiceBackofficeController extends Controller
             'campaigns.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'campaigns.*.hero_image_url' => ['nullable', 'string', 'max:255'],
             'campaigns.*.card_image_url' => ['nullable', 'string', 'max:255'],
+            'campaigns.*.starts_at' => ['nullable', 'date'],
+            'campaigns.*.ends_at' => ['nullable', 'date'],
+            'campaigns.*.invoice_min_amount_for_shot' => ['nullable', 'numeric', 'min:0'],
+            'campaigns.*.amount_per_point' => ['nullable', 'numeric', 'min:0'],
+            'campaigns.*.points_per_block' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'campaigns.*.daily_max_points' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'campaigns.*.daily_max_invoices' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'campaigns.*.coupon_ttl_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
+            'campaigns.*.games_enabled' => ['nullable', 'boolean'],
+            'campaigns.*.major_prizes_enabled' => ['nullable', 'boolean'],
+            'campaigns.*.invoice_scan_enabled' => ['nullable', 'boolean'],
+            'campaigns.*.redemption_enabled' => ['nullable', 'boolean'],
+            'campaigns.*.entry_threshold_amount' => ['nullable', 'numeric', 'min:0'],
+            'campaigns.*.entry_requires_approval' => ['nullable', 'boolean'],
         ]);
 
         foreach ($payload['campaigns'] as $campaignData) {
@@ -94,12 +109,93 @@ class InvoiceBackofficeController extends Controller
                 'sort_order' => (int) ($campaignData['sort_order'] ?? 0),
                 'hero_image_url' => $campaignData['hero_image_url'] ?? null,
                 'card_image_url' => $campaignData['card_image_url'] ?? null,
+                'starts_at' => $campaignData['starts_at'] ?? $campaign->starts_at,
+                'ends_at' => $campaignData['ends_at'] ?? $campaign->ends_at,
+                'invoice_min_amount_for_shot' => $campaignData['invoice_min_amount_for_shot'] ?? $campaign->invoice_min_amount_for_shot,
+                'amount_per_point' => $campaignData['amount_per_point'] ?? $campaign->amount_per_point,
+                'points_per_block' => $campaignData['points_per_block'] ?? $campaign->points_per_block,
+                'daily_max_points' => $campaignData['daily_max_points'] ?? $campaign->daily_max_points,
+                'daily_max_invoices' => $campaignData['daily_max_invoices'] ?? $campaign->daily_max_invoices,
+                'coupon_ttl_hours' => $campaignData['coupon_ttl_hours'] ?? $campaign->coupon_ttl_hours,
+                'games_enabled' => (bool) ($campaignData['games_enabled'] ?? false),
+                'major_prizes_enabled' => (bool) ($campaignData['major_prizes_enabled'] ?? false),
+                'invoice_scan_enabled' => (bool) ($campaignData['invoice_scan_enabled'] ?? false),
+                'redemption_enabled' => (bool) ($campaignData['redemption_enabled'] ?? false),
+                'entry_threshold_amount' => $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount,
+                'entry_requires_approval' => (bool) ($campaignData['entry_requires_approval'] ?? false),
             ])->save();
         }
 
         return redirect()
             ->route('admin.invoice-backoffice')
             ->with('status', 'Promociones actualizadas.');
+    }
+
+    public function storeCampaign(Request $request): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'slug' => ['nullable', 'string', 'max:120', 'alpha_dash', Rule::unique('campaigns', 'slug')],
+            'description' => ['nullable', 'string'],
+            'status' => ['required', 'in:draft,active,paused,archived'],
+            'is_listed' => ['nullable', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'hero_image_url' => ['nullable', 'string', 'max:255'],
+            'card_image_url' => ['nullable', 'string', 'max:255'],
+            'invoice_min_amount_for_shot' => ['nullable', 'numeric', 'min:0'],
+            'amount_per_point' => ['nullable', 'numeric', 'min:0'],
+            'points_per_block' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'daily_max_points' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'daily_max_invoices' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'coupon_ttl_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
+            'games_enabled' => ['nullable', 'boolean'],
+            'major_prizes_enabled' => ['nullable', 'boolean'],
+            'invoice_scan_enabled' => ['nullable', 'boolean'],
+            'redemption_enabled' => ['nullable', 'boolean'],
+            'entry_threshold_amount' => ['nullable', 'numeric', 'min:0'],
+            'entry_requires_approval' => ['nullable', 'boolean'],
+        ]);
+
+        $slug = $validated['slug'] ?: str($validated['name'])->slug()->toString();
+
+        if (Campaign::query()->where('slug', $slug)->exists()) {
+            return back()
+                ->withErrors(['slug' => 'Ya existe una promocion con ese slug.'])
+                ->withInput();
+        }
+
+        Campaign::query()->create([
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'description' => $validated['description'] ?? null,
+            'status' => $validated['status'],
+            'is_listed' => $request->boolean('is_listed'),
+            'sort_order' => (int) ($validated['sort_order'] ?? 0),
+            'starts_at' => $validated['starts_at'] ?? now(),
+            'ends_at' => $validated['ends_at'] ?? now()->addYear(),
+            'hero_image_url' => $validated['hero_image_url'] ?? null,
+            'card_image_url' => $validated['card_image_url'] ?? null,
+            'invoice_min_amount_for_shot' => $validated['invoice_min_amount_for_shot'] ?? 25,
+            'amount_per_point' => $validated['amount_per_point'] ?? 25,
+            'points_per_block' => $validated['points_per_block'] ?? 1,
+            'daily_max_points' => $validated['daily_max_points'] ?? 1000,
+            'daily_max_invoices' => $validated['daily_max_invoices'] ?? 100,
+            'coupon_ttl_hours' => $validated['coupon_ttl_hours'] ?? 72,
+            'games_enabled' => $request->boolean('games_enabled'),
+            'major_prizes_enabled' => $request->boolean('major_prizes_enabled'),
+            'invoice_scan_enabled' => $request->boolean('invoice_scan_enabled', true),
+            'redemption_enabled' => $request->boolean('redemption_enabled'),
+            'entry_threshold_amount' => $validated['entry_threshold_amount'] ?? null,
+            'entry_requires_approval' => $request->boolean('entry_requires_approval'),
+        ]);
+
+        return redirect()
+            ->route('admin.invoice-backoffice')
+            ->with('status', 'Promocion creada correctamente.');
     }
 
     public function invoices(Request $request): View

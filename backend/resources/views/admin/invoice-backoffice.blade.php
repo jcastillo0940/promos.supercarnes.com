@@ -81,7 +81,126 @@
             <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;margin-top:18px;">
                 <div class="page-section">
                     <p class="sidebar-title">Promociones</p>
-                    <p class="small">Edita el slug para cada promoción. Ejemplo: <code>/dia-del-padre</code>.</p>
+                    <p class="small">Crea nuevas promociones con sus propias reglas o edita las existentes. Ejemplo: <code>/dia-del-padre</code>.</p>
+
+                    <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.store') }}" style="margin:18px 0 24px;">
+                        @csrf
+                        <div class="page-card" style="box-shadow:none;border:1px solid #cbd5e1;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);">
+                            <div class="page-section stack">
+                                <div>
+                                    <p class="sidebar-title">Nueva promoción</p>
+                                    <p class="small">Define el nombre, el slug y las reglas base. Si dejas el slug vacío, se genera automáticamente.</p>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                                    <div class="field">
+                                        <label for="new_campaign_name">Nombre</label>
+                                        <input id="new_campaign_name" name="name" type="text" value="{{ old('name') }}" placeholder="Del sueño al puesto">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_slug">Slug</label>
+                                        <input id="new_campaign_slug" name="slug" type="text" value="{{ old('slug') }}" placeholder="del-sueno-al-puesto">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_status">Estado</label>
+                                        <select id="new_campaign_status" name="status">
+                                            <option value="draft" @selected(old('status', 'draft') === 'draft')>Borrador</option>
+                                            <option value="active" @selected(old('status') === 'active')>Activa</option>
+                                            <option value="paused" @selected(old('status') === 'paused')>Pausada</option>
+                                            <option value="archived" @selected(old('status') === 'archived')>Archivada</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_sort_order">Orden</label>
+                                        <input id="new_campaign_sort_order" name="sort_order" type="number" min="0" max="9999" value="{{ old('sort_order', 0) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_starts_at">Inicio</label>
+                                        <input id="new_campaign_starts_at" name="starts_at" type="datetime-local" value="{{ old('starts_at') }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_ends_at">Fin</label>
+                                        <input id="new_campaign_ends_at" name="ends_at" type="datetime-local" value="{{ old('ends_at') }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_description">Descripción</label>
+                                        <input id="new_campaign_description" name="description" type="text" value="{{ old('description') }}" placeholder="Resumen de la promoción">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_card_image_url">Imagen card</label>
+                                        <input id="new_campaign_card_image_url" name="card_image_url" type="text" value="{{ old('card_image_url') }}" placeholder="/images/promo-card.png">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_hero_image_url">Imagen hero</label>
+                                        <input id="new_campaign_hero_image_url" name="hero_image_url" type="text" value="{{ old('hero_image_url') }}" placeholder="/images/promo-hero.png">
+                                    </div>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                                    <div class="field">
+                                        <label for="new_campaign_invoice_min_amount_for_shot">Monto mínimo por factura</label>
+                                        <input id="new_campaign_invoice_min_amount_for_shot" name="invoice_min_amount_for_shot" type="number" min="0" step="0.01" value="{{ old('invoice_min_amount_for_shot', 25) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_amount_per_point">Monto por punto</label>
+                                        <input id="new_campaign_amount_per_point" name="amount_per_point" type="number" min="0" step="0.01" value="{{ old('amount_per_point', 25) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_points_per_block">Puntos por bloque</label>
+                                        <input id="new_campaign_points_per_block" name="points_per_block" type="number" min="1" value="{{ old('points_per_block', 1) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_daily_max_points">Máximo puntos por día</label>
+                                        <input id="new_campaign_daily_max_points" name="daily_max_points" type="number" min="1" value="{{ old('daily_max_points', 1000) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_daily_max_invoices">Máximo facturas por día</label>
+                                        <input id="new_campaign_daily_max_invoices" name="daily_max_invoices" type="number" min="1" value="{{ old('daily_max_invoices', 100) }}">
+                                    </div>
+                                    <div class="field">
+                                        <label for="new_campaign_coupon_ttl_hours">Vigencia cupón (horas)</label>
+                                        <input id="new_campaign_coupon_ttl_hours" name="coupon_ttl_hours" type="number" min="1" value="{{ old('coupon_ttl_hours', 72) }}">
+                                    </div>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                                    <div class="field">
+                                        <label for="new_campaign_entry_threshold_amount">Límite de participación</label>
+                                        <input id="new_campaign_entry_threshold_amount" name="entry_threshold_amount" type="number" min="0" step="0.01" value="{{ old('entry_threshold_amount') }}" placeholder="300">
+                                    </div>
+                                    <div class="field">
+                                        <label>&nbsp;</label>
+                                        <label style="display:flex;align-items:center;gap:10px;">
+                                            <input type="checkbox" name="entry_requires_approval" value="1" @checked(old('entry_requires_approval'))>
+                                            Requiere aprobación manual para entrar
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="is_listed" value="1" @checked(old('is_listed', true))>
+                                        Visible en el catálogo
+                                    </label>
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="invoice_scan_enabled" value="1" @checked(old('invoice_scan_enabled', true))>
+                                        Habilitar facturas
+                                    </label>
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="games_enabled" value="1" @checked(old('games_enabled'))>
+                                        Habilitar juegos
+                                    </label>
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="redemption_enabled" value="1" @checked(old('redemption_enabled'))>
+                                        Habilitar redención
+                                    </label>
+                                </div>
+                                <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                    <input type="checkbox" name="major_prizes_enabled" value="1" @checked(old('major_prizes_enabled'))>
+                                    Habilitar premios mayores
+                                </label>
+                            </div>
+                            <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                                <button type="submit" class="btn btn-red">Crear promoción</button>
+                            </div>
+                        </div>
+                    </form>
 
                     <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.update') }}">
                         @csrf
@@ -115,18 +234,80 @@
                                             <label>Imagen card</label>
                                             <input type="text" name="campaigns[{{ $loop->index }}][card_image_url]" value="{{ old("campaigns.$loop->index.card_image_url", $campaign->card_image_url) }}">
                                         </div>
-                                        <div class="field">
-                                            <label>Imagen hero</label>
-                                            <input type="text" name="campaigns[{{ $loop->index }}][hero_image_url]" value="{{ old("campaigns.$loop->index.hero_image_url", $campaign->hero_image_url) }}">
-                                        </div>
+                                    <div class="field">
+                                        <label>Imagen hero</label>
+                                        <input type="text" name="campaigns[{{ $loop->index }}][hero_image_url]" value="{{ old("campaigns.$loop->index.hero_image_url", $campaign->hero_image_url) }}">
                                     </div>
                                     <div class="field">
-                                        <label>Descripción</label>
-                                        <input type="text" name="campaigns[{{ $loop->index }}][description]" value="{{ old("campaigns.$loop->index.description", $campaign->description) }}">
+                                        <label>Inicio</label>
+                                        <input type="datetime-local" name="campaigns[{{ $loop->index }}][starts_at]" value="{{ old("campaigns.$loop->index.starts_at", optional($campaign->starts_at)->format('Y-m-d\TH:i')) }}">
                                     </div>
-                                    <label>
-                                        <input type="checkbox" name="campaigns[{{ $loop->index }}][is_listed]" value="1" @checked(old("campaigns.$loop->index.is_listed", $campaign->is_listed ?? true))>
-                                        Mostrar en el catálogo
+                                    <div class="field">
+                                        <label>Fin</label>
+                                        <input type="datetime-local" name="campaigns[{{ $loop->index }}][ends_at]" value="{{ old("campaigns.$loop->index.ends_at", optional($campaign->ends_at)->format('Y-m-d\TH:i')) }}">
+                                    </div>
+                                </div>
+                                    <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                                        <div class="field">
+                                            <label>Monto mínimo por factura</label>
+                                            <input type="number" min="0" step="0.01" name="campaigns[{{ $loop->index }}][invoice_min_amount_for_shot]" value="{{ old("campaigns.$loop->index.invoice_min_amount_for_shot", $campaign->invoice_min_amount_for_shot ?? 25) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Monto por punto</label>
+                                            <input type="number" min="0" step="0.01" name="campaigns[{{ $loop->index }}][amount_per_point]" value="{{ old("campaigns.$loop->index.amount_per_point", $campaign->amount_per_point ?? 25) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Puntos por bloque</label>
+                                            <input type="number" min="1" name="campaigns[{{ $loop->index }}][points_per_block]" value="{{ old("campaigns.$loop->index.points_per_block", $campaign->points_per_block ?? 1) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Máximo puntos por día</label>
+                                            <input type="number" min="1" name="campaigns[{{ $loop->index }}][daily_max_points]" value="{{ old("campaigns.$loop->index.daily_max_points", $campaign->daily_max_points ?? 1000) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Máximo facturas por día</label>
+                                            <input type="number" min="1" name="campaigns[{{ $loop->index }}][daily_max_invoices]" value="{{ old("campaigns.$loop->index.daily_max_invoices", $campaign->daily_max_invoices ?? 100) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Vigencia cupón (horas)</label>
+                                            <input type="number" min="1" name="campaigns[{{ $loop->index }}][coupon_ttl_hours]" value="{{ old("campaigns.$loop->index.coupon_ttl_hours", $campaign->coupon_ttl_hours ?? 72) }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                                        <div class="field">
+                                            <label>Descripción</label>
+                                            <input type="text" name="campaigns[{{ $loop->index }}][description]" value="{{ old("campaigns.$loop->index.description", $campaign->description) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Límite de participación</label>
+                                            <input type="number" min="0" step="0.01" name="campaigns[{{ $loop->index }}][entry_threshold_amount]" value="{{ old("campaigns.$loop->index.entry_threshold_amount", $campaign->entry_threshold_amount) }}" placeholder="300">
+                                        </div>
+                                    </div>
+                                    <div class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                                        <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                            <input type="checkbox" name="campaigns[{{ $loop->index }}][is_listed]" value="1" @checked(old("campaigns.$loop->index.is_listed", $campaign->is_listed ?? true))>
+                                            Mostrar en el catálogo
+                                        </label>
+                                        <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                            <input type="checkbox" name="campaigns[{{ $loop->index }}][invoice_scan_enabled]" value="1" @checked(old("campaigns.$loop->index.invoice_scan_enabled", $campaign->invoice_scan_enabled ?? true))>
+                                            Habilitar facturas
+                                        </label>
+                                        <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                            <input type="checkbox" name="campaigns[{{ $loop->index }}][games_enabled]" value="1" @checked(old("campaigns.$loop->index.games_enabled", $campaign->games_enabled ?? false))>
+                                            Habilitar juegos
+                                        </label>
+                                        <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                            <input type="checkbox" name="campaigns[{{ $loop->index }}][redemption_enabled]" value="1" @checked(old("campaigns.$loop->index.redemption_enabled", $campaign->redemption_enabled ?? false))>
+                                            Habilitar redención
+                                        </label>
+                                    </div>
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="campaigns[{{ $loop->index }}][major_prizes_enabled]" value="1" @checked(old("campaigns.$loop->index.major_prizes_enabled", $campaign->major_prizes_enabled ?? false))>
+                                        Habilitar premios mayores
+                                    </label>
+                                    <label class="small" style="display:flex;align-items:center;gap:10px;">
+                                        <input type="checkbox" name="campaigns[{{ $loop->index }}][entry_requires_approval]" value="1" @checked(old("campaigns.$loop->index.entry_requires_approval", $campaign->entry_requires_approval ?? false))>
+                                        Requiere aprobación manual para entrar
                                     </label>
                                 </div>
                             @endforeach

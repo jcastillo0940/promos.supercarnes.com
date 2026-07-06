@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/dashboard', [InvoiceBackofficeController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/adminrepus1car', [InvoiceBackofficeController::class, 'index'])->name('admin.invoice-backoffice');
     Route::post('/adminrepus1car', [InvoiceBackofficeController::class, 'update'])->name('admin.invoice-backoffice.update');
+    Route::post('/adminrepus1car/promociones', [InvoiceBackofficeController::class, 'storeCampaign'])->name('admin.invoice-backoffice.campaigns.store');
     Route::get('/adminrepus1car/facturas', [InvoiceBackofficeController::class, 'invoices'])->name('admin.invoices');
     Route::get('/adminrepus1car/ganadores', [InvoiceBackofficeController::class, 'winners'])->name('admin.winners');
     Route::get('/adminrepus1car/auditoria', [InvoiceBackofficeController::class, 'audit'])->name('admin.audit');
