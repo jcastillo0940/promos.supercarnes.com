@@ -374,6 +374,7 @@ class ContestInvoiceRegistrationService
             ['cedula' => $documentNumber],
             [
                 'name' => $fullName,
+                'full_name' => $fullName,
                 'document_type' => $documentType,
                 'email' => $safeEmail,
                 'phone' => $data['phone'] ?? null,
@@ -393,6 +394,7 @@ class ContestInvoiceRegistrationService
 
         $user->forceFill([
             'name' => $fullName,
+            'full_name' => $fullName,
             'email' => $safeEmail ?? $user->email,
             'phone' => $data['phone'] ?? $user->phone,
             'cedula' => $documentNumber,

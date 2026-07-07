@@ -17,6 +17,8 @@ class InvoiceController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $authUser = $request->user('sanctum');
+
         $data = $request->validate([
             'qr_raw_text' => ['required', 'string', 'max:2048'],
             'purchase_amount' => ['required', 'numeric', 'min:0.01'],
@@ -41,11 +43,26 @@ class InvoiceController extends Controller
             'entrepreneur_reason' => ['nullable', 'string'],
         ]);
 
+        if ($authUser) {
+            $nameParts = preg_split('/\s+/', trim((string) ($authUser->full_name ?? $authUser->name)), 2) ?: [];
+            $data['document_type'] = $authUser->document_type ?? 'cedula';
+            $data['document_number'] = $authUser->cedula;
+            $data['cedula'] = $authUser->cedula;
+            $data['first_name'] = $nameParts[0] ?? $authUser->name;
+            $data['last_name'] = $nameParts[1] ?? '.';
+            $data['full_name'] = $authUser->full_name ?? $authUser->name;
+            $data['phone'] = $authUser->phone;
+            $data['email'] = $authUser->email;
+        }
+
         $result = $this->registrationService->registerGuest($data, $request);
 
         return response()->json([
             'message' => $result['message'],
             'invoice' => $result['invoice'],
+            'campaign_total' => $result['campaign_total'] ?? null,
+            'campaign_threshold' => $result['campaign_threshold'] ?? null,
+            'campaign_qualified' => $result['campaign_qualified'] ?? null,
         ], 201);
     }
 

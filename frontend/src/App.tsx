@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { CSSProperties, FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
-import { api } from './api'
-import type { RegisteredInvoice, ResolvedInvoiceData } from './types'
+import { api, setApiToken } from './api'
+import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
 type EntryMode = 'scan' | 'manual'
 type PromoStep = 1 | 2 | 3
@@ -51,6 +51,19 @@ interface InvoiceFormState {
 
 const QR_READER_ELEMENT_ID = 'dgi-qr-reader'
 const CUFE_SHORT_PREFIX = 'FE01200000032812-2-249262-'
+const AUTH_TOKEN_STORAGE_KEY = 'supercarnes.auth.token'
+const PANAMA_PROVINCES = [
+  'Bocas del Toro',
+  'Cocle',
+  'Colon',
+  'Chiriqui',
+  'Darien',
+  'Herrera',
+  'Los Santos',
+  'Panama',
+  'Panama Oeste',
+  'Veraguas',
+]
 const INVOICE_SCANNER_FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE,
   Html5QrcodeSupportedFormats.DATA_MATRIX,
@@ -81,6 +94,30 @@ function emptyForm(): InvoiceFormState {
   }
 }
 
+function firstNameFromUser(user: User): string {
+  return (user.full_name || '').trim().split(/\s+/)[0] || 'Participante'
+}
+
+function lastNameFromUser(user: User): string {
+  const parts = (user.full_name || '').trim().split(/\s+/)
+  return parts.slice(1).join(' ') || '.'
+}
+
+function formFromUser(user: User): InvoiceFormState {
+  return {
+    ...emptyForm(),
+    document_type: user.document_type,
+    document_number: user.cedula,
+    first_name: firstNameFromUser(user),
+    last_name: lastNameFromUser(user),
+    phone: user.phone ?? '',
+    email: user.email,
+    entrepreneur_name: user.entrepreneur_name ?? '',
+    entrepreneur_province: user.entrepreneur_province ?? '',
+    entrepreneur_reason: user.entrepreneur_reason ?? '',
+  }
+}
+
 function createInvoiceScanner() {
   return new Html5Qrcode(QR_READER_ELEMENT_ID, {
     verbose: false,
@@ -92,7 +129,36 @@ export function App() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loadingCampaigns, setLoadingCampaigns] = useState(true)
   const [campaignError, setCampaignError] = useState<string | null>(null)
+  const [authUser, setAuthUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [path, setPath] = useState(window.location.pathname)
+
+  useEffect(() => {
+    const token = window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+    if (!token) {
+      setAuthLoading(false)
+      return
+    }
+
+    setApiToken(token)
+    let cancelled = false
+    api
+      .get<{ data: User }>('/auth/me')
+      .then((response) => {
+        if (!cancelled) setAuthUser(response.data.data)
+      })
+      .catch(() => {
+        window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+        setApiToken(null)
+      })
+      .finally(() => {
+        if (!cancelled) setAuthLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const onPopState = () => setPath(window.location.pathname)
@@ -136,17 +202,51 @@ export function App() {
   }
 
   if (!selectedSlug) {
+    if (authLoading) {
+      return <AuthLoadingScreen />
+    }
+
+    if (!authUser) {
+      return <ParticipantAuthScreen onAuthenticated={setAuthUser} />
+    }
+
     return (
       <PromoCatalog
         campaigns={campaigns}
         loading={loadingCampaigns}
         error={campaignError}
+        user={authUser}
+        onLogout={() => void logoutParticipant(setAuthUser)}
         onOpen={(slug) => openPath(`/${slug}`, setPath)}
       />
     )
   }
 
+  if (selectedCampaign?.participation_mode === 'threshold_form') {
+    if (authLoading) {
+      return <AuthLoadingScreen />
+    }
+
+    if (!authUser) {
+      return <ParticipantAuthScreen onAuthenticated={setAuthUser} />
+    }
+
+    return <ThresholdPromoLanding campaign={selectedCampaign} user={authUser} onUserChange={setAuthUser} onBack={() => goHome(setPath)} />
+  }
+
   return <PromoLanding campaign={selectedCampaign} onBack={() => goHome(setPath)} />
+}
+
+async function logoutParticipant(setAuthUser: (user: User | null) => void) {
+  try {
+    await api.post('/auth/logout')
+  } catch {
+    // Local logout should still work if the token already expired.
+  } finally {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+    setApiToken(null)
+    setAuthUser(null)
+  }
 }
 
 function goHome(setPath: (value: string) => void) {
@@ -159,15 +259,141 @@ function openPath(path: string, setPath: (value: string) => void) {
   setPath(window.location.pathname)
 }
 
+function AuthLoadingScreen() {
+  return (
+    <div className="auth-shell">
+      <div className="auth-card auth-card-slim">
+        <img src="/logo_web.jpg" alt="Super Carnes" />
+        <h1>Cargando tu sesion...</h1>
+        <p>Estamos preparando tus promociones.</p>
+      </div>
+    </div>
+  )
+}
+
+function ParticipantAuthScreen({ onAuthenticated }: { onAuthenticated: (user: User) => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [form, setForm] = useState({
+    document_type: 'cedula' as InvoiceFormState['document_type'],
+    document_number: '',
+    full_name: '',
+    email: '',
+    phone: '',
+    password: '',
+    login: '',
+  })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
+      const payload = mode === 'login'
+        ? { login: form.login.trim(), password: form.password }
+        : {
+            document_type: form.document_type,
+            document_number: sanitizeDocumentNumber(form.document_type, form.document_number),
+            full_name: sanitizeName(form.full_name),
+            email: form.email.trim(),
+            phone: sanitizePanamaPhone(form.phone),
+            password: form.password,
+          }
+      const response = await api.post<{ token: string; data: User }>(endpoint, payload)
+      window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, response.data.token)
+      setApiToken(response.data.token)
+      onAuthenticated(response.data.data)
+    } catch (authError) {
+      setError(normalizeError(authError))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="auth-shell">
+      <section className="auth-hero">
+        <img src="/logo_web.jpg" alt="Super Carnes" />
+        <h1>Promos Super Carnes</h1>
+        <p>Registrate una sola vez, elige una promocion activa y todas tus facturas quedaran asociadas a tu documento.</p>
+      </section>
+      <form className="auth-card" onSubmit={handleSubmit}>
+        <div className="auth-tabs">
+          <button type="button" className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Iniciar sesion</button>
+          <button type="button" className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrarme</button>
+        </div>
+
+        {mode === 'login' ? (
+          <>
+            <label>
+              Correo o cedula
+              <input value={form.login} onChange={(event) => setForm((current) => ({ ...current, login: event.target.value }))} placeholder="correo@dominio.com o 8-123-456" required />
+            </label>
+            <label>
+              Contrasena
+              <input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} type="password" minLength={6} required />
+            </label>
+          </>
+        ) : (
+          <>
+            <label>
+              Nombre completo
+              <input value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: sanitizeName(event.target.value) }))} placeholder="Nombre y apellido" required />
+            </label>
+            <div className="auth-grid">
+              <label>
+                Documento
+                <select value={form.document_type} onChange={(event) => setForm((current) => ({ ...current, document_type: event.target.value as InvoiceFormState['document_type'], document_number: '' }))}>
+                  <option value="cedula">Cedula</option>
+                  <option value="passport">Pasaporte</option>
+                  <option value="residente">Carnet residente</option>
+                </select>
+              </label>
+              <label>
+                Numero
+                <input value={form.document_number} onChange={(event) => setForm((current) => ({ ...current, document_number: sanitizeDocumentNumber(current.document_type, event.target.value) }))} placeholder={documentPlaceholder(form.document_type)} required />
+              </label>
+            </div>
+            <label>
+              Correo
+              <input value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value.trim() }))} type="email" placeholder="correo@dominio.com" required />
+            </label>
+            <label>
+              Telefono
+              <input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: sanitizePanamaPhone(event.target.value) }))} inputMode="tel" placeholder="6XXX-XXXX" required />
+            </label>
+            <label>
+              Contrasena
+              <input value={form.password} onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))} type="password" minLength={6} required />
+            </label>
+          </>
+        )}
+
+        {error ? <div className="promo-alert">{error}</div> : null}
+        <button className="promo-primary" type="submit" disabled={submitting}>
+          {submitting ? 'Procesando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 function PromoCatalog({
   campaigns,
   loading,
   error,
+  user,
+  onLogout,
   onOpen,
 }: {
   campaigns: Campaign[]
   loading: boolean
   error: string | null
+  user: User
+  onLogout: () => void
   onOpen: (slug: string) => void
 }) {
   return (
@@ -175,9 +401,16 @@ function PromoCatalog({
       <div className="promo-ambient" />
       <main className="promo-catalog-layout">
         <header className="promo-catalog-header">
+          <div>
           <p className="promo-kicker">Promociones Super Carnes</p>
           <h1>Elige una promo activa</h1>
           <p>Si solo hay una, verás una sola tarjeta. Si hay varias, se adaptan en cuadrícula.</p>
+          </div>
+          <div className="promo-session">
+            <strong>{user.full_name}</strong>
+            <span>{user.cedula}</span>
+            <button type="button" onClick={onLogout}>Cerrar sesion</button>
+          </div>
         </header>
 
         {loading ? <div className="promo-state">Cargando promociones...</div> : null}
@@ -213,10 +446,6 @@ function PromoLanding({
   campaign: Campaign | null
   onBack: () => void
 }) {
-  if (campaign?.participation_mode === 'threshold_form') {
-    return <ThresholdPromoLanding campaign={campaign} onBack={onBack} />
-  }
-
   const [entryMode, setEntryMode] = useState<EntryMode>('scan')
   const [promoStep, setPromoStep] = useState<PromoStep>(1)
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(emptyForm())
@@ -561,6 +790,345 @@ function PromoLanding({
 }
 
 function ThresholdPromoLanding({
+  campaign,
+  user,
+  onUserChange,
+  onBack,
+}: {
+  campaign: Campaign | null
+  user: User
+  onUserChange: (user: User) => void
+  onBack: () => void
+}) {
+  const [entryMode, setEntryMode] = useState<EntryMode>('scan')
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => formFromUser(user))
+  const [profileForm, setProfileForm] = useState({
+    entrepreneur_name: user.entrepreneur_name ?? '',
+    entrepreneur_province: user.entrepreneur_province ?? '',
+    entrepreneur_reason: user.entrepreneur_reason ?? '',
+  })
+  const [scannerOn, setScannerOn] = useState(false)
+  const [scannerError, setScannerError] = useState<string | null>(null)
+  const [resolvingInvoice, setResolvingInvoice] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [invoiceValidated, setInvoiceValidated] = useState(false)
+  const [manualTouched, setManualTouched] = useState(false)
+  const [campaignTotal, setCampaignTotal] = useState(0)
+
+  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 300)
+  const campaignQualified = campaignTotal >= thresholdAmount
+  const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
+  const progress = Math.min(100, (campaignTotal / thresholdAmount) * 100)
+  const profileCompleted = Boolean(user.entrepreneur_name && user.entrepreneur_province && user.entrepreneur_reason)
+
+  useEffect(() => {
+    setInvoiceForm((current) => ({
+      ...formFromUser(user),
+      entrepreneur_name: current.entrepreneur_name,
+      entrepreneur_province: current.entrepreneur_province,
+      entrepreneur_reason: current.entrepreneur_reason,
+      rawInput: current.rawInput,
+      invoice_number: current.invoice_number,
+      purchase_amount: current.purchase_amount,
+      issued_at: current.issued_at,
+      issuer_name: current.issuer_name,
+      cufe_tail: current.cufe_tail,
+    }))
+    setProfileForm({
+      entrepreneur_name: user.entrepreneur_name ?? '',
+      entrepreneur_province: user.entrepreneur_province ?? '',
+      entrepreneur_reason: user.entrepreneur_reason ?? '',
+    })
+  }, [user])
+
+  useEffect(() => {
+    if (!scannerOn || entryMode !== 'scan') return undefined
+
+    let scanner: Html5Qrcode | null = null
+    let stopped = false
+
+    async function start() {
+      try {
+        scanner = createInvoiceScanner()
+        await scanner.start({ facingMode: 'environment' }, { fps: 12, disableFlip: true }, async (decodedText) => {
+          if (stopped) return
+          await resolveInvoice(decodedText)
+          await scanner?.stop().catch(() => undefined)
+          await scanner?.clear()
+          setScannerOn(false)
+        }, () => undefined)
+      } catch (error) {
+        setScannerError(normalizeError(error))
+      }
+    }
+
+    void start()
+
+    return () => {
+      stopped = true
+      if (!scanner) return
+      void scanner.stop().catch(() => undefined).finally(() => {
+        void scanner?.clear()
+      })
+    }
+  }, [entryMode, scannerOn])
+
+  useEffect(() => {
+    if (!campaign?.slug) return undefined
+
+    let cancelled = false
+    void api
+      .get<{ data: { campaign_total?: number } }>(`/campaigns/${campaign.slug}/progress`)
+      .then((response) => {
+        if (!cancelled) setCampaignTotal(Number(response.data.data.campaign_total ?? 0))
+      })
+      .catch(() => {
+        if (!cancelled) setCampaignTotal(0)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [campaign?.slug, user.id])
+
+  async function saveDreamProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSavingProfile(true)
+    setSubmitError(null)
+    setSubmitSuccess(null)
+
+    try {
+      const response = await api.post<{ data: User; message?: string }>('/auth/dream-profile', profileForm)
+      onUserChange(response.data.data)
+      setSubmitSuccess(response.data.message ?? 'Formulario guardado.')
+    } catch (error) {
+      setSubmitError(normalizeError(error))
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  async function resolveInvoice(rawText: string) {
+    try {
+      setResolvingInvoice(true)
+      const response = await api.post<{ data: ResolvedInvoiceData & { is_valid?: boolean; minimum_amount?: number } }>('/invoices/resolve', {
+        qr_raw_text: rawText,
+      })
+
+      setScannerError(null)
+
+      if (!response.data.data.is_valid) {
+        setInvoiceValidated(false)
+        setSubmitSuccess(null)
+        setSubmitError(null)
+        setScannerError(`La factura no supera el monto minimo de $${(response.data.data.minimum_amount ?? 25).toFixed(2)}.`)
+        return
+      }
+
+      setInvoiceValidated(true)
+      setSubmitSuccess(null)
+      setInvoiceForm((current) => ({
+        ...current,
+        rawInput: rawText,
+        cufe_tail: rawText.slice(-60),
+        invoice_number: response.data.data.invoice_number ?? current.invoice_number,
+        purchase_amount: response.data.data.purchase_amount ?? current.purchase_amount,
+        issued_at: response.data.data.issued_at ?? current.issued_at,
+        issuer_name: response.data.data.issuer_name ?? current.issuer_name,
+      }))
+    } catch (error) {
+      setScannerError(normalizeError(error))
+    } finally {
+      setResolvingInvoice(false)
+    }
+  }
+
+  async function validateManualCufe() {
+    const rawTail = invoiceForm.cufe_tail.trim().replace(/\D/g, '').slice(0, 60)
+    if (!rawTail) return
+    await resolveInvoice(`${CUFE_SHORT_PREFIX}${rawTail}`)
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setSubmitError(null)
+    setSubmitSuccess(null)
+
+    try {
+      const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
+      const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_threshold?: number; campaign_qualified?: boolean }>('/invoices/scan', {
+        qr_raw_text: rawText,
+        campaign_slug: campaign?.slug ?? null,
+        purchase_amount: Number(invoiceForm.purchase_amount || 0),
+        invoice_number: invoiceForm.invoice_number || null,
+        issued_at: invoiceForm.issued_at || null,
+        document_type: user.document_type,
+        document_number: user.cedula,
+        first_name: firstNameFromUser(user),
+        last_name: lastNameFromUser(user),
+        full_name: user.full_name,
+        cedula: user.cedula,
+        phone: user.phone || null,
+        email: user.email || null,
+        entrepreneur_name: user.entrepreneur_name || profileForm.entrepreneur_name || null,
+        entrepreneur_province: user.entrepreneur_province || profileForm.entrepreneur_province || null,
+        entrepreneur_reason: user.entrepreneur_reason || profileForm.entrepreneur_reason || null,
+      })
+
+      if (typeof response.data.campaign_total === 'number') {
+        setCampaignTotal(response.data.campaign_total)
+      }
+
+      setSubmitSuccess(response.data.message ?? (response.data.campaign_qualified ? 'Participacion activa.' : 'Factura registrada.'))
+      setInvoiceValidated(false)
+      setScannerError(null)
+      setInvoiceForm((current) => ({
+        ...current,
+        rawInput: '',
+        invoice_number: '',
+        purchase_amount: '',
+        issued_at: '',
+        issuer_name: '',
+        cufe_tail: '',
+      }))
+    } catch (error) {
+      setSubmitError(normalizeError(error))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="dream-page">
+      <header className="dream-hero">
+        <button className="dream-back" type="button" onClick={onBack}>Volver a promociones</button>
+        <div className="dream-copy">
+          <img src="/logo_web.jpg" alt="Super Carnes" />
+          <h1>Del Sueño al Puesto</h1>
+          <p>Acumula $300 o mas en facturas, completa tu historia de emprendimiento y activa tu participacion por una tolda.</p>
+        </div>
+      </header>
+
+      <main className="dream-workspace">
+        <section className="dream-meter">
+          <div>
+            <p>Participante</p>
+            <h2>{user.full_name}</h2>
+            <span>{user.cedula} · {user.email}</span>
+          </div>
+          <div className="dream-progress-ring" style={{ '--progress': `${progress}%` } as CSSProperties}>
+            <strong>${Math.min(campaignTotal, thresholdAmount).toFixed(2)}</strong>
+            <span>de ${thresholdAmount.toFixed(2)}</span>
+          </div>
+          <div className="dream-progress-copy">
+            <strong>{campaignQualified ? 'Participacion activa' : `Faltan $${remainingAmount.toFixed(2)}`}</strong>
+            <p>{campaignQualified ? 'Llegaste al monto requerido. Puedes seguir registrando facturas.' : 'Cada factura valida suma a tu acumulado.'}</p>
+          </div>
+        </section>
+
+        <section className="dream-grid">
+          {!profileCompleted ? (
+            <form className="dream-panel dream-form" onSubmit={saveDreamProfile}>
+              <p className="dream-label">Formulario de emprendimiento</p>
+              <h2>Cuéntanos por qué tu emprendimiento debe ganar una tolda</h2>
+              <label>
+                Nombre completo
+                <input value={user.full_name} disabled />
+              </label>
+              <label>
+                Correo
+                <input value={user.email} disabled />
+              </label>
+              <label>
+                Nombre del emprendimiento
+                <input value={profileForm.entrepreneur_name} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_name: event.target.value }))} required />
+              </label>
+              <label>
+                Ubicacion del emprendimiento
+                <select value={profileForm.entrepreneur_province} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_province: event.target.value }))} required>
+                  <option value="">Selecciona provincia</option>
+                  {PANAMA_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+                </select>
+              </label>
+              <label>
+                Por que debe ganar una tolda
+                <textarea value={profileForm.entrepreneur_reason} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_reason: event.target.value }))} rows={5} required />
+              </label>
+              <button className="dream-primary" type="submit" disabled={savingProfile}>{savingProfile ? 'Guardando...' : 'Guardar formulario'}</button>
+            </form>
+          ) : (
+            <article className="dream-panel dream-story">
+              <p className="dream-label">Formulario enviado</p>
+              <h2>{user.entrepreneur_name}</h2>
+              <span>{user.entrepreneur_province}</span>
+              <p>{user.entrepreneur_reason}</p>
+            </article>
+          )}
+
+          <form className="dream-panel dream-invoice" onSubmit={handleSubmit}>
+            <p className="dream-label">Facturas</p>
+            <h2>Registra CUFE para sumar al tracker</h2>
+            <div className="dream-actions">
+              <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>Escanear QR</button>
+              <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>Ingresar CUFE</button>
+              <a href="https://wa.me/50766153518?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Del%20Sue%C3%B1o%20al%20Puesto" target="_blank" rel="noreferrer">Via WhatsApp</a>
+            </div>
+
+            {entryMode === 'scan' ? (
+              <div className="dream-scan">
+                {!scannerOn ? (
+                  <button className="dream-primary" type="button" onClick={() => setScannerOn(true)}>Activar camara</button>
+                ) : (
+                  <div id={QR_READER_ELEMENT_ID} className="promo-scanner" />
+                )}
+              </div>
+            ) : (
+              <label>
+                Ultimos 60 numeros del CUFE
+                <input
+                  value={invoiceForm.cufe_tail}
+                  onChange={(event) => {
+                    setManualTouched(true)
+                    setInvoiceForm((current) => ({ ...current, cufe_tail: event.target.value.replace(/\D/g, '').slice(0, 60) }))
+                  }}
+                  maxLength={60}
+                  inputMode="numeric"
+                  placeholder="Escribe solo los ultimos 60 numeros"
+                />
+              </label>
+            )}
+
+            {entryMode === 'manual' ? (
+              <button className="dream-secondary" type="button" disabled={invoiceForm.cufe_tail.length < 10 || resolvingInvoice} onClick={() => void validateManualCufe()}>
+                {resolvingInvoice ? 'Validando...' : 'Validar CUFE'}
+              </button>
+            ) : null}
+
+            {manualTouched && !invoiceValidated && !scannerError ? <p className="promo-help">Valida el CUFE antes de registrar.</p> : null}
+            {scannerError ? <div className="promo-alert">{scannerError}</div> : null}
+            {invoiceValidated ? (
+              <div className="dream-ticket">
+                <strong>Factura lista</strong>
+                <span>{invoiceForm.invoice_number || 'Sin numero'} · ${Number(invoiceForm.purchase_amount || 0).toFixed(2)}</span>
+              </div>
+            ) : null}
+            {submitError ? <div className="promo-alert">{submitError}</div> : null}
+            {submitSuccess ? <div className="promo-success-msg">{submitSuccess}</div> : null}
+            <button className="dream-primary" type="submit" disabled={submitting || !invoiceValidated || !profileCompleted}>
+              {submitting ? 'Registrando...' : profileCompleted ? 'Registrar factura' : 'Primero guarda el formulario'}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+export function LegacyThresholdPromoLanding({
   campaign,
   onBack,
 }: {

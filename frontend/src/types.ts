@@ -9,6 +9,10 @@ export interface User {
   document_type: DocumentType
   email: string
   phone: string | null
+  entrepreneur_name?: string | null
+  entrepreneur_province?: string | null
+  entrepreneur_reason?: string | null
+  dream_promo_qualified_at?: string | null
   avatar_url?: string | null
   birthdate?: string | null
   resides_in_panama?: boolean

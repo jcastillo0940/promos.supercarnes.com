@@ -36,12 +36,13 @@ class CampaignController extends Controller
     public function progress(Request $request, string $slug): JsonResponse
     {
         $validated = $request->validate([
-            'document_number' => ['required', 'string', 'max:40'],
+            'document_number' => ['nullable', 'string', 'max:40'],
         ]);
 
         $campaign = Campaign::query()->where('slug', $slug)->firstOrFail();
-        $documentNumber = strtoupper(trim($validated['document_number']));
-        $user = User::query()->where('cedula', $documentNumber)->first();
+        $authUser = $request->user('sanctum');
+        $documentNumber = strtoupper(trim((string) ($validated['document_number'] ?? $authUser?->cedula ?? '')));
+        $user = $authUser ?: ($documentNumber !== '' ? User::query()->where('cedula', $documentNumber)->first() : null);
         $total = $user
             ? (float) RegisteredInvoice::query()
                 ->where('user_id', $user->id)
