@@ -116,6 +116,12 @@ class ContestInvoiceRegistrationService
             }
         }
 
+        if ($campaign->slug === 'del-sueno-al-puesto' && ! ($issuedAt->year === 2026 && $issuedAt->month === 7)) {
+            throw ValidationException::withMessages([
+                'issued_at' => 'Para Del sueno al puesto solo participan facturas emitidas en julio de 2026.',
+            ]);
+        }
+
         $verification = $this->verifier->verify($participant, [
             'cufe' => $canonicalCufe,
             'purchase_amount' => $purchaseAmount,
@@ -124,20 +130,21 @@ class ContestInvoiceRegistrationService
         $canonicalCufe = strtoupper((string) ($verification['canonical_cufe'] ?? $canonicalCufe));
         $invoicePeriod = $this->phaseResolver->periodForDate($issuedAt);
 
-        if (RegisteredInvoice::query()->where('cufe', $canonicalCufe)->exists()) {
+        if (RegisteredInvoice::query()->where('campaign_id', $campaign->id)->where('cufe', $canonicalCufe)->exists()) {
             throw ValidationException::withMessages([
-                'qr_raw_text' => 'Este CUFE ya fue registrado y no puede participar dos veces.',
+                'qr_raw_text' => 'Este CUFE ya fue registrado en esta promocion y no puede participar dos veces en el mismo evento.',
             ]);
         }
 
         $duplicateInvoice = RegisteredInvoice::query()
+            ->where('campaign_id', $campaign->id)
             ->where('invoice_number', (string) ($resolvedInvoice['invoice_number'] ?? ''))
             ->where('issuer_ruc', (string) ($resolvedInvoice['issuer_ruc'] ?? ''))
             ->first();
 
         if ($duplicateInvoice) {
             throw ValidationException::withMessages([
-                'qr_raw_text' => 'Esta factura ya fue registrada y no puede participar dos veces.',
+                'qr_raw_text' => 'Esta factura ya fue registrada en esta promocion y no puede participar dos veces en el mismo evento.',
             ]);
         }
 
@@ -243,9 +250,9 @@ class ContestInvoiceRegistrationService
                 return $invoice;
             });
         } catch (QueryException $exception) {
-            if ((int) $exception->getCode() === 23000 || str_contains($exception->getMessage(), 'registered_invoices_cufe_unique')) {
+            if ((int) $exception->getCode() === 23000 || str_contains($exception->getMessage(), 'registered_invoices_campaign_cufe_unique')) {
                 throw ValidationException::withMessages([
-                    'qr_raw_text' => 'Esta factura ya fue registrada y no puede participar dos veces.',
+                    'qr_raw_text' => 'Esta factura ya fue registrada en esta promocion y no puede participar dos veces en el mismo evento.',
                 ]);
             }
 
