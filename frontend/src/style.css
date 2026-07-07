@@ -9253,6 +9253,47 @@ a {
   background: #e9fbff;
 }
 
+.dream-scan-panel {
+  align-self: start;
+  color: #073675;
+  background: #ffffff;
+}
+
+.dream-scan-panel .dream-label {
+  color: #00a7df;
+}
+
+.dream-scan-panel h2 {
+  color: #004bb8;
+}
+
+.dream-scan-panel .promo-mode-switch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dream-scan-panel .promo-mode-whatsapp {
+  min-height: 46px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #073675;
+  background: #e8f7ff;
+  font-size: 12px;
+  font-weight: 1000;
+  text-decoration: none;
+}
+
+.dream-scan-panel .promo-scan {
+  min-height: 160px;
+  margin-top: 12px;
+}
+
+.dream-scan-panel .promo-scanner video,
+.dream-scan-panel .promo-scanner canvas {
+  max-width: 100%;
+}
+
 .dream-story {
   align-self: start;
   background: linear-gradient(145deg, #ffffff, #eaf9ff);

@@ -1075,19 +1075,19 @@ function ThresholdPromoLanding({
             </article>
           )}
 
-          <form className="dream-panel dream-invoice" onSubmit={handleSubmit}>
+          <form className="promo-panel dream-scan-panel" onSubmit={handleSubmit}>
             <p className="dream-label">Facturas</p>
             <h2>Registra CUFE para sumar al tracker</h2>
-            <div className="dream-actions">
+            <div className="promo-mode-switch">
               <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>Escanear QR</button>
-              <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>Ingresar CUFE</button>
-              <a href="https://wa.me/50766153518?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Del%20Sue%C3%B1o%20al%20Puesto" target="_blank" rel="noreferrer">Via WhatsApp</a>
+              <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>Manual</button>
+              <a className="promo-mode-whatsapp" href="https://wa.me/50766153518?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Del%20Sue%C3%B1o%20al%20Puesto" target="_blank" rel="noreferrer">WhatsApp</a>
             </div>
 
             {entryMode === 'scan' ? (
-              <div className="dream-scan">
+              <div className="promo-scan">
                 {!scannerOn ? (
-                  <button className="dream-primary" type="button" onClick={() => setScannerOn(true)}>Activar camara</button>
+                  <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>Activar escaneo de QR</button>
                 ) : (
                   <div id={QR_READER_ELEMENT_ID} className="promo-scanner" />
                 )}
@@ -1109,7 +1109,7 @@ function ThresholdPromoLanding({
             )}
 
             {entryMode === 'manual' ? (
-              <button className="dream-secondary" type="button" disabled={invoiceForm.cufe_tail.length < 10 || resolvingInvoice} onClick={() => void validateManualCufe()}>
+              <button className="promo-primary" type="button" disabled={invoiceForm.cufe_tail.length < 10 || resolvingInvoice} onClick={() => void validateManualCufe()}>
                 {resolvingInvoice ? 'Validando...' : 'Validar CUFE'}
               </button>
             ) : null}
@@ -1124,8 +1124,8 @@ function ThresholdPromoLanding({
             ) : null}
             {submitError ? <div className="promo-alert">{submitError}</div> : null}
             {submitSuccess ? <div className="promo-success-msg">{submitSuccess}</div> : null}
-            <button className="dream-primary" type="submit" disabled={submitting || !invoiceValidated || !profileCompleted}>
-              {submitting ? 'Registrando...' : profileCompleted ? 'Registrar factura' : 'Primero guarda el formulario'}
+            <button className="promo-primary" type="submit" disabled={submitting || !invoiceValidated || !profileCompleted}>
+              {submitting ? 'Registrando...' : profileCompleted ? 'Registrar factura y acumular' : 'Primero guarda el formulario'}
             </button>
           </form>
         </section>

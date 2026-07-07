@@ -30,19 +30,17 @@ class AuthController extends Controller
             ]);
         }
 
-        if (User::query()->where('cedula', $documentNumber)->exists()) {
-            throw ValidationException::withMessages([
-                'document_number' => 'Este documento ya esta registrado. Inicia sesion.',
-            ]);
-        }
+        $existingUser = User::query()->where('cedula', $documentNumber)->first();
+        $emailOwner = User::query()->where('email', $data['email'])->first();
 
-        if (User::query()->where('email', $data['email'])->exists()) {
+        if ($emailOwner && (! $existingUser || $emailOwner->id !== $existingUser->id)) {
             throw ValidationException::withMessages([
                 'email' => 'Este correo ya esta registrado. Inicia sesion.',
             ]);
         }
 
-        $user = User::query()->create([
+        $user = $existingUser ?: new User();
+        $user->forceFill([
             'name' => $data['full_name'],
             'full_name' => $data['full_name'],
             'email' => $data['email'],
@@ -50,15 +48,15 @@ class AuthController extends Controller
             'cedula' => $documentNumber,
             'document_type' => $data['document_type'],
             'password' => Hash::make($data['password']),
-            'role' => 'client',
+            'role' => $user->role ?: 'client',
             'is_active' => true,
             'resides_in_panama' => true,
             'is_employee' => false,
-            'registration_completed_at' => now(),
-            'accepted_terms_at' => now(),
-        ]);
+            'registration_completed_at' => $user->registration_completed_at ?: now(),
+            'accepted_terms_at' => $user->accepted_terms_at ?: now(),
+        ])->save();
 
-        return $this->tokenResponse($user, 'Registro completado.');
+        return $this->tokenResponse($user, $existingUser ? 'Cuenta actualizada e iniciada.' : 'Registro completado.');
     }
 
     public function login(Request $request): JsonResponse
