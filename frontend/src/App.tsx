@@ -842,6 +842,7 @@ function ThresholdPromoLanding({
   const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
   const progress = Math.min(100, (campaignTotal / thresholdAmount) * 100)
   const profileCompleted = Boolean(user.entrepreneur_name && user.entrepreneur_province && user.entrepreneur_reason)
+  const canSubmitInvoice = profileCompleted && !submitting && (entryMode === 'scan' ? invoiceValidated : invoiceForm.cufe_tail.trim().replace(/\D/g, '').length >= 10)
 
   useEffect(() => {
     setInvoiceForm((current) => ({
@@ -965,12 +966,6 @@ function ThresholdPromoLanding({
     }
   }
 
-  async function validateManualCufe() {
-    const rawTail = invoiceForm.cufe_tail.trim().replace(/\D/g, '').slice(0, 60)
-    if (!rawTail) return
-    await resolveInvoice(`${CUFE_SHORT_PREFIX}${rawTail}`)
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmitting(true)
@@ -979,12 +974,47 @@ function ThresholdPromoLanding({
 
     try {
       const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
+      let invoicePayload = invoiceForm
+
+      if (!invoiceValidated) {
+        if (entryMode !== 'manual' || invoiceForm.cufe_tail.trim().replace(/\D/g, '').length < 10) {
+          setSubmitError('Escanea la factura o escribe el CUFE antes de registrar.')
+          return
+        }
+
+        setResolvingInvoice(true)
+        try {
+          const resolved = await api.post<{ data: ResolvedInvoiceData & { is_valid?: boolean; minimum_amount?: number } }>('/invoices/resolve', {
+            qr_raw_text: rawText,
+          })
+
+          if (!resolved.data.data.is_valid) {
+            setScannerError(`La factura no supera el monto minimo de $${(resolved.data.data.minimum_amount ?? 25).toFixed(2)}.`)
+            return
+          }
+
+          invoicePayload = {
+            ...invoicePayload,
+            rawInput: rawText,
+            cufe_tail: rawText.slice(-60),
+            invoice_number: resolved.data.data.invoice_number ?? invoicePayload.invoice_number,
+            purchase_amount: resolved.data.data.purchase_amount ?? invoicePayload.purchase_amount,
+            issued_at: resolved.data.data.issued_at ?? invoicePayload.issued_at,
+            issuer_name: resolved.data.data.issuer_name ?? invoicePayload.issuer_name,
+          }
+          setInvoiceValidated(true)
+          setInvoiceForm(invoicePayload)
+        } finally {
+          setResolvingInvoice(false)
+        }
+      }
+
       const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_threshold?: number; campaign_qualified?: boolean }>('/invoices/scan', {
         qr_raw_text: rawText,
         campaign_slug: campaign?.slug ?? null,
-        purchase_amount: Number(invoiceForm.purchase_amount || 0),
-        invoice_number: invoiceForm.invoice_number || null,
-        issued_at: invoiceForm.issued_at || null,
+        purchase_amount: Number(invoicePayload.purchase_amount || 0),
+        invoice_number: invoicePayload.invoice_number || null,
+        issued_at: invoicePayload.issued_at || null,
         document_type: user.document_type,
         document_number: user.cedula,
         first_name: firstNameFromUser(user),
@@ -1106,28 +1136,26 @@ function ThresholdPromoLanding({
                 )}
               </div>
             ) : (
-              <label>
-                Ultimos 60 numeros del CUFE
-                <input
-                  value={invoiceForm.cufe_tail}
-                  onChange={(event) => {
-                    setManualTouched(true)
-                    setInvoiceForm((current) => ({ ...current, cufe_tail: event.target.value.replace(/\D/g, '').slice(0, 60) }))
-                  }}
-                  maxLength={60}
-                  inputMode="numeric"
-                  placeholder="Escribe solo los ultimos 60 numeros"
-                />
-              </label>
+              <div className="promo-manual dream-cufe-entry">
+                <label>
+                  <span>CUFE de la factura</span>
+                  <input
+                    value={invoiceForm.cufe_tail}
+                    onChange={(event) => {
+                      setManualTouched(true)
+                      setInvoiceValidated(false)
+                      setInvoiceForm((current) => ({ ...current, cufe_tail: event.target.value.replace(/\D/g, '').slice(0, 60), rawInput: '' }))
+                    }}
+                    maxLength={60}
+                    inputMode="numeric"
+                    placeholder="Pega o escribe los ultimos 60 numeros"
+                  />
+                </label>
+                <p className="promo-help">Cuando presiones registrar, validaremos el CUFE y sumaremos el monto automaticamente.</p>
+              </div>
             )}
 
-            {entryMode === 'manual' ? (
-              <button className="promo-primary" type="button" disabled={invoiceForm.cufe_tail.length < 10 || resolvingInvoice} onClick={() => void validateManualCufe()}>
-                {resolvingInvoice ? 'Validando...' : 'Validar CUFE'}
-              </button>
-            ) : null}
-
-            {manualTouched && !invoiceValidated && !scannerError ? <p className="promo-help">Valida el CUFE antes de registrar.</p> : null}
+            {manualTouched && entryMode === 'manual' && !invoiceValidated && !scannerError ? <p className="promo-help">Listo. Ahora presiona registrar factura para validar y acumular.</p> : null}
             {scannerError ? <div className="promo-alert">{scannerError}</div> : null}
             {invoiceValidated ? (
               <div className="dream-ticket">
@@ -1137,8 +1165,8 @@ function ThresholdPromoLanding({
             ) : null}
             {submitError ? <div className="promo-alert">{submitError}</div> : null}
             {submitSuccess ? <div className="promo-success-msg">{submitSuccess}</div> : null}
-            <button className="promo-primary" type="submit" disabled={submitting || !invoiceValidated || !profileCompleted}>
-              {submitting ? 'Registrando...' : profileCompleted ? 'Registrar factura y acumular' : 'Primero guarda el formulario'}
+            <button className="promo-primary" type="submit" disabled={!canSubmitInvoice}>
+              {submitting || resolvingInvoice ? 'Validando y registrando...' : profileCompleted ? 'Registrar factura y acumular' : 'Primero guarda el formulario'}
             </button>
           </form>
         </section>

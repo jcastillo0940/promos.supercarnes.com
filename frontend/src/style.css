@@ -9344,6 +9344,47 @@ a {
   border-radius: 18px;
 }
 
+.dream-cufe-entry {
+  padding: 18px;
+  border: 2px solid #d5ecff;
+  border-radius: 20px;
+  background: #f5fbff;
+}
+
+.dream-cufe-entry label {
+  display: grid;
+  gap: 10px;
+  color: #004bb8;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dream-cufe-entry input {
+  min-height: 58px;
+  width: 100%;
+  border: 2px solid #73c8ff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: #073675;
+  background: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  outline: none;
+}
+
+.dream-cufe-entry input:focus {
+  border-color: #004bb8;
+  box-shadow: 0 0 0 4px rgba(0, 75, 184, 0.12);
+}
+
+.dream-cufe-entry .promo-help {
+  margin: 10px 0 0;
+  color: #315b8d;
+  font-weight: 800;
+}
+
 .dream-story {
   align-self: start;
   background: linear-gradient(145deg, #ffffff, #eaf9ff);
