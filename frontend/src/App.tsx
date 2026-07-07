@@ -261,8 +261,8 @@ function openPath(path: string, setPath: (value: string) => void) {
 
 function AuthLoadingScreen() {
   return (
-    <div className="auth-shell">
-      <div className="auth-card auth-card-slim">
+    <div className="participant-auth">
+      <div className="participant-auth-card participant-auth-card-slim">
         <img src="/logo_web.jpg" alt="Super Carnes" />
         <h1>Cargando tu sesion...</h1>
         <p>Estamos preparando tus promociones.</p>
@@ -314,14 +314,19 @@ function ParticipantAuthScreen({ onAuthenticated }: { onAuthenticated: (user: Us
   }
 
   return (
-    <div className="auth-shell">
-      <section className="auth-hero">
+    <div className="participant-auth">
+      <section className="participant-auth-hero">
         <img src="/logo_web.jpg" alt="Super Carnes" />
         <h1>Promos Super Carnes</h1>
-        <p>Registrate una sola vez, elige una promocion activa y todas tus facturas quedaran asociadas a tu documento.</p>
+        <p>Ingresa, elige una promo activa y registra tus facturas con tu mismo documento.</p>
+        <div className="participant-auth-steps">
+          <span>1. Inicia sesion</span>
+          <span>2. Elige promo</span>
+          <span>3. Sube facturas</span>
+        </div>
       </section>
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="auth-tabs">
+      <form className="participant-auth-card" onSubmit={handleSubmit}>
+        <div className="participant-auth-tabs">
           <button type="button" className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Iniciar sesion</button>
           <button type="button" className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrarme</button>
         </div>
@@ -343,7 +348,7 @@ function ParticipantAuthScreen({ onAuthenticated }: { onAuthenticated: (user: Us
               Nombre completo
               <input value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: sanitizeName(event.target.value) }))} placeholder="Nombre y apellido" required />
             </label>
-            <div className="auth-grid">
+            <div className="participant-auth-grid">
               <label>
                 Documento
                 <select value={form.document_type} onChange={(event) => setForm((current) => ({ ...current, document_type: event.target.value as InvoiceFormState['document_type'], document_number: '' }))}>
