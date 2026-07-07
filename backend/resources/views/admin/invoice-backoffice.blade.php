@@ -218,6 +218,22 @@
                             @foreach ($campaigns as $campaign)
                                 <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
                                     <input type="hidden" name="campaigns[{{ $loop->index }}][id]" value="{{ $campaign->id }}">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+                                        <div>
+                                            <strong>{{ $campaign->name }}</strong>
+                                            <div class="small">/{{ $campaign->slug }} · Estado actual: {{ $campaign->status }}</div>
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            class="btn {{ $campaign->status === 'active' ? 'btn-gray' : 'btn-red' }}"
+                                            formaction="{{ route('admin.invoice-backoffice.campaigns.toggle-status', $campaign) }}"
+                                            formmethod="POST"
+                                            name="status"
+                                            value="{{ $campaign->status === 'active' ? 'paused' : 'active' }}"
+                                        >
+                                            {{ $campaign->status === 'active' ? 'Desactivar promo' : 'Activar promo' }}
+                                        </button>
+                                    </div>
                                     <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                                         <div class="field">
                                             <label>Nombre</label>

@@ -406,7 +406,8 @@ function PromoCatalog({
       <div className="promo-ambient" />
       <main className="promo-catalog-layout">
         <header className="promo-catalog-header">
-          <div>
+          <div className="promo-catalog-copy">
+            <img src="/logo_web.jpg" alt="Super Carnes" />
           <p className="promo-kicker">Promociones Super Carnes</p>
           <h1>Elige una promo activa</h1>
           <p>Si solo hay una, verás una sola tarjeta. Si hay varias, se adaptan en cuadrícula.</p>
@@ -433,7 +434,7 @@ function PromoCatalog({
                   <strong>{campaign.name}</strong>
                   <p>{campaign.description ?? 'Abre esta promoción para participar.'}</p>
                   {campaign.participation_mode === 'threshold_form' ? <p>Se activa al acumular ${Number(campaign.entry_threshold_amount ?? 300).toFixed(2)} en facturas.</p> : null}
-                  <em>/{campaign.slug}</em>
+                  <em>Participar ahora</em>
                 </div>
               </button>
             ))}

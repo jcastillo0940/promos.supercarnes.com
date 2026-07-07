@@ -29,6 +29,7 @@ class CampaignManager
     {
         return Campaign::query()
             ->where('is_listed', true)
+            ->where('status', 'active')
             ->orderByDesc('status')
             ->orderBy('sort_order')
             ->orderByDesc('starts_at')

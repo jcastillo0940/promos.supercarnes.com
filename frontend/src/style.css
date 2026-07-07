@@ -9500,3 +9500,184 @@ a {
     border-radius: 24px;
   }
 }
+
+.promo-shell-catalog {
+  min-height: 100vh;
+  place-items: stretch;
+  color: #073675;
+  background:
+    radial-gradient(circle at 8% 18%, rgba(255, 214, 0, 0.42), transparent 24%),
+    radial-gradient(circle at 86% 84%, rgba(0, 170, 225, 0.28), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #eef9ff 50%, #d9f3ff 100%);
+}
+
+.promo-shell-catalog .promo-ambient {
+  display: none;
+}
+
+.promo-catalog-layout {
+  width: min(1220px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 64px) 0 clamp(36px, 6vw, 80px);
+}
+
+.promo-catalog-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: clamp(24px, 5vw, 56px);
+}
+
+.promo-catalog-copy img {
+  width: clamp(96px, 11vw, 138px);
+  margin-bottom: 24px;
+  border-radius: 20px;
+  box-shadow: 0 16px 42px rgba(0, 75, 184, 0.15);
+}
+
+.promo-catalog-header .promo-kicker {
+  color: #00a7df;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.promo-catalog-header h1 {
+  max-width: 820px;
+  margin: 8px 0 12px;
+  color: #004bb8;
+  font-size: clamp(44px, 7vw, 88px);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.promo-catalog-header p:not(.promo-kicker) {
+  max-width: 660px;
+  color: #214c80;
+  font-size: clamp(16px, 1.7vw, 21px);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.promo-session {
+  min-width: 245px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 75, 184, 0.12);
+  border-radius: 24px;
+  color: #073675;
+  background: #ffffff;
+  box-shadow: 0 22px 55px rgba(0, 75, 184, 0.12);
+}
+
+.promo-session strong {
+  color: #004bb8;
+  text-transform: capitalize;
+}
+
+.promo-session span {
+  color: #315b8d;
+  font-weight: 800;
+}
+
+.promo-grid {
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 24px;
+  margin-top: 0;
+}
+
+.promo-card {
+  position: relative;
+  min-height: 430px;
+  border: 0;
+  border-radius: 32px;
+  color: #073675;
+  background: #ffffff;
+  box-shadow: 0 28px 78px rgba(0, 75, 184, 0.14);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.promo-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 34px 90px rgba(0, 75, 184, 0.2);
+}
+
+.promo-card-image {
+  min-height: 235px;
+  background:
+    linear-gradient(180deg, rgba(0, 75, 184, 0) 0%, rgba(0, 75, 184, 0.12) 100%),
+    url('/del-sueno-al-puesto-steps.png') center / cover no-repeat,
+    linear-gradient(135deg, #ffd600, #00a7df);
+}
+
+.promo-card-body {
+  min-height: 195px;
+  padding: 22px;
+  gap: 10px;
+}
+
+.promo-card-body span {
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #073675;
+  background: #ffd600;
+  opacity: 1;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.promo-card-body strong {
+  color: #004bb8;
+  font-size: clamp(24px, 2.4vw, 34px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.promo-card-body p {
+  margin: 0;
+  color: #315b8d;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.promo-card-body em {
+  align-self: end;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #004bb8;
+  opacity: 1;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.promo-state {
+  color: #073675;
+  background: #ffffff;
+  border-color: rgba(0, 75, 184, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 75, 184, 0.1);
+}
+
+@media (max-width: 760px) {
+  .promo-catalog-header {
+    grid-template-columns: 1fr;
+  }
+
+  .promo-session {
+    justify-self: stretch;
+  }
+
+  .promo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .promo-card {
+    min-height: auto;
+  }
+}

@@ -148,6 +148,24 @@ class InvoiceBackofficeController extends Controller
             ->with('status', 'Promociones actualizadas.');
     }
 
+    public function toggleCampaignStatus(Request $request, Campaign $campaign): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:active,paused'],
+        ]);
+
+        $campaign->forceFill([
+            'status' => $validated['status'],
+            'is_listed' => $validated['status'] === 'active',
+        ])->save();
+
+        return redirect()
+            ->route('admin.invoice-backoffice')
+            ->with('status', $validated['status'] === 'active' ? 'Promocion activada.' : 'Promocion desactivada.');
+    }
+
     public function storeCampaign(Request $request): RedirectResponse
     {
         $this->authorizeAccess($request);
