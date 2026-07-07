@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from 'html5-qrcode'
 import { api, setApiToken } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
@@ -70,6 +70,19 @@ const INVOICE_SCANNER_FORMATS = [
   Html5QrcodeSupportedFormats.PDF_417,
   Html5QrcodeSupportedFormats.AZTEC,
 ]
+const INVOICE_SCANNER_START_CONFIG: Html5QrcodeCameraScanConfig = {
+  fps: 12,
+  disableFlip: true,
+  aspectRatio: 4 / 3,
+  qrbox: (viewfinderWidth, viewfinderHeight) => {
+    const edge = Math.floor(Math.max(190, Math.min(viewfinderWidth, viewfinderHeight) * 0.78))
+
+    return {
+      width: Math.min(edge, 330),
+      height: Math.min(edge, 330),
+    }
+  },
+}
 
 function emptyForm(): InvoiceFormState {
   return {
@@ -483,7 +496,7 @@ function PromoLanding({
     async function start() {
       try {
         scanner = createInvoiceScanner()
-        await scanner.start({ facingMode: 'environment' }, { fps: 12, disableFlip: true }, async (decodedText) => {
+        await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
           if (stopped) return
           await resolveInvoice(decodedText)
           await scanner?.stop().catch(() => undefined)
@@ -859,7 +872,7 @@ function ThresholdPromoLanding({
     async function start() {
       try {
         scanner = createInvoiceScanner()
-        await scanner.start({ facingMode: 'environment' }, { fps: 12, disableFlip: true }, async (decodedText) => {
+        await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
           if (stopped) return
           await resolveInvoice(decodedText)
           await scanner?.stop().catch(() => undefined)
@@ -1177,7 +1190,7 @@ export function LegacyThresholdPromoLanding({
     async function start() {
       try {
         scanner = createInvoiceScanner()
-        await scanner.start({ facingMode: 'environment' }, { fps: 12, disableFlip: true }, async (decodedText) => {
+        await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
           if (stopped) return
           await resolveInvoice(decodedText)
           await scanner?.stop().catch(() => undefined)

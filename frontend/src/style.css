@@ -9294,6 +9294,27 @@ a {
   max-width: 100%;
 }
 
+.promo-scanner {
+  width: 100%;
+  min-height: clamp(280px, 48vw, 430px);
+  position: relative;
+}
+
+.promo-scanner video,
+.promo-scanner canvas {
+  width: 100% !important;
+  min-height: clamp(280px, 48vw, 430px);
+  object-fit: cover;
+  display: block;
+}
+
+.dream-scan-panel .promo-scanner,
+.dream-scan-panel .promo-scanner video,
+.dream-scan-panel .promo-scanner canvas {
+  min-height: clamp(300px, 54vw, 460px);
+  border-radius: 18px;
+}
+
 .dream-story {
   align-self: start;
   background: linear-gradient(145deg, #ffffff, #eaf9ff);
