@@ -48,6 +48,12 @@ class ContestInvoiceRegistrationService
 
         $participant = $this->findOrCreateParticipant($data, $campaign);
 
+        if ($this->usesThresholdParticipation($campaign) && (! $participant->entrepreneur_name || ! $participant->entrepreneur_province || ! $participant->entrepreneur_reason)) {
+            throw ValidationException::withMessages([
+                'entrepreneur_reason' => 'Debes completar el formulario de inscripción antes de registrar facturas.',
+            ]);
+        }
+
         $cufe = $this->cufeParser->extract($data['qr_raw_text']);
         if (! $cufe) {
             throw ValidationException::withMessages([
