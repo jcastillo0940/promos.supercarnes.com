@@ -36,11 +36,10 @@ class FondaChallengeController extends Controller
             'full_name' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:40'],
             'email' => ['required', 'email', 'max:150'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'fonda_name' => ['required', 'string', 'max:150'],
-            'fonda_location' => ['nullable', 'string', 'max:150'],
+            'fonda_location' => ['required', 'string', 'max:150'],
             'dish_name' => ['required', 'string', 'max:150'],
-            'description' => ['required', 'string', 'min:30'],
             'consent_terms' => ['accepted'],
         ]);
 
@@ -56,9 +55,9 @@ class FondaChallengeController extends Controller
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'fonda_name' => $validated['fonda_name'],
-                'fonda_location' => $validated['fonda_location'] ?? null,
+                'fonda_location' => $validated['fonda_location'],
                 'dish_name' => $validated['dish_name'],
-                'description' => $validated['description'],
+                'description' => '',
                 'consent_terms' => 'v1',
                 'meta' => [
                     'ip' => $request->ip(),

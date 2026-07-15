@@ -45,27 +45,24 @@
                     <label>Cédula</label>
                     <input name="cedula" value="{{ old('cedula') }}" required>
 
-                    <label>Correo</label>
+                    <label>Correo electrónico</label>
                     <input type="email" name="email" value="{{ old('email') }}" required>
 
                     <label>Teléfono</label>
-                    <input name="phone" value="{{ old('phone') }}">
+                    <input name="phone" value="{{ old('phone') }}" required>
 
                     <label>Nombre de la fonda</label>
                     <input name="fonda_name" value="{{ old('fonda_name') }}" required>
 
-                    <label>Ubicación</label>
-                    <input name="fonda_location" value="{{ old('fonda_location') }}">
+                    <label>Ubicación de la fonda</label>
+                    <input name="fonda_location" value="{{ old('fonda_location') }}" required>
 
-                    <label>Plato principal</label>
+                    <label>Plato a presentar</label>
                     <input name="dish_name" value="{{ old('dish_name') }}" required>
-
-                    <label>Descripción / historia</label>
-                    <textarea name="description" required>{{ old('description') }}</textarea>
 
                     <label style="display:flex; gap:10px; align-items:flex-start; font-weight:600;">
                         <input type="checkbox" name="consent_terms" value="1" required style="width:auto; margin-top:4px;">
-                        Acepto términos, uso de imagen y revisión administrativa.
+                        Acepto los términos y condiciones y autorizo el uso de mi imagen para fines promocionales de Super Carnes.
                     </label>
 
                     @if ($errors->any())
