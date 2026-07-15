@@ -7944,7 +7944,7 @@ a {
 
 .promo-mode-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0;
   margin-bottom: 22px;
   border: 1px solid rgba(88, 130, 204, 0.24);
@@ -8091,6 +8091,126 @@ a {
   border-radius: 8px;
   border: 1px solid rgba(255, 85, 85, 0.34);
   background: rgba(255, 55, 55, 0.12);
+}
+
+.promo-mode-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #25d366 !important;
+  border-bottom-color: rgba(37, 211, 102, 0.4) !important;
+}
+
+.promo-mode-whatsapp .material-symbols-outlined {
+  font-size: 16px;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.promo-mode-whatsapp.is-active {
+  border-bottom-color: #25d366 !important;
+  background: rgba(37, 211, 102, 0.15) !important;
+  color: #25d366 !important;
+}
+
+.promo-whatsapp-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.promo-whatsapp-tab-intro {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226, 236, 255, 0.5);
+}
+
+.promo-whatsapp-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.promo-whatsapp-steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(37, 211, 102, 0.18);
+  background: rgba(37, 211, 102, 0.05);
+  counter-increment: wa-step;
+}
+
+.promo-whatsapp-steps li > .material-symbols-outlined {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(37, 211, 102, 0.14);
+  border: 1px solid rgba(37, 211, 102, 0.28);
+  color: #25d366;
+  font-size: 20px;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.promo-whatsapp-steps li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.promo-whatsapp-steps li strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.promo-whatsapp-steps li span {
+  font-size: 12px;
+  color: rgba(226, 236, 255, 0.52);
+  line-height: 1.35;
+}
+
+.promo-whatsapp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  width: 100%;
+  padding: 0 20px;
+  border-radius: 14px;
+  background: #25d366;
+  color: #fff;
+  font: 700 18px/1 'Archivo Narrow', sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 160ms ease;
+  box-shadow: 0 12px 28px rgba(37, 211, 102, 0.28);
+}
+
+.promo-whatsapp-btn:hover {
+  background: #1ebe5a;
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(37, 211, 102, 0.38);
+}
+
+.promo-whatsapp-btn .material-symbols-outlined {
+  font-size: 22px;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 .promo-security-note {
@@ -9048,160 +9168,416 @@ a {
   cursor: pointer;
 }
 
-.dream-page {
-  min-height: 100vh;
+.dream-page-compact {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
   color: #062b68;
   background:
     linear-gradient(180deg, rgba(0, 77, 184, 0.06), rgba(255, 255, 255, 0.8) 42%),
     #f4fbff;
 }
 
-.dream-hero {
-  position: relative;
-  min-height: clamp(560px, 82vh, 820px);
+.dream-split {
+  height: 100%;
   display: grid;
-  align-items: end;
-  padding: clamp(22px, 5vw, 64px);
-  overflow: hidden;
-  color: #ffffff;
-  background:
-    linear-gradient(90deg, rgba(0, 38, 105, 0.78), rgba(0, 75, 184, 0.28) 48%, rgba(0, 0, 0, 0.06)),
-    url('/del-sueno-al-puesto-hero.png') center / cover no-repeat;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(320px, 1.15fr);
 }
 
-.dream-hero::after {
+.dream-showcase {
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(20px, 4vw, 48px);
+  overflow: hidden;
+  color: #ffffff;
+  background: linear-gradient(160deg, #002669, #004bb8 60%, #00a7df);
+}
+
+.dream-showcase::before {
   content: '';
   position: absolute;
-  inset: auto -8% -14% -8%;
-  height: 34%;
-  background: #f4fbff;
-  border-radius: 50% 50% 0 0;
+  inset: -20px;
+  z-index: -2;
+  background: url('/del-sueno-al-puesto-hero.png') center / cover no-repeat;
+  filter: blur(10px) brightness(0.6) saturate(1.1);
+  transform: scale(1.1);
+}
+
+.dream-showcase::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(160deg, rgba(0, 38, 105, 0.78), rgba(0, 75, 184, 0.5) 55%, rgba(0, 167, 223, 0.32));
 }
 
 .dream-back {
-  position: absolute;
-  z-index: 2;
-  top: 24px;
-  left: 24px;
-  min-height: 42px;
+  flex: 0 0 auto;
+  min-height: 36px;
   border: 0;
   border-radius: 999px;
-  padding: 0 18px;
+  padding: 0 16px;
   color: #073675;
   background: #ffd600;
+  font-size: 13px;
   font-weight: 1000;
   cursor: pointer;
 }
 
-.dream-copy {
-  position: relative;
-  z-index: 2;
-  max-width: 720px;
-  margin-bottom: clamp(42px, 8vw, 100px);
+.dream-showcase img {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
 }
 
-.dream-copy img {
-  width: 138px;
-  border-radius: 18px;
-}
-
-.dream-copy h1 {
-  margin: 24px 0 16px;
-  color: #ffffff;
-  text-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
-  font-size: clamp(56px, 9vw, 118px);
-  line-height: 0.86;
-  letter-spacing: -0.07em;
-}
-
-.dream-copy p {
-  max-width: 610px;
+.dream-showcase h1 {
   margin: 0;
   color: #ffffff;
-  font-size: clamp(18px, 2.2vw, 27px);
-  font-weight: 800;
-  line-height: 1.28;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
 }
 
-.dream-workspace {
-  position: relative;
-  z-index: 3;
-  width: min(1180px, calc(100% - 32px));
-  margin: -86px auto 0;
-  padding-bottom: 64px;
-}
-
-.dream-meter {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: clamp(18px, 4vw, 44px);
-  align-items: center;
-  padding: clamp(20px, 4vw, 34px);
-  border-radius: 34px;
-  color: #073675;
-  background: #ffffff;
-  box-shadow: 0 24px 72px rgba(0, 75, 184, 0.16);
-}
-
-.dream-meter p,
-.dream-label {
-  margin: 0;
-  color: #00a7df;
+.dream-showcase-user {
+  color: #cfe8ff;
   font-size: 13px;
-  font-weight: 1000;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 700;
 }
 
-.dream-meter h2,
-.dream-panel h2 {
-  margin: 8px 0;
-  color: #004bb8;
-  font-size: clamp(28px, 4vw, 48px);
-  line-height: 0.95;
-  letter-spacing: -0.05em;
+.dream-tracker-big {
+  width: 100%;
+  max-width: 380px;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 8px;
 }
 
-.dream-progress-ring {
-  width: 190px;
-  height: 190px;
+.dream-tracker-ring {
+  position: relative;
+  width: clamp(170px, 26vw, 260px);
+  height: clamp(170px, 26vw, 260px);
   display: grid;
   place-items: center;
+}
+
+.dream-tracker-ring::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  z-index: -1;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at center, #ffffff 0 58%, transparent 59%),
-    conic-gradient(#ffd600 var(--progress), #d8f4ff 0);
+  background: conic-gradient(from 0deg, transparent, rgba(255, 214, 0, 0.4), transparent 32%);
+  animation: dream-ring-spin 3.4s linear infinite;
 }
 
-.dream-progress-ring strong,
-.dream-progress-ring span {
-  grid-area: 1 / 1;
+.dream-tracker-big.is-complete .dream-tracker-ring::before {
+  background: conic-gradient(from 0deg, transparent, rgba(52, 211, 153, 0.5), transparent 32%);
+  animation-duration: 2s;
 }
 
-.dream-progress-ring strong {
-  margin-top: -18px;
-  font-size: 34px;
-  letter-spacing: -0.06em;
+.dream-tracker-big.is-complete .dream-tracker-ring {
+  animation: dream-ring-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.dream-progress-ring span {
-  margin-top: 44px;
-  color: #00a7df;
+.dream-liquid-gauge {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 3px solid rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.28);
+}
+
+.dream-liquid-fill {
+  position: absolute;
+  left: -8%;
+  bottom: 0;
+  width: 116%;
+  background: linear-gradient(180deg, #ffe066, #ff8a00 65%, #ff6a00);
+  transition: height 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dream-tracker-big.is-complete .dream-liquid-fill {
+  background: linear-gradient(180deg, #6ee7b7, #10b981 65%, #059669);
+}
+
+.dream-liquid-surface {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  animation: dream-liquid-bob 2.6s ease-in-out infinite;
+}
+
+.dream-liquid-bubble {
+  position: absolute;
+  bottom: 6%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  animation: dream-liquid-bubble-rise 3.6s ease-in infinite;
+}
+
+.dream-liquid-bubble.b1 {
+  left: 26%;
+}
+
+.dream-liquid-bubble.b2 {
+  left: 52%;
+  width: 4px;
+  height: 4px;
+  animation-delay: 1.1s;
+  animation-duration: 3s;
+}
+
+.dream-liquid-bubble.b3 {
+  left: 72%;
+  animation-delay: 2s;
+  animation-duration: 4.2s;
+}
+
+.dream-tracker-ring-label {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.dream-tracker-ring-label strong {
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 20, 60, 0.55);
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dream-tracker-ring-label span {
+  color: #ffe9b3;
+  text-shadow: 0 1px 6px rgba(0, 20, 60, 0.5);
+  font-size: clamp(13px, 1.4vw, 15px);
   font-weight: 900;
 }
 
-.dream-progress-copy strong {
-  display: block;
-  color: #004bb8;
-  font-size: clamp(24px, 3vw, 38px);
-  line-height: 1;
+.dream-tracker-big p {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-weight: 900;
+  transition: color 0.3s ease;
 }
 
-.dream-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
-  gap: 22px;
-  margin-top: 24px;
+.dream-tracker-done {
+  color: #ffd600;
+}
+
+.dream-tracker-bar {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+
+.dream-tracker-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd600, #ffb300);
+  transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+}
+
+.dream-tracker-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: dream-bar-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes dream-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dream-ring-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes dream-bar-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes dream-liquid-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes dream-liquid-bubble-rise {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.25;
+  }
+  100% {
+    transform: translateY(-180px) scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dream-tracker-ring::before {
+    animation: none;
+  }
+
+  .dream-tracker-big.is-complete .dream-tracker-ring {
+    animation: none;
+  }
+
+  .dream-tracker-fill::after {
+    animation: none;
+  }
+
+  .dream-tracker-fill {
+    transition: none;
+  }
+
+  .dream-liquid-surface,
+  .dream-liquid-bubble {
+    animation: none;
+  }
+
+  .dream-liquid-fill {
+    transition: none;
+  }
+}
+
+.dream-panel h2 {
+  margin: 0;
+  color: #004bb8;
+  font-size: clamp(20px, 3vw, 26px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.dream-action {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(16px, 3vh, 28px) clamp(16px, 3vw, 32px);
+}
+
+.dream-steps {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding-bottom: 12px;
+}
+
+.dream-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: #6f88ad;
+  background: #eaf3ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dream-step b {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #a9c3e6;
+  font-size: 11px;
+}
+
+.dream-step.is-active {
+  color: #073675;
+  background: #ffd600;
+}
+
+.dream-step.is-active b {
+  background: #073675;
+}
+
+.dream-step.is-done {
+  color: #0a8f5b;
+  background: #e3f9ee;
+}
+
+.dream-step.is-done b {
+  background: #0a8f5b;
+}
+
+.dream-workspace-compact {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.dream-workspace-compact .dream-panel,
+.dream-workspace-compact .promo-panel {
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.dream-confirm-line {
+  margin: 0;
+  color: #0a8f5b;
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .dream-panel {
@@ -9214,14 +9590,19 @@ a {
 }
 
 .dream-primary {
-  min-height: 52px;
+  min-height: 48px;
   border: 0;
-  border-radius: 999px;
-  padding: 0 22px;
+  border-radius: 12px;
+  padding: 0 20px;
   color: #073675;
-  background: linear-gradient(135deg, #ffd600, #ffed67);
-  font-weight: 1000;
+  background: #ffd600;
+  font-size: 14px;
+  font-weight: 800;
   cursor: pointer;
+}
+
+.dream-primary:hover:not(:disabled) {
+  background: #ffe14d;
 }
 
 .dream-primary:disabled,
@@ -9257,60 +9638,126 @@ a {
   align-self: start;
   color: #073675;
   background: #ffffff;
-}
-
-.dream-scan-panel .dream-label {
-  color: #00a7df;
+  border: 1px solid #e6eef8;
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(0, 43, 104, 0.08);
 }
 
 .dream-scan-panel h2 {
   color: #004bb8;
 }
 
+.dream-panel-head {
+  display: grid;
+  gap: 4px;
+}
+
+.dream-panel-kicker {
+  color: #00a7df;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dream-info-block {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f4f9ff;
+}
+
+.dream-info-block-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #004bb8;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.dream-info-block-title .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.dream-info-block-copy {
+  margin: 0;
+  color: #3f5c85;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.dream-info-block-copy.is-muted {
+  color: #7590b5;
+}
+
+.dream-code-sample {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.dream-code-sample-prefix {
+  color: #a9b8cf;
+}
+
+.dream-code-sample-tail {
+  color: #073675;
+  font-weight: 800;
+}
+
 .dream-scan-panel .promo-mode-switch {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 6px;
-  border: 1px solid #d5ecff;
-  border-radius: 18px;
-  background: #f0f9ff;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #eaf1fa;
+  border-radius: 12px;
+  background: #f7fafd;
   overflow: visible;
 }
 
 .dream-scan-panel .promo-mode-switch button,
 .dream-scan-panel .promo-mode-switch a {
-  min-height: 56px;
+  min-height: 38px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
-  color: #004bb8;
-  background: #ffffff;
-  font-size: 13px;
-  font-weight: 1000;
-  letter-spacing: 0.02em;
+  padding: 0 10px;
+  color: #4b6b94;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
   text-decoration: none;
-  box-shadow: inset 0 0 0 1px #cfe8ff;
+  box-shadow: none;
 }
 
 .dream-scan-panel .promo-mode-switch button.is-active {
-  color: #071b52;
-  background: #ffd600;
-  box-shadow: 0 12px 24px rgba(255, 214, 0, 0.24);
+  color: #073675;
+  background: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 75, 184, 0.14);
 }
 
 .dream-scan-panel .promo-mode-switch button:not(.is-active):hover,
 .dream-scan-panel .promo-mode-switch a:hover {
   color: #073675;
-  background: #e2f4ff;
+  background: rgba(0, 75, 184, 0.06);
 }
 
 .dream-scan-panel .promo-mode-whatsapp {
-  min-height: 46px;
-  color: #073675;
-  background: #e8f7ff;
+  min-height: 38px;
+  color: #128a55;
 }
 
 .dream-scan-panel .promo-scan {
@@ -9345,64 +9792,79 @@ a {
 }
 
 .dream-cufe-entry {
-  padding: 18px;
-  border: 2px solid #d5ecff;
-  border-radius: 20px;
-  background: #f5fbff;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .dream-cufe-entry label {
   display: grid;
-  gap: 10px;
-  color: #004bb8;
-  font-size: 13px;
-  font-weight: 1000;
-  letter-spacing: 0.06em;
+  gap: 6px;
+  color: #4b6b94;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+.dream-cufe-input-group {
+  display: grid;
+  gap: 4px;
+}
+
+.dream-cufe-prefix {
+  width: fit-content;
+  color: #90a5c4;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .dream-cufe-entry input {
-  min-height: 58px;
+  min-height: 50px;
   width: 100%;
-  border: 2px solid #73c8ff;
-  border-radius: 16px;
-  padding: 14px 16px;
-  color: #073675;
-  background: #ffffff;
-  font-size: 18px;
-  font-weight: 800;
+  border: 1px solid #cfe0f5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #08265b;
+  background: #fbfdff;
+  font-size: 16px;
+  font-weight: 700;
   outline: none;
 }
 
 .dream-cufe-entry input:focus {
   border-color: #004bb8;
-  box-shadow: 0 0 0 4px rgba(0, 75, 184, 0.12);
+  box-shadow: 0 0 0 3px rgba(0, 75, 184, 0.1);
 }
 
 .dream-cufe-entry .promo-help {
-  margin: 10px 0 0;
-  color: #315b8d;
-  font-weight: 800;
+  margin: 8px 0 0;
+  color: #6c86ac;
+  font-weight: 600;
+  font-size: 12.5px;
 }
 
-.dream-story {
-  align-self: start;
-  background: linear-gradient(145deg, #ffffff, #eaf9ff);
-}
-
-.dream-story span {
-  width: fit-content;
-  padding: 8px 14px;
-  border-radius: 999px;
-  color: #073675;
+.dream-scan-panel .promo-primary {
+  min-height: 48px;
+  border-radius: 12px;
+  padding: 0 20px;
   background: #ffd600;
-  font-weight: 1000;
+  color: #073675;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.dream-scan-panel .promo-primary:hover:not(:disabled) {
+  background: #ffe14d;
 }
 
 @media (max-width: 900px) {
-  .auth-shell,
-  .dream-meter,
-  .dream-grid {
+  .auth-shell {
     grid-template-columns: 1fr;
   }
 
@@ -9410,8 +9872,14 @@ a {
     justify-self: stretch;
   }
 
-  .dream-progress-ring {
-    justify-self: center;
+  .dream-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .dream-showcase {
+    flex: 0 0 auto;
+    padding: 18px clamp(16px, 5vw, 28px);
   }
 }
 
@@ -9426,16 +9894,6 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .dream-hero {
-    min-height: 560px;
-    background-position: center top;
-  }
-
-  .dream-workspace {
-    margin-top: -42px;
-  }
-
-  .dream-meter,
   .dream-panel {
     border-radius: 22px;
   }
@@ -9714,37 +10172,58 @@ a {
 }
 
 .promo-grid {
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, 300px);
+  justify-content: start;
+  gap: 28px;
   margin-top: 0;
 }
 
 .promo-card {
   position: relative;
-  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
   border: 0;
-  border-radius: 32px;
+  border-radius: 28px;
   color: #073675;
   background: #ffffff;
   box-shadow: 0 28px 78px rgba(0, 75, 184, 0.14);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.promo-card:hover {
+.promo-card:hover,
+.promo-card:focus-visible {
   transform: translateY(-6px);
   box-shadow: 0 34px 90px rgba(0, 75, 184, 0.2);
 }
 
 .promo-card-image {
-  min-height: 235px;
-  background:
-    linear-gradient(180deg, rgba(0, 75, 184, 0) 0%, rgba(0, 75, 184, 0.12) 100%),
-    url('/del-sueno-al-puesto-steps.png') center / cover no-repeat,
-    linear-gradient(135deg, #ffd600, #00a7df);
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffd600, #00a7df);
+}
+
+.promo-card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+.promo-card-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 75, 184, 0) 60%, rgba(0, 30, 80, 0.45) 100%);
+  pointer-events: none;
 }
 
 .promo-card-body {
-  min-height: 195px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 22px;
   gap: 10px;
 }
@@ -9758,35 +10237,41 @@ a {
   opacity: 1;
   font-size: 12px;
   font-weight: 1000;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .promo-card-body strong {
   color: #004bb8;
-  font-size: clamp(24px, 2.4vw, 34px);
-  line-height: 1;
-  letter-spacing: -0.04em;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
 }
 
 .promo-card-body p {
   margin: 0;
   color: #315b8d;
-  font-weight: 800;
-  line-height: 1.35;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .promo-card-body em {
-  align-self: end;
+  align-self: flex-start;
   width: fit-content;
-  margin-top: 8px;
-  padding: 12px 16px;
+  margin-top: auto;
+  padding: 12px 20px;
   border-radius: 999px;
   color: #ffffff;
   background: #004bb8;
   opacity: 1;
   font-size: 14px;
   font-weight: 1000;
+  font-style: normal;
+  transition: background 160ms ease;
+}
+
+.promo-card:hover em {
+  background: #073675;
 }
 
 .promo-state {
@@ -9804,23 +10289,13 @@ a {
   .promo-session {
     justify-self: stretch;
   }
-
-  .promo-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .promo-card {
-    min-height: auto;
-  }
 }
 
 @media (max-width: 560px) {
-  .dream-scan-panel .promo-mode-switch {
-    grid-template-columns: 1fr;
-  }
-
   .dream-scan-panel .promo-mode-switch button,
   .dream-scan-panel .promo-mode-switch a {
-    min-height: 52px;
+    min-height: 40px;
+    font-size: 11.5px;
+    padding: 0 6px;
   }
 }

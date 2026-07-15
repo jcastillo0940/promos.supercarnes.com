@@ -15,6 +15,9 @@
                 <a href="{{ route('admin.winners') }}" @class(['active' => request()->routeIs('admin.winners')])>
                     Ganadores
                 </a>
+                <a href="{{ route('admin.entrepreneurs') }}" @class(['active' => request()->routeIs('admin.entrepreneurs*')])>
+                    Del sueño al puesto
+                </a>
                 <a href="{{ route('admin.audit') }}" @class(['active' => request()->routeIs('admin.audit')])>
                     Auditoría
                 </a>

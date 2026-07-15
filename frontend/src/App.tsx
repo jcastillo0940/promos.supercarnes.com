@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { CSSProperties, FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from 'html5-qrcode'
 import { api, setApiToken } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
-type EntryMode = 'scan' | 'manual'
+type EntryMode = 'scan' | 'manual' | 'whatsapp'
 type PromoStep = 1 | 2 | 3
 type CampaignStatus = 'draft' | 'active' | 'paused' | 'archived'
 type ParticipationMode = 'points' | 'threshold_form'
@@ -51,6 +51,8 @@ interface InvoiceFormState {
 
 const QR_READER_ELEMENT_ID = 'dgi-qr-reader'
 const CUFE_SHORT_PREFIX = 'FE01200000032812-2-249262-'
+const CUFE_SHORT_PREFIX_ABBR = 'FE...-249262-'
+const CUFE_TAIL_EXAMPLE = '630003202607091500223344556677889900112233445566778899001122'.slice(0, 60)
 const AUTH_TOKEN_STORAGE_KEY = 'supercarnes.auth.token'
 const PANAMA_PROVINCES = [
   'Bocas del Toro',
@@ -423,7 +425,7 @@ function PromoCatalog({
             <img src="/logo_web.jpg" alt="Super Carnes" />
           <p className="promo-kicker">Promociones Super Carnes</p>
           <h1>Elige una promo activa</h1>
-          <p>Si solo hay una, verás una sola tarjeta. Si hay varias, se adaptan en cuadrícula.</p>
+          <p>Participa en las promociones vigentes: registra tus facturas, sigue tu progreso y entérate cuando ganes.</p>
           </div>
           <div className="promo-session">
             <strong>{user.full_name}</strong>
@@ -441,13 +443,14 @@ function PromoCatalog({
           <section className="promo-grid">
             {campaigns.map((campaign) => (
               <button key={campaign.id} type="button" className="promo-card" onClick={() => onOpen(campaign.slug)}>
-                <div className="promo-card-image" style={campaign.card_image_url ? { backgroundImage: `url(${campaign.card_image_url})` } : undefined} />
+                <div className="promo-card-image">
+                  {campaign.card_image_url ? <img src={campaign.card_image_url} alt={campaign.name} loading="lazy" /> : null}
+                </div>
                 <div className="promo-card-body">
-                  <span>{campaign.participation_mode === 'threshold_form' ? 'Umbral de participación' : campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
+                  <span>{campaign.participation_mode === 'threshold_form' ? `Meta: $${Number(campaign.entry_threshold_amount ?? 300).toFixed(0)} en facturas` : campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
                   <strong>{campaign.name}</strong>
                   <p>{campaign.description ?? 'Abre esta promoción para participar.'}</p>
-                  {campaign.participation_mode === 'threshold_form' ? <p>Se activa al acumular ${Number(campaign.entry_threshold_amount ?? 300).toFixed(2)} en facturas.</p> : null}
-                  <em>Participar ahora</em>
+                  <em>Participar ahora →</em>
                 </div>
               </button>
             ))}
@@ -673,7 +676,11 @@ function PromoLanding({
                   Escanear QR
                 </button>
                 <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>
-                  Ingresar CUFE
+                  Manual
+                </button>
+                <button className={`promo-mode-whatsapp ${entryMode === 'whatsapp' ? 'is-active' : ''}`} type="button" onClick={() => setEntryMode('whatsapp')}>
+                  <span className="material-symbols-outlined" aria-hidden="true">chat</span>
+                  WhatsApp
                 </button>
               </div>
 
@@ -688,7 +695,7 @@ function PromoLanding({
                   )}
                   {scannerError ? <div className="promo-alert">{scannerError}</div> : null}
                 </div>
-              ) : (
+              ) : entryMode === 'manual' ? (
                 <div className="promo-manual">
                   <label>
                     Ultimos 60 numeros del CUFE
@@ -718,6 +725,49 @@ function PromoLanding({
                   ) : !scannerError ? (
                     <p className="promo-help">{manualTouched ? 'Listo. Espera un momento.' : 'Escribe los ultimos 60 numeros del CUFE y toca validar.'}</p>
                   ) : null}
+                </div>
+              ) : (
+                <div className="promo-whatsapp-tab">
+                  <p className="promo-whatsapp-tab-intro">Envía los siguientes datos por WhatsApp para participar:</p>
+                  <ul className="promo-whatsapp-steps">
+                    <li>
+                      <span className="material-symbols-outlined" aria-hidden="true">photo_camera</span>
+                      <div>
+                        <strong>Fotografía de tu factura</strong>
+                        <span>Foto legible de tu compra en Super Carnes</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span className="material-symbols-outlined" aria-hidden="true">person</span>
+                      <div>
+                        <strong>Nombre completo</strong>
+                        <span>Tu nombre tal como aparece en tu documento</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span className="material-symbols-outlined" aria-hidden="true">badge</span>
+                      <div>
+                        <strong>Número de cédula</strong>
+                        <span>Documento de identidad del participante</span>
+                      </div>
+                    </li>
+                    <li>
+                      <span className="material-symbols-outlined" aria-hidden="true">favorite</span>
+                      <div>
+                        <strong>¿Por qué tu papá merece ganar?</strong>
+                        <span>Cuéntanos en tus propias palabras</span>
+                      </div>
+                    </li>
+                  </ul>
+                  <a
+                    className="promo-whatsapp-btn"
+                    href="https://wa.me/50768982167?text=Deseo%20participar%20en%20el%20Give%20Away%20del%20dia%20del%20Padre."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">chat</span>
+                    Registrar vía WhatsApp
+                  </a>
                 </div>
               )}
             </div>
@@ -819,7 +869,7 @@ function ThresholdPromoLanding({
   onUserChange: (user: User) => void
   onBack: () => void
 }) {
-  const [entryMode, setEntryMode] = useState<EntryMode>('scan')
+  const [entryMode, setEntryMode] = useState<EntryMode>('manual')
   const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => formFromUser(user))
   const [profileForm, setProfileForm] = useState({
     entrepreneur_name: user.entrepreneur_name ?? '',
@@ -836,13 +886,36 @@ function ThresholdPromoLanding({
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
   const [campaignTotal, setCampaignTotal] = useState(0)
+  const [animatedTotal, setAnimatedTotal] = useState(0)
+  const animatedTotalRef = useRef(0)
 
   const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 300)
   const campaignQualified = campaignTotal >= thresholdAmount
   const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
-  const progress = Math.min(100, (campaignTotal / thresholdAmount) * 100)
   const profileCompleted = Boolean(user.entrepreneur_name && user.entrepreneur_province && user.entrepreneur_reason)
   const canSubmitInvoice = profileCompleted && !submitting && (entryMode === 'scan' ? invoiceValidated : invoiceForm.cufe_tail.trim().replace(/\D/g, '').length >= 10)
+
+  const trackerProgress = Math.min(100, (animatedTotal / thresholdAmount) * 100)
+
+  useEffect(() => {
+    const from = animatedTotalRef.current
+    const to = Math.min(campaignTotal, thresholdAmount)
+    const duration = 900
+    const start = performance.now()
+    let raf = 0
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const value = from + (to - from) * eased
+      animatedTotalRef.current = value
+      setAnimatedTotal(value)
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [campaignTotal, thresholdAmount])
 
   useEffect(() => {
     setInvoiceForm((current) => ({
@@ -1052,79 +1125,82 @@ function ThresholdPromoLanding({
   }
 
   return (
-    <div className="dream-page">
-      <header className="dream-hero">
-        <button className="dream-back" type="button" onClick={onBack}>Volver a promociones</button>
-        <div className="dream-copy">
+    <div className="dream-page-compact">
+      <div className="dream-split">
+        <aside className="dream-showcase">
+          <button className="dream-back" type="button" onClick={onBack}>← Volver</button>
           <img src="/logo_web.jpg" alt="Super Carnes" />
           <h1>Del Sueño al Puesto</h1>
-          <p>Acumula $300 o mas en facturas, completa tu historia de emprendimiento y activa tu participacion por una tolda.</p>
-        </div>
-      </header>
+          <span className="dream-showcase-user">{user.full_name} · {user.cedula}</span>
 
-      <main className="dream-workspace">
-        <section className="dream-meter">
-          <div>
-            <p>Participante</p>
-            <h2>{user.full_name}</h2>
-            <span>{user.cedula} · {user.email}</span>
+          <div className={`dream-tracker-big${campaignQualified ? ' is-complete' : ''}`}>
+            <div className="dream-tracker-ring">
+              <div className="dream-liquid-gauge">
+                <div className="dream-liquid-fill" style={{ height: `${Math.max(trackerProgress, 6)}%` }}>
+                  <span className="dream-liquid-surface" />
+                </div>
+                <span className="dream-liquid-bubble b1" />
+                <span className="dream-liquid-bubble b2" />
+                <span className="dream-liquid-bubble b3" />
+              </div>
+              <div className="dream-tracker-ring-label">
+                <strong>${Math.round(animatedTotal)}</strong>
+                <span>de ${thresholdAmount.toFixed(0)}</span>
+              </div>
+            </div>
+            <p className={campaignQualified ? 'dream-tracker-done' : ''}>
+              {campaignQualified ? '¡Participación activa!' : `Faltan $${remainingAmount.toFixed(2)}`}
+            </p>
+            <div className="dream-tracker-bar">
+              <div className="dream-tracker-fill" style={{ width: `${trackerProgress}%` }} />
+            </div>
           </div>
-          <div className="dream-progress-ring" style={{ '--progress': `${progress}%` } as CSSProperties}>
-            <strong>${Math.min(campaignTotal, thresholdAmount).toFixed(2)}</strong>
-            <span>de ${thresholdAmount.toFixed(2)}</span>
-          </div>
-          <div className="dream-progress-copy">
-            <strong>{campaignQualified ? 'Participacion activa' : `Faltan $${remainingAmount.toFixed(2)}`}</strong>
-            <p>{campaignQualified ? 'Llegaste al monto requerido. Puedes seguir registrando facturas.' : 'Cada factura valida suma a tu acumulado.'}</p>
-          </div>
-        </section>
+        </aside>
 
-        <section className="dream-grid">
-          {!profileCompleted ? (
-            <form className="dream-panel dream-form" onSubmit={saveDreamProfile}>
-              <p className="dream-label">Formulario de emprendimiento</p>
-              <h2>Cuéntanos por qué tu emprendimiento debe ganar una tolda</h2>
-              <label>
-                Nombre completo
-                <input value={user.full_name} disabled />
-              </label>
-              <label>
-                Correo
-                <input value={user.email} disabled />
-              </label>
-              <label>
-                Nombre del emprendimiento
-                <input value={profileForm.entrepreneur_name} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_name: event.target.value }))} required />
-              </label>
-              <label>
-                Ubicacion del emprendimiento
-                <select value={profileForm.entrepreneur_province} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_province: event.target.value }))} required>
-                  <option value="">Selecciona provincia</option>
-                  {PANAMA_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
-                </select>
-              </label>
-              <label>
-                Por que debe ganar una tolda
-                <textarea value={profileForm.entrepreneur_reason} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_reason: event.target.value }))} rows={5} required />
-              </label>
-              <button className="dream-primary" type="submit" disabled={savingProfile}>{savingProfile ? 'Guardando...' : 'Guardar formulario'}</button>
-            </form>
-          ) : (
-            <article className="dream-panel dream-story">
-              <p className="dream-label">Formulario enviado</p>
-              <h2>{user.entrepreneur_name}</h2>
-              <span>{user.entrepreneur_province}</span>
-              <p>{user.entrepreneur_reason}</p>
-            </article>
-          )}
+        <main className="dream-action">
+          <div className="dream-steps">
+            <span className={`dream-step ${!profileCompleted ? 'is-active' : 'is-done'}`}>
+              <b>1</b> Formulario
+            </span>
+            <span className={`dream-step ${profileCompleted ? 'is-active' : ''}`}>
+              <b>2</b> Registrar facturas
+            </span>
+          </div>
 
+          <div className="dream-workspace-compact">
+        {!profileCompleted ? (
+          <form className="dream-panel dream-form" onSubmit={saveDreamProfile}>
+            <h2>Cuéntanos por qué tu emprendimiento debe ganar una tolda</h2>
+            <p className="promo-help">Completa esto primero: es lo único que falta para poder registrar tus facturas.</p>
+            <label>
+              Nombre del emprendimiento
+              <input value={profileForm.entrepreneur_name} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_name: event.target.value }))} required />
+            </label>
+            <label>
+              Ubicacion del emprendimiento
+              <select value={profileForm.entrepreneur_province} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_province: event.target.value }))} required>
+                <option value="">Selecciona provincia</option>
+                {PANAMA_PROVINCES.map((province) => <option key={province} value={province}>{province}</option>)}
+              </select>
+            </label>
+            <label>
+              Por que debe ganar una tolda
+              <textarea value={profileForm.entrepreneur_reason} onChange={(event) => setProfileForm((current) => ({ ...current, entrepreneur_reason: event.target.value }))} rows={3} required />
+            </label>
+            {submitError ? <div className="promo-alert">{submitError}</div> : null}
+            <button className="dream-primary" type="submit" disabled={savingProfile}>{savingProfile ? 'Guardando...' : 'Guardar y continuar'}</button>
+          </form>
+        ) : (
           <form className="promo-panel dream-scan-panel" onSubmit={handleSubmit}>
-            <p className="dream-label">Facturas</p>
-            <h2>Registra CUFE para sumar al tracker</h2>
+            <p className="dream-confirm-line">✓ {user.entrepreneur_name} · {user.entrepreneur_province}</p>
+            <div className="dream-panel-head">
+              <span className="dream-panel-kicker">{entryMode === 'manual' ? 'Registro manual' : 'Escaneo de QR'}</span>
+              <h2>{entryMode === 'manual' ? 'Ingresa el CUFE' : 'Registra tu factura'}</h2>
+            </div>
             <div className="promo-mode-switch">
-              <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>Escanear QR</button>
               <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>Manual</button>
-              <a className="promo-mode-whatsapp" href="https://wa.me/50766153518?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Del%20Sue%C3%B1o%20al%20Puesto" target="_blank" rel="noreferrer">WhatsApp</a>
+              <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>Escanear QR</button>
+              <a className="promo-mode-whatsapp" href="https://wa.me/50766153518?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Del%20Sue%C3%B1o%20al%20Puesto" target="_blank" rel="noreferrer">WhatsApp Del Sueño al Puesto</a>
             </div>
 
             {entryMode === 'scan' ? (
@@ -1136,23 +1212,41 @@ function ThresholdPromoLanding({
                 )}
               </div>
             ) : (
-              <div className="promo-manual dream-cufe-entry">
-                <label>
-                  <span>CUFE de la factura</span>
-                  <input
-                    value={invoiceForm.cufe_tail}
-                    onChange={(event) => {
-                      setManualTouched(true)
-                      setInvoiceValidated(false)
-                      setInvoiceForm((current) => ({ ...current, cufe_tail: event.target.value.replace(/\D/g, '').slice(0, 60), rawInput: '' }))
-                    }}
-                    maxLength={60}
-                    inputMode="numeric"
-                    placeholder="Pega o escribe los ultimos 60 numeros"
-                  />
-                </label>
-                <p className="promo-help">Cuando presiones registrar, validaremos el CUFE y sumaremos el monto automaticamente.</p>
-              </div>
+              <>
+                <div className="dream-info-block">
+                  <p className="dream-info-block-title">
+                    <span className="material-symbols-outlined" aria-hidden="true">info</span>
+                    ¿Qué número debo escribir?
+                  </p>
+                  <p className="dream-info-block-copy">El CUFE de tu factura Super Carnes tiene varias partes separadas por guiones. Solo necesitas escribir el bloque final, los números después del último guión.</p>
+                  <div className="dream-code-sample">
+                    <span className="dream-code-sample-prefix">{CUFE_SHORT_PREFIX}</span>
+                    <span className="dream-code-sample-tail">{CUFE_TAIL_EXAMPLE}</span>
+                  </div>
+                  <p className="dream-info-block-copy is-muted">Escribe solo la parte resaltada. La encontrarás al final de la factura, debajo del código QR, etiquetada como CUFE.</p>
+                </div>
+
+                <div className="promo-manual dream-cufe-entry">
+                  <label>
+                    <span>Código final del CUFE</span>
+                    <div className="dream-cufe-input-group">
+                      <span className="dream-cufe-prefix">{CUFE_SHORT_PREFIX_ABBR}</span>
+                      <input
+                        value={invoiceForm.cufe_tail}
+                        onChange={(event) => {
+                          setManualTouched(true)
+                          setInvoiceValidated(false)
+                          setInvoiceForm((current) => ({ ...current, cufe_tail: event.target.value.replace(/\D/g, '').slice(0, 60), rawInput: '' }))
+                        }}
+                        maxLength={60}
+                        inputMode="numeric"
+                        placeholder={CUFE_TAIL_EXAMPLE.slice(0, 18) + '...'}
+                      />
+                    </div>
+                  </label>
+                  <p className="promo-help">Solo los números finales, sin espacios ni guiones.</p>
+                </div>
+              </>
             )}
 
             {manualTouched && entryMode === 'manual' && !invoiceValidated && !scannerError ? <p className="promo-help">Listo. Ahora presiona registrar factura para validar y acumular.</p> : null}
@@ -1166,11 +1260,13 @@ function ThresholdPromoLanding({
             {submitError ? <div className="promo-alert">{submitError}</div> : null}
             {submitSuccess ? <div className="promo-success-msg">{submitSuccess}</div> : null}
             <button className="promo-primary" type="submit" disabled={!canSubmitInvoice}>
-              {submitting || resolvingInvoice ? 'Validando y registrando...' : profileCompleted ? 'Registrar factura y acumular' : 'Primero guarda el formulario'}
+              {submitting || resolvingInvoice ? 'Validando y registrando...' : 'Registrar factura y acumular'}
             </button>
           </form>
-        </section>
-      </main>
+        )}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

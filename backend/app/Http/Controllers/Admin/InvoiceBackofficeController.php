@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Campaign;
 use App\Models\InvoiceGoalSetting;
 use App\Models\AuditLog;
@@ -11,11 +12,13 @@ use App\Models\RegisteredInvoice;
 use App\Models\User;
 use App\Models\SiteSetting;
 use App\Support\Audit;
+use App\Support\ContestInvoiceRegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class InvoiceBackofficeController extends Controller
@@ -447,6 +450,159 @@ class InvoiceBackofficeController extends Controller
             ->delete();
 
         return back()->with('status', 'Cliente marcado como no ganador.');
+    }
+
+    public function entrepreneurs(Request $request): View
+    {
+        $query = User::query()
+            ->where(function ($query) {
+                $query->whereNotNull('entrepreneur_name')
+                    ->orWhereNotNull('dream_promo_qualified_at');
+            })
+            ->when($request->filled('name'), function ($query) use ($request) {
+                $term = trim((string) $request->input('name'));
+                $query->where(function ($nameQuery) use ($term) {
+                    $nameQuery->where('full_name', 'like', "%{$term}%")
+                        ->orWhere('name', 'like', "%{$term}%")
+                        ->orWhere('entrepreneur_name', 'like', "%{$term}%");
+                });
+            })
+            ->when($request->filled('cedula'), function ($query) use ($request) {
+                $term = trim((string) $request->input('cedula'));
+                $query->where('cedula', 'like', "%{$term}%");
+            })
+            ->when($request->filled('province'), function ($query) use ($request) {
+                $term = trim((string) $request->input('province'));
+                $query->where('entrepreneur_province', 'like', "%{$term}%");
+            })
+            ->when($request->filled('qualified'), function ($query) use ($request) {
+                if ($request->input('qualified') === 'yes') {
+                    $query->whereNotNull('dream_promo_qualified_at');
+                } elseif ($request->input('qualified') === 'no') {
+                    $query->whereNull('dream_promo_qualified_at');
+                }
+            });
+
+        $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
+
+        $entrepreneurs = $query
+            ->with('branch')
+            ->orderByDesc('dream_promo_qualified_at')
+            ->orderByDesc('id')
+            ->paginate(30);
+
+        $entrepreneurs->appends($request->only(['name', 'cedula', 'province', 'qualified']));
+
+        $totalsByUser = collect();
+        if ($dreamCampaign) {
+            $totalsByUser = RegisteredInvoice::query()
+                ->where('campaign_id', $dreamCampaign->id)
+                ->whereIn('user_id', $entrepreneurs->pluck('id'))
+                ->selectRaw('user_id, SUM(purchase_amount) as total')
+                ->groupBy('user_id')
+                ->pluck('total', 'user_id');
+        }
+
+        return view('admin.entrepreneurs', [
+            'entrepreneurs' => $entrepreneurs,
+            'totalsByUser' => $totalsByUser,
+            'dreamCampaign' => $dreamCampaign,
+        ]);
+    }
+
+    public function entrepreneurEdit(User $user): View
+    {
+        $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
+
+        $user->load('branch');
+
+        $invoices = collect();
+        $total = 0.0;
+        if ($dreamCampaign) {
+            $invoices = RegisteredInvoice::query()
+                ->where('user_id', $user->id)
+                ->where('campaign_id', $dreamCampaign->id)
+                ->orderByDesc('created_at')
+                ->get();
+            $total = (float) $invoices->sum('purchase_amount');
+        }
+
+        return view('admin.entrepreneur-edit', [
+            'entrepreneur' => $user,
+            'branches' => Branch::query()->orderBy('name')->get(),
+            'dreamCampaign' => $dreamCampaign,
+            'invoices' => $invoices,
+            'total' => $total,
+        ]);
+    }
+
+    public function entrepreneurUpdate(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'max:180'],
+            'cedula' => ['nullable', 'string', 'max:40', Rule::unique('users', 'cedula')->ignore($user->id)],
+            'email' => ['nullable', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'entrepreneur_name' => ['required', 'string', 'max:180'],
+            'entrepreneur_province' => ['required', 'string', 'max:120'],
+            'entrepreneur_type' => ['nullable', 'string', 'max:120'],
+            'entrepreneur_story' => ['nullable', 'string'],
+            'entrepreneur_reason' => ['required', 'string', 'max:2000'],
+            'nearest_branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+            'dream_promo_qualified' => ['nullable', 'boolean'],
+        ]);
+
+        $wasQualified = $user->dream_promo_qualified_at !== null;
+        $isQualified = $request->boolean('dream_promo_qualified');
+
+        $user->forceFill([
+            'full_name' => $validated['full_name'],
+            'cedula' => $validated['cedula'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'entrepreneur_name' => $validated['entrepreneur_name'],
+            'entrepreneur_province' => $validated['entrepreneur_province'],
+            'entrepreneur_type' => $validated['entrepreneur_type'] ?? null,
+            'entrepreneur_story' => $validated['entrepreneur_story'] ?? null,
+            'entrepreneur_reason' => $validated['entrepreneur_reason'],
+            'nearest_branch_id' => $validated['nearest_branch_id'] ?? null,
+            'dream_promo_qualified_at' => $isQualified
+                ? ($wasQualified ? $user->dream_promo_qualified_at : now())
+                : null,
+        ])->save();
+
+        return redirect()
+            ->route('admin.entrepreneurs.edit', $user)
+            ->with('status', 'Datos del emprendedor actualizados.');
+    }
+
+    public function entrepreneurInvoiceStore(Request $request, User $user, ContestInvoiceRegistrationService $registrationService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'qr_raw_text' => ['required', 'string', 'max:2048'],
+        ]);
+
+        if (! $user->cedula) {
+            return back()->withErrors(['qr_raw_text' => 'Este emprendedor no tiene cédula registrada. Agrégala antes de ingresar una factura.']);
+        }
+
+        try {
+            $registrationService->registerGuest([
+                'campaign_slug' => 'del-sueno-al-puesto',
+                'document_type' => $user->document_type ?? 'cedula',
+                'document_number' => $user->cedula,
+                'full_name' => $user->full_name ?? $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'qr_raw_text' => $validated['qr_raw_text'],
+            ]);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
+        }
+
+        return redirect()
+            ->route('admin.entrepreneurs.edit', $user)
+            ->with('status', 'Factura ingresada manualmente para el emprendedor.');
     }
 
     public function prizeDeliveryIndex(Request $request): View

@@ -65,6 +65,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/clientes/{user}', [InvoiceBackofficeController::class, 'customerHistory'])->name('admin.customers.history');
     Route::post('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'markCustomerAsWinner'])->name('admin.customers.mark-winner');
     Route::delete('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'unmarkCustomerAsWinner'])->name('admin.customers.unmark-winner');
+    Route::get('/adminrepus1car/emprendedores', [InvoiceBackofficeController::class, 'entrepreneurs'])->name('admin.entrepreneurs');
+    Route::get('/adminrepus1car/emprendedores/{user}', [InvoiceBackofficeController::class, 'entrepreneurEdit'])->name('admin.entrepreneurs.edit');
+    Route::post('/adminrepus1car/emprendedores/{user}', [InvoiceBackofficeController::class, 'entrepreneurUpdate'])->name('admin.entrepreneurs.update');
+    Route::post('/adminrepus1car/emprendedores/{user}/facturas', [InvoiceBackofficeController::class, 'entrepreneurInvoiceStore'])->name('admin.entrepreneurs.invoices.store');
 });
 
 Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () {
