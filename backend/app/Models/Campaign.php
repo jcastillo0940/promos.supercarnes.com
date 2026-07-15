@@ -60,4 +60,9 @@ class Campaign extends Model
     {
         return $this->hasMany(InstantWinWindow::class);
     }
+
+    public function fondaRegistrations(): HasMany
+    {
+        return $this->hasMany(FondaRegistration::class);
+    }
 }

@@ -1,13 +1,13 @@
 <aside class="sidebar">
     <div class="sidebar-section">
-        <p class="sidebar-title">Navegación</p>
+        <p class="sidebar-title">NavegaciÃ³n</p>
         <nav class="sidebar-nav">
             @if(auth()->user()?->isAdmin())
                 <a href="{{ route('admin.dashboard') }}" @class(['active' => request()->routeIs('admin.dashboard')])>
                     Dashboard
                 </a>
                 <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice')])>
-                    Configuración
+                    ConfiguraciÃ³n
                 </a>
                 <a href="{{ route('admin.invoices') }}" @class(['active' => request()->routeIs('admin.invoices')])>
                     Facturas
@@ -16,10 +16,13 @@
                     Ganadores
                 </a>
                 <a href="{{ route('admin.entrepreneurs') }}" @class(['active' => request()->routeIs('admin.entrepreneurs*')])>
-                    Del sueño al puesto
+                    Del sueÃ±o al puesto
+                </a>
+                <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge')])>
+                    Fonda Challenge
                 </a>
                 <a href="{{ route('admin.audit') }}" @class(['active' => request()->routeIs('admin.audit')])>
-                    Auditoría
+                    AuditorÃ­a
                 </a>
             @endif
             <a href="{{ route('admin.prize-delivery') }}" @class(['active' => request()->routeIs('admin.prize-delivery')])>
@@ -38,6 +41,6 @@
     @endif
 
     <div class="sidebar-foot">
-        Panel optimizado para escritorio y móvil.
+        Panel optimizado para escritorio y mÃ³vil.
     </div>
 </aside>

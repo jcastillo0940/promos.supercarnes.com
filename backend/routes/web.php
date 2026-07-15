@@ -3,7 +3,12 @@
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminLoginController;
+use App\Http\Controllers\Admin\FondaChallengeController as AdminFondaChallengeController;
+use App\Http\Controllers\Admin\FondaJuryController;
+use App\Http\Controllers\Admin\FondaMediaController;
+use App\Http\Controllers\Admin\FondaResultsController;
 use App\Http\Controllers\Admin\InvoiceBackofficeController;
+use App\Http\Controllers\FondaChallengeController;
 
 $frontendDist = realpath(base_path('../frontend/dist'));
 
@@ -50,6 +55,10 @@ Route::get('/admin/login', [AdminLoginController::class, 'showLogin'])->name('ad
 Route::post('/admin/login', [AdminLoginController::class, 'login'])->name('admin.login.post');
 Route::post('/admin/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
 
+Route::get('/fonda-challenge', [FondaChallengeController::class, 'landing'])->name('fonda-challenge.landing');
+Route::post('/fonda-challenge', [FondaChallengeController::class, 'store'])->name('fonda-challenge.store');
+Route::get('/fonda-challenge/{code}', [FondaChallengeController::class, 'show'])->name('fonda-challenge.show');
+
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/dashboard', [InvoiceBackofficeController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/adminrepus1car', [InvoiceBackofficeController::class, 'index'])->name('admin.invoice-backoffice');
@@ -82,6 +91,16 @@ Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/entrega-premio/{winner}/reabrir', [InvoiceBackofficeController::class, 'prizeDeliveryOverride'])->name('admin.prize-delivery.override');
     Route::post('/adminrepus1car/campaigns', [InvoiceBackofficeController::class, 'updateCampaigns'])->name('admin.invoice-backoffice.campaigns.update');
+    Route::get('/adminrepus1car/fonda-challenge', [AdminFondaChallengeController::class, 'index'])->name('admin.fonda-challenge');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/status', [AdminFondaChallengeController::class, 'updateStatus'])->name('admin.fonda-challenge.status');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/check-in', [AdminFondaChallengeController::class, 'checkIn'])->name('admin.fonda-challenge.check-in');
+    Route::get('/adminrepus1car/fonda-challenge/ranking', [AdminFondaChallengeController::class, 'ranking'])->name('admin.fonda-challenge.ranking');
+    Route::get('/adminrepus1car/fonda-jury', [FondaJuryController::class, 'index'])->name('admin.fonda-jury');
+    Route::post('/adminrepus1car/fonda-jury/{registration}/assign', [FondaJuryController::class, 'assign'])->name('admin.fonda-jury.assign');
+    Route::post('/adminrepus1car/fonda-jury/evaluations/{assignment}', [FondaJuryController::class, 'evaluate'])->name('admin.fonda-jury.evaluate');
+    Route::post('/adminrepus1car/fonda-media/{registration}', [FondaMediaController::class, 'create'])->name('admin.fonda-media.create');
+    Route::post('/adminrepus1car/fonda-results/freeze', [FondaResultsController::class, 'freeze'])->name('admin.fonda-results.freeze');
+    Route::post('/adminrepus1car/fonda-results/publish', [FondaResultsController::class, 'publish'])->name('admin.fonda-results.publish');
 });
 
 Route::get('/{any?}', function () use ($frontendDist, $serveFrontendFile) {
