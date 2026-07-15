@@ -118,13 +118,9 @@
                 </div>
                 <div class="right">
                     <div class="qr-card">
-                        <h2>¿Qué sigue?</h2>
-                        @if (in_array($registration->status, ['approved', 'checked_in', 'ready_for_judging'], true))
-                            <img src="{{ route('fonda-challenge.qr', $registration->code) }}" alt="QR Fonda Challenge">
-                            <p>Este QR sirve para check-in y control operativo.</p>
-                        @else
-                            <p>Tu registro quedó en revisión. Cuando el equipo lo apruebe, podrás ver el QR aquí mismo.</p>
-                        @endif
+                        <h2>Tu código QR</h2>
+                        <img src="{{ route('fonda-challenge.qr', $registration->code) }}" alt="QR Fonda Challenge">
+                        <p>Guárdalo o revisa tu correo: lo enviamos a {{ $registration->email }}. Este QR sirve para check-in y control operativo el día del evento, aunque tu registro esté en revisión.</p>
                         @if (session('status'))
                             <div class="note">{{ session('status') }}</div>
                         @endif

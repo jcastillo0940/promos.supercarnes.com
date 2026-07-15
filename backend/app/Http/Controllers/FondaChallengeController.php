@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\FondaChallengeRegistrationConfirmation;
 use App\Models\Campaign;
 use App\Models\FondaRegistration;
-use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -67,6 +70,8 @@ class FondaChallengeController extends Controller
             ],
         ])->save();
 
+        $this->sendRegistrationEmail($registration);
+
         return redirect()
             ->route('fonda-challenge.show', ['code' => $registration->code])
             ->with('status', 'Tu registro quedo en revision.');
@@ -87,19 +92,29 @@ class FondaChallengeController extends Controller
     public function qr(string $code)
     {
         $registration = FondaRegistration::query()->where('code', $code)->firstOrFail();
-        abort_unless(in_array($registration->status, ['approved', 'checked_in', 'ready_for_judging'], true), 403);
 
-        $result = Builder::create()
-            ->writer(new SvgWriter())
-            ->data(route('fonda-challenge.show', ['code' => $registration->code]))
-            ->size(320)
-            ->margin(16)
-            ->build();
+        $qrCode = new QrCode(
+            data: route('fonda-challenge.show', ['code' => $registration->code]),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 320,
+            margin: 16,
+        );
+
+        $result = (new SvgWriter())->write($qrCode);
 
         return response($result->getString(), 200, [
             'Content-Type' => 'image/svg+xml; charset=UTF-8',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
+    }
+
+    private function sendRegistrationEmail(FondaRegistration $registration): void
+    {
+        try {
+            Mail::to($registration->email)->send(new FondaChallengeRegistrationConfirmation($registration));
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
     }
 
     private function generateCode(): string
