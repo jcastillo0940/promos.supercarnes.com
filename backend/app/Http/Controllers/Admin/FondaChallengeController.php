@@ -56,6 +56,27 @@ class FondaChallengeController extends Controller
         return back()->with('status', 'Estado actualizado.');
     }
 
+    public function approve(Request $request, FondaRegistration $registration): RedirectResponse
+    {
+        return $this->updateStatus($request->merge([
+            'status' => 'approved',
+        ]), $registration);
+    }
+
+    public function requestCorrection(Request $request, FondaRegistration $registration): RedirectResponse
+    {
+        return $this->updateStatus($request->merge([
+            'status' => 'needs_correction',
+        ]), $registration);
+    }
+
+    public function reject(Request $request, FondaRegistration $registration): RedirectResponse
+    {
+        return $this->updateStatus($request->merge([
+            'status' => 'rejected',
+        ]), $registration);
+    }
+
     public function checkIn(Request $request, FondaRegistration $registration): RedirectResponse
     {
         abort_unless($registration->status === 'approved' || $registration->status === 'ready_for_judging', 422, 'La fonda debe estar aprobada.');

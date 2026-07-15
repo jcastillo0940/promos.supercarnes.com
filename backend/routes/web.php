@@ -58,6 +58,7 @@ Route::post('/admin/logout', [AdminLoginController::class, 'logout'])->name('adm
 Route::get('/fonda-challenge', [FondaChallengeController::class, 'landing'])->name('fonda-challenge.landing');
 Route::post('/fonda-challenge', [FondaChallengeController::class, 'store'])->name('fonda-challenge.store');
 Route::get('/fonda-challenge/{code}', [FondaChallengeController::class, 'show'])->name('fonda-challenge.show');
+Route::get('/fonda-challenge/{code}/qr', [FondaChallengeController::class, 'qr'])->name('fonda-challenge.qr');
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/dashboard', [InvoiceBackofficeController::class, 'dashboard'])->name('admin.dashboard');
@@ -93,6 +94,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/campaigns', [InvoiceBackofficeController::class, 'updateCampaigns'])->name('admin.invoice-backoffice.campaigns.update');
     Route::get('/adminrepus1car/fonda-challenge', [AdminFondaChallengeController::class, 'index'])->name('admin.fonda-challenge');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/status', [AdminFondaChallengeController::class, 'updateStatus'])->name('admin.fonda-challenge.status');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/approve', [AdminFondaChallengeController::class, 'approve'])->name('admin.fonda-challenge.approve');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/request-correction', [AdminFondaChallengeController::class, 'requestCorrection'])->name('admin.fonda-challenge.request-correction');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/reject', [AdminFondaChallengeController::class, 'reject'])->name('admin.fonda-challenge.reject');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/check-in', [AdminFondaChallengeController::class, 'checkIn'])->name('admin.fonda-challenge.check-in');
     Route::get('/adminrepus1car/fonda-challenge/ranking', [AdminFondaChallengeController::class, 'ranking'])->name('admin.fonda-challenge.ranking');
     Route::get('/adminrepus1car/fonda-jury', [FondaJuryController::class, 'index'])->name('admin.fonda-jury');

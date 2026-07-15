@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\FondaRegistration;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class FondaChallengeController extends Controller
@@ -43,29 +44,28 @@ class FondaChallengeController extends Controller
             'consent_terms' => ['accepted'],
         ]);
 
-        $registration = FondaRegistration::query()->updateOrCreate(
-            [
-                'campaign_id' => $campaign->id,
-                'cedula' => $validated['cedula'],
+        $registration = FondaRegistration::query()->firstOrNew([
+            'campaign_id' => $campaign->id,
+            'cedula' => $validated['cedula'],
+        ]);
+
+        $registration->forceFill([
+            'code' => $registration->exists ? $registration->code : $this->generateCode(),
+            'status' => $registration->exists ? $registration->status : 'pending_review',
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'fonda_name' => $validated['fonda_name'],
+            'fonda_location' => $validated['fonda_location'],
+            'dish_name' => $validated['dish_name'],
+            'description' => '',
+            'consent_terms' => 'v1',
+            'meta' => [
+                'ip' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 255),
+                'referer' => $request->headers->get('referer'),
             ],
-            [
-                'code' => $this->generateCode(),
-                'status' => 'pending_review',
-                'full_name' => $validated['full_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'fonda_name' => $validated['fonda_name'],
-                'fonda_location' => $validated['fonda_location'],
-                'dish_name' => $validated['dish_name'],
-                'description' => '',
-                'consent_terms' => 'v1',
-                'meta' => [
-                    'ip' => $request->ip(),
-                    'user_agent' => substr((string) $request->userAgent(), 0, 255),
-                    'referer' => $request->headers->get('referer'),
-                ],
-            ]
-        );
+        ])->save();
 
         return redirect()
             ->route('fonda-challenge.show', ['code' => $registration->code])
@@ -81,6 +81,24 @@ class FondaChallengeController extends Controller
 
         return view('fonda-challenge.confirmation', [
             'registration' => $registration,
+        ]);
+    }
+
+    public function qr(string $code)
+    {
+        $registration = FondaRegistration::query()->where('code', $code)->firstOrFail();
+        abort_unless(in_array($registration->status, ['approved', 'checked_in', 'ready_for_judging'], true), 403);
+
+        $result = Builder::create()
+            ->writer(new SvgWriter())
+            ->data(route('fonda-challenge.show', ['code' => $registration->code]))
+            ->size(320)
+            ->margin(16)
+            ->build();
+
+        return response($result->getString(), 200, [
+            'Content-Type' => 'image/svg+xml; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
     }
 
