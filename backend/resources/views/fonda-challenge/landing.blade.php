@@ -45,7 +45,7 @@
             border-radius: 34px;
             background:
                 linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.38)),
-                url('/fonda-challenge/hero-cover.jpeg') center/cover no-repeat;
+                url('/fonda-assets/hero-cover.jpeg') center/cover no-repeat;
             box-shadow: 0 24px 60px var(--shadow);
         }
         .paper::before,
@@ -407,10 +407,10 @@
                 <section class="paper-card">
                     <div class="photo-row">
                         <div class="polaroid">
-                            <img src="/fonda-challenge/step-1.jpeg" alt="Fonda Challenge" loading="lazy">
+                            <img src="/fonda-assets/step-1.jpeg" alt="Fonda Challenge" loading="lazy">
                         </div>
                         <div class="polaroid right">
-                            <img src="/fonda-challenge/step-2.jpeg" alt="Evaluación Fonda Challenge" loading="lazy">
+                            <img src="/fonda-assets/step-2.jpeg" alt="Evaluación Fonda Challenge" loading="lazy">
                         </div>
                     </div>
                 </section>
@@ -504,10 +504,10 @@
                 </div>
                 <div class="photo-row" style="margin-top:14px;">
                     <div class="polaroid">
-                        <img src="/fonda-challenge/step-3.jpeg" alt="Premios Fonda Challenge" loading="lazy">
+                        <img src="/fonda-assets/step-3.jpeg" alt="Premios Fonda Challenge" loading="lazy">
                     </div>
                     <div class="polaroid right">
-                        <img src="/fonda-challenge/step-4.jpeg" alt="Inscripción Fonda Challenge" loading="lazy">
+                        <img src="/fonda-assets/step-4.jpeg" alt="Inscripción Fonda Challenge" loading="lazy">
                     </div>
                 </div>
             </aside>

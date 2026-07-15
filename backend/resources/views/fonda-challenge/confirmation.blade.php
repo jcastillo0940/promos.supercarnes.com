@@ -20,7 +20,7 @@
             min-height: 520px;
             background:
                 radial-gradient(circle at top left, rgba(255,255,255,.75), transparent 24%),
-                url('/fonda-challenge/hero-cover.jpeg') center/cover no-repeat;
+                url('/fonda-assets/hero-cover.jpeg') center/cover no-repeat;
         }
         .left { padding: 28px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(90deg, rgba(245,239,229,.82), rgba(245,239,229,.28)); }
         .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: .18em; color: var(--brown); font-weight: 800; }
