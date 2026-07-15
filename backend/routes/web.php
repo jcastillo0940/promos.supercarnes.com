@@ -100,6 +100,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/fonda-challenge/{registration}/reject', [AdminFondaChallengeController::class, 'reject'])->name('admin.fonda-challenge.reject');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/check-in', [AdminFondaChallengeController::class, 'checkIn'])->name('admin.fonda-challenge.check-in');
     Route::get('/adminrepus1car/fonda-challenge/ranking', [AdminFondaChallengeController::class, 'ranking'])->name('admin.fonda-challenge.ranking');
+    Route::get('/adminrepus1car/fonda-challenge/{registration}/editar', [AdminFondaChallengeController::class, 'edit'])->name('admin.fonda-challenge.edit');
+    Route::post('/adminrepus1car/fonda-challenge/{registration}/editar', [AdminFondaChallengeController::class, 'update'])->name('admin.fonda-challenge.update');
     Route::post('/adminrepus1car/fonda-jury/{registration}/assign', [FondaJuryController::class, 'assign'])->name('admin.fonda-jury.assign');
     Route::post('/adminrepus1car/fonda-media/{registration}', [FondaMediaController::class, 'create'])->name('admin.fonda-media.create');
     Route::post('/adminrepus1car/fonda-results/freeze', [FondaResultsController::class, 'freeze'])->name('admin.fonda-results.freeze');
