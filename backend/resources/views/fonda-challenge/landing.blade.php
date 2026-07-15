@@ -33,49 +33,27 @@
             margin: 0 auto;
             padding: 12px 0 28px;
         }
-        .masthead {
+
+        /* Primary fold: 50% info / 50% form */
+        .hero-split {
             display: grid;
-            grid-template-columns: 1.25fr .75fr;
-            gap: 14px;
-            min-height: 680px;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: stretch;
         }
-        .paper {
+        .hero-info {
             position: relative;
             overflow: hidden;
             border-radius: 34px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             background:
-                linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.38)),
+                linear-gradient(180deg, rgba(93, 49, 12, .58), rgba(93, 49, 12, .82)),
                 url('/fonda-assets/hero-cover.jpeg') center/cover no-repeat;
             box-shadow: 0 24px 60px var(--shadow);
-        }
-        .paper::before,
-        .paper::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-        }
-        .paper::before {
-            background:
-                radial-gradient(circle at 12% 10%, rgba(255,255,255,.22), transparent 18%),
-                radial-gradient(circle at 70% 12%, rgba(255,255,255,.18), transparent 14%),
-                linear-gradient(115deg, rgba(255,255,255,.0) 0 26%, rgba(255,255,255,.9) 26.7% 28.8%, transparent 29.2% 100%);
-            opacity: .9;
-        }
-        .hero-copy {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-start;
-            padding: 28px;
-            background:
-                linear-gradient(90deg, rgba(245,239,229,.12) 0%, rgba(245,239,229,.04) 45%, rgba(245,239,229,.4) 100%);
-        }
-        .hero-copy-inner {
-            width: min(540px, 100%);
-            margin-left: auto;
-            text-align: right;
+            min-height: 560px;
         }
         .kicker {
             display: inline-flex;
@@ -85,17 +63,18 @@
             letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--brown);
-            background: rgba(255, 255, 255, .72);
+            background: rgba(255, 255, 255, .84);
             border-radius: 999px;
             padding: 10px 14px;
             box-shadow: 0 10px 22px rgba(0, 0, 0, .08);
+            width: fit-content;
         }
         .hero-title {
             margin: 18px 0 0;
             font-family: 'Fredoka', sans-serif;
-            font-size: clamp(56px, 7vw, 104px);
-            line-height: .9;
-            letter-spacing: -.04em;
+            font-size: clamp(42px, 4.6vw, 68px);
+            line-height: .96;
+            letter-spacing: -.03em;
             color: var(--yellow);
             text-shadow:
                 -2px -2px 0 var(--brown-deep),
@@ -106,17 +85,16 @@
         }
         .hero-subtitle {
             margin: 14px 0 0;
-            font-family: 'Fredoka', sans-serif;
-            font-size: clamp(22px, 2.7vw, 38px);
-            line-height: 1.02;
+            font-size: 17px;
+            line-height: 1.55;
             color: #fff;
-            text-shadow: 0 6px 24px rgba(0,0,0,.35);
+            max-width: 34rem;
+            text-shadow: 0 4px 14px rgba(0,0,0,.35);
         }
         .hero-chiprow {
-            margin-top: 18px;
+            margin-top: 20px;
             display: flex;
             gap: 10px;
-            justify-content: flex-end;
             flex-wrap: wrap;
         }
         .chip {
@@ -127,142 +105,55 @@
             padding: 10px 14px;
             font-size: 14px;
             font-weight: 800;
-            background: rgba(255,255,255,.82);
+            background: rgba(255,255,255,.9);
             color: var(--brown);
             box-shadow: 0 12px 24px rgba(0,0,0,.08);
         }
-        .panel {
+        .hero-mini-facts {
+            margin-top: 26px;
             display: grid;
-            gap: 14px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
         }
-        .paper-card {
-            position: relative;
-            border-radius: 32px;
-            padding: 24px;
+        .hero-mini-facts div {
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.28);
+            border-radius: 18px;
+            padding: 12px 14px;
+        }
+        .hero-mini-facts strong {
+            display: block;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 15px;
+            color: var(--yellow);
+        }
+        .hero-mini-facts span {
+            display: block;
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        .form-card {
+            border-radius: 34px;
+            padding: 28px;
             background:
-                radial-gradient(circle at top, rgba(255,255,255,.8), transparent 45%),
-                linear-gradient(180deg, rgba(247,240,229,.98), rgba(236,225,206,.96));
-            box-shadow: 0 18px 44px rgba(0, 0, 0, .10);
-            overflow: hidden;
-        }
-        .paper-card::after {
-            content: '';
-            position: absolute;
-            inset: auto -10px -14px auto;
-            width: 72px;
-            height: 72px;
-            background: rgba(255, 211, 26, .16);
-            transform: rotate(35deg);
-            border-radius: 10px;
-        }
-        .story {
+                linear-gradient(180deg, rgba(255,255,255,.9), rgba(246,238,227,.98));
+            box-shadow: 0 24px 60px var(--shadow);
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-height: 220px;
         }
-        .story h2 {
-            margin: 0;
+        .form-title {
+            margin: 0 0 6px;
             font-family: 'Fredoka', sans-serif;
-            font-size: clamp(36px, 3.7vw, 62px);
-            line-height: .96;
-            color: var(--brown);
-        }
-        .story p {
-            margin: 14px 0 0;
-            font-size: 17px;
-            line-height: 1.6;
-            max-width: 32rem;
-        }
-        .step-grid {
-            display: grid;
-            gap: 12px;
-        }
-        .step {
-            display: grid;
-            grid-template-columns: 72px 1fr;
-            gap: 14px;
-            align-items: start;
-            background: rgba(255,255,255,.54);
-            border: 1px solid rgba(122, 68, 17, .08);
-            border-radius: 26px;
-            padding: 14px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
-        }
-        .step-num {
-            font-family: 'Fredoka', sans-serif;
-            font-size: 48px;
-            line-height: .82;
-            color: var(--yellow);
-            text-shadow: 0 2px 0 var(--brown);
-        }
-        .step strong {
-            display: block;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 28px;
+            font-size: 32px;
             line-height: 1;
             color: var(--brown);
         }
-        .step p {
-            margin: 6px 0 0;
-            font-size: 15px;
-            line-height: 1.5;
-        }
-        .photo-row {
-            display: grid;
-            grid-template-columns: 1.1fr .9fr;
-            gap: 14px;
-        }
-        .polaroid {
-            position: relative;
-            overflow: hidden;
-            min-height: 250px;
-            border-radius: 26px;
-            background: #fff;
-            box-shadow: 0 16px 32px rgba(0,0,0,.14);
-            transform: rotate(-2deg);
-        }
-        .polaroid.right { transform: rotate(2deg); }
-        .polaroid img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .polaroid::after {
-            content: '';
-            position: absolute;
-            inset: 10px;
-            border: 7px solid rgba(255,255,255,.95);
-            border-radius: 18px;
-            pointer-events: none;
-            mix-blend-mode: screen;
-        }
-        .form-shell {
-            margin-top: 14px;
-            display: grid;
-            gap: 16px;
-            grid-template-columns: 1.05fr .95fr;
-        }
-        .form-card,
-        .info-card {
-            border-radius: 30px;
-            padding: 24px;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.84), rgba(246,238,227,.96));
-            box-shadow: 0 18px 42px rgba(0,0,0,.10);
-        }
-        .form-title,
-        .info-title {
-            margin: 0 0 10px;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 30px;
-            line-height: 1;
-            color: var(--brown);
-        }
-        .form-copy,
-        .info-copy {
-            margin: 0 0 14px;
+        .form-copy {
+            margin: 0 0 16px;
             font-size: 15px;
             line-height: 1.55;
         }
@@ -284,6 +175,11 @@
             border-color: rgba(255, 211, 26, .9);
             box-shadow: 0 0 0 4px rgba(255, 211, 26, .16);
         }
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
         .check {
             display: flex;
             gap: 10px;
@@ -299,7 +195,7 @@
             cursor: pointer;
             border: 0;
             border-radius: 18px;
-            padding: 14px 18px;
+            padding: 15px 18px;
             background: linear-gradient(180deg, #ffd31a, #eab80a);
             color: #3a240d;
             font-family: 'Fredoka', sans-serif;
@@ -320,12 +216,76 @@
             background: rgba(255, 239, 239, .98);
             color: #8e1d1d;
         }
+
+        /* Secondary content below the fold */
+        .detail-band { margin-top: 22px; }
         .section-title {
-            margin: 0 0 10px;
+            margin: 0 0 14px;
             font-family: 'Fredoka', sans-serif;
-            font-size: 36px;
+            font-size: 32px;
             line-height: .95;
             color: var(--brown);
+        }
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .step {
+            display: grid;
+            grid-template-columns: 56px 1fr;
+            gap: 12px;
+            align-items: start;
+            background: rgba(255,255,255,.62);
+            border: 1px solid rgba(122, 68, 17, .08);
+            border-radius: 24px;
+            padding: 14px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+        }
+        .step-num {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 36px;
+            line-height: .82;
+            color: var(--yellow);
+            text-shadow: 0 2px 0 var(--brown);
+        }
+        .step strong {
+            display: block;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 22px;
+            line-height: 1;
+            color: var(--brown);
+        }
+        .step p {
+            margin: 6px 0 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .footer-band {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        .paper-card {
+            position: relative;
+            border-radius: 28px;
+            padding: 22px;
+            background:
+                radial-gradient(circle at top, rgba(255,255,255,.8), transparent 45%),
+                linear-gradient(180deg, rgba(247,240,229,.98), rgba(236,225,206,.96));
+            box-shadow: 0 16px 40px rgba(0, 0, 0, .08);
+        }
+        .paper-card h3 {
+            margin: 0;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 26px;
+            color: var(--brown);
+        }
+        .paper-card p {
+            margin: 8px 0 0;
+            font-size: 15px;
+            line-height: 1.5;
         }
         .small-note {
             margin: 10px 0 0;
@@ -333,136 +293,104 @@
             line-height: 1.5;
             color: #7d6550;
         }
-        .footer-band {
-            margin-top: 14px;
+        .photo-row {
+            margin-top: 16px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 14px;
         }
-        .footer-band .paper-card {
-            min-height: 170px;
+        .polaroid {
+            position: relative;
+            overflow: hidden;
+            min-height: 160px;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 12px 26px rgba(0,0,0,.12);
         }
-        .footer-band h3 {
-            margin: 0;
-            font-family: 'Fredoka', sans-serif;
-            font-size: 28px;
-            color: var(--brown);
-        }
-        .footer-band p {
-            margin: 8px 0 0;
-            font-size: 15px;
-            line-height: 1.5;
+        .polaroid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         @media (max-width: 1080px) {
-            .masthead,
-            .form-shell,
-            .footer-band,
-            .photo-row {
-                grid-template-columns: 1fr;
-            }
-            .hero-copy { align-items: flex-start; }
-            .hero-copy-inner { margin-left: 0; text-align: left; }
-            .hero-chiprow { justify-content: flex-start; }
+            .hero-split, .footer-band { grid-template-columns: 1fr; }
+            .step-grid { grid-template-columns: 1fr; }
+            .photo-row { grid-template-columns: repeat(2, 1fr); }
+            .hero-info { min-height: 420px; }
         }
-        @media (max-width: 720px) {
+        @media (max-width: 640px) {
             .page { width: min(100vw - 18px, 1280px); padding-top: 9px; }
-            .paper-card, .form-card, .info-card { padding: 18px; border-radius: 24px; }
-            .masthead { min-height: 560px; }
-            .hero-copy { padding: 18px; }
-            .story h2 { font-size: 34px; }
-            .section-title { font-size: 30px; }
-            .step { grid-template-columns: 54px 1fr; }
-            .step-num { font-size: 38px; }
+            .hero-info, .form-card, .paper-card { padding: 20px; border-radius: 24px; }
+            .field-row { grid-template-columns: 1fr; }
+            .hero-mini-facts { grid-template-columns: 1fr; }
             .submit { font-size: 18px; }
         }
     </style>
 </head>
 <body>
     <main class="page">
-        <section class="masthead">
-            <div class="paper">
-                <div class="hero-copy">
-                    <div class="hero-copy-inner">
-                        <div class="kicker">Super Carnes · Fonda Challenge 2026</div>
-                        <h1 class="hero-title">YA LLEGÓ EL FONDA CHALLENGE</h1>
-                        <p class="hero-subtitle">Si tienes fonda, prepárate para competir, mostrar tu sazón y llevarte uno de los premios.</p>
-                        <div class="hero-chiprow">
-                            <span class="chip">31 de julio de 2026</span>
-                            <span class="chip">Santiago de Veraguas</span>
-                            <span class="chip">Premios en efectivo</span>
-                        </div>
+        <section class="hero-split">
+            <div class="hero-info">
+                <div class="kicker">Super Carnes · Fonda Challenge 2026</div>
+                <h1 class="hero-title">YA LLEGÓ EL FONDA CHALLENGE</h1>
+                <p class="hero-subtitle">Si tienes fonda, prepárate para competir, mostrar tu sazón y llevarte uno de los premios.</p>
+                <div class="hero-chiprow">
+                    <span class="chip">31 de julio de 2026</span>
+                    <span class="chip">Santiago de Veraguas</span>
+                    <span class="chip">Premios en efectivo</span>
+                </div>
+                <div class="hero-mini-facts">
+                    <div>
+                        <strong>Cómo participar</strong>
+                        <span>Llena el formulario, el equipo revisa tu inscripción.</span>
+                    </div>
+                    <div>
+                        <strong>Premios</strong>
+                        <span>$500, $300 y $200 para los primeros 3 lugares.</span>
+                    </div>
+                    <div>
+                        <strong>Jurado</strong>
+                        <span>Degustación y evaluación el día del evento.</span>
                     </div>
                 </div>
+                @if ($campaign)
+                    <p class="small-note" style="color:rgba(255,255,255,.85);">Campaña activa: <strong>{{ $campaign->name }}</strong></p>
+                @endif
             </div>
 
-            <div class="panel">
-                <section class="paper-card story">
-                    <h2>¿Cómo participar?</h2>
-                    <p>Inscríbete gratis en esta sección, llena los datos básicos y recibe las instrucciones por correo. El equipo revisará cada inscripción antes del evento.</p>
-                    @if ($campaign)
-                        <p class="small-note">Campaña activa: <strong>{{ $campaign->name }}</strong></p>
-                    @endif
-                </section>
-
-                <section class="paper-card">
-                    <div class="photo-row">
-                        <div class="polaroid">
-                            <img src="/fonda-assets/step-1.jpeg" alt="Fonda Challenge" loading="lazy">
-                        </div>
-                        <div class="polaroid right">
-                            <img src="/fonda-assets/step-2.jpeg" alt="Evaluación Fonda Challenge" loading="lazy">
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </section>
-
-        <section class="footer-band">
-            <article class="paper-card">
-                <h3>Premios</h3>
-                <p><strong>1er lugar:</strong> $500.00</p>
-                <p><strong>2do lugar:</strong> $300.00</p>
-                <p><strong>3er lugar:</strong> $200.00</p>
-            </article>
-            <article class="paper-card">
-                <h3>Jurado y evaluación</h3>
-                <p>Un grupo de jueces seleccionados degustará y evaluará el mejor plato de cada fonda.</p>
-                <p class="small-note">Los resultados se congelan y publican desde el panel admin cuando el evento cierre.</p>
-            </article>
-            <article class="paper-card">
-                <h3>Kit fonda</h3>
-                <p>Inscríbete y recibe orientación para participar con los mejores productos de Super Carnes.</p>
-                <p class="small-note">Si necesitas ayuda, el equipo confirmará tu inscripción por correo.</p>
-            </article>
-        </section>
-
-        <section class="form-shell">
             <section class="form-card">
                 <h2 class="form-title">Inscripción</h2>
-                <p class="form-copy">Completa los campos obligatorios para registrar tu fonda.</p>
+                <p class="form-copy">Completa tus datos para participar. Es gratis.</p>
                 <form method="POST" action="{{ route('fonda-challenge.store') }}">
                     @csrf
-                    <label>Nombre completo
-                        <input name="full_name" value="{{ old('full_name') }}" required>
-                    </label>
-                    <label>Cédula
-                        <input name="cedula" value="{{ old('cedula') }}" required>
-                    </label>
-                    <label>Correo electrónico
-                        <input type="email" name="email" value="{{ old('email') }}" required>
-                    </label>
-                    <label>Teléfono
-                        <input name="phone" value="{{ old('phone') }}" required>
-                    </label>
+                    <div class="field-row">
+                        <label>Nombre completo
+                            <input name="full_name" value="{{ old('full_name') }}" required>
+                        </label>
+                        <label>Cédula
+                            <input name="cedula" value="{{ old('cedula') }}" required>
+                        </label>
+                    </div>
+                    <div class="field-row">
+                        <label>Correo electrónico
+                            <input type="email" name="email" value="{{ old('email') }}" required>
+                        </label>
+                        <label>Teléfono
+                            <input name="phone" value="{{ old('phone') }}" required>
+                        </label>
+                    </div>
                     <label>Nombre de la fonda
                         <input name="fonda_name" value="{{ old('fonda_name') }}" required>
                     </label>
-                    <label>Ubicación de la fonda
-                        <input name="fonda_location" value="{{ old('fonda_location') }}" required>
-                    </label>
-                    <label>Plato a presentar
-                        <input name="dish_name" value="{{ old('dish_name') }}" required>
-                    </label>
+                    <div class="field-row">
+                        <label>Ubicación de la fonda
+                            <input name="fonda_location" value="{{ old('fonda_location') }}" required>
+                        </label>
+                        <label>Plato a presentar
+                            <input name="dish_name" value="{{ old('dish_name') }}" required>
+                        </label>
+                    </div>
                     <label class="check">
                         <input type="checkbox" name="consent_terms" value="1" required>
                         <span>Acepto los términos y autorizo el uso de mi imagen para fines promocionales de Super Carnes.</span>
@@ -476,41 +404,59 @@
                     <button class="submit" type="submit">Enviar inscripción</button>
                 </form>
             </section>
+        </section>
 
-            <aside class="info-card">
-                <h2 class="info-title">Pasos</h2>
-                <div class="step-grid">
-                    <div class="step">
-                        <div class="step-num">1</div>
-                        <div>
-                            <strong>Regístrate</strong>
-                            <p>Llena el formulario con los datos de la fonda y su responsable.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">2</div>
-                        <div>
-                            <strong>Espera revisión</strong>
-                            <p>Recibirás un correo de confirmación mientras el equipo valida la información.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-num">3</div>
-                        <div>
-                            <strong>Participa</strong>
-                            <p>El día del evento habrá check-in, evaluación y cierre desde el módulo interno.</p>
-                        </div>
+        <section class="detail-band">
+            <h2 class="section-title">¿Cómo funciona?</h2>
+            <div class="step-grid">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div>
+                        <strong>Regístrate</strong>
+                        <p>Llena el formulario con los datos de la fonda y su responsable.</p>
                     </div>
                 </div>
-                <div class="photo-row" style="margin-top:14px;">
-                    <div class="polaroid">
-                        <img src="/fonda-assets/step-3.jpeg" alt="Premios Fonda Challenge" loading="lazy">
-                    </div>
-                    <div class="polaroid right">
-                        <img src="/fonda-assets/step-4.jpeg" alt="Inscripción Fonda Challenge" loading="lazy">
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div>
+                        <strong>Espera revisión</strong>
+                        <p>Recibirás confirmación mientras el equipo valida la información.</p>
                     </div>
                 </div>
-            </aside>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div>
+                        <strong>Participa</strong>
+                        <p>El día del evento habrá check-in, evaluación y cierre.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-band">
+                <article class="paper-card">
+                    <h3>Premios</h3>
+                    <p><strong>1er lugar:</strong> $500.00</p>
+                    <p><strong>2do lugar:</strong> $300.00</p>
+                    <p><strong>3er lugar:</strong> $200.00</p>
+                </article>
+                <article class="paper-card">
+                    <h3>Jurado y evaluación</h3>
+                    <p>Un grupo de jueces seleccionados degustará y evaluará el mejor plato de cada fonda.</p>
+                    <p class="small-note">Los resultados se congelan y publican desde el panel admin cuando el evento cierre.</p>
+                </article>
+                <article class="paper-card">
+                    <h3>Kit fonda</h3>
+                    <p>Inscríbete y recibe orientación para participar con los mejores productos de Super Carnes.</p>
+                    <p class="small-note">Si necesitas ayuda, el equipo confirmará tu inscripción por correo.</p>
+                </article>
+            </div>
+
+            <div class="photo-row">
+                <div class="polaroid"><img src="/fonda-assets/step-1.jpeg" alt="Fonda Challenge" loading="lazy"></div>
+                <div class="polaroid"><img src="/fonda-assets/step-2.jpeg" alt="Evaluación Fonda Challenge" loading="lazy"></div>
+                <div class="polaroid"><img src="/fonda-assets/step-3.jpeg" alt="Premios Fonda Challenge" loading="lazy"></div>
+                <div class="polaroid"><img src="/fonda-assets/step-4.jpeg" alt="Inscripción Fonda Challenge" loading="lazy"></div>
+            </div>
         </section>
     </main>
 </body>

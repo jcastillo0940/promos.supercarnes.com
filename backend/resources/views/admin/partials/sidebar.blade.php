@@ -21,13 +21,26 @@
                 <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge')])>
                     Fonda Challenge
                 </a>
+                <a href="{{ route('admin.fonda-jury') }}" @class(['active' => request()->routeIs('admin.fonda-jury')])>
+                    Jurado Fonda Challenge
+                </a>
+                <a href="{{ route('admin.jurors') }}" @class(['active' => request()->routeIs('admin.jurors')])>
+                    Jurados
+                </a>
                 <a href="{{ route('admin.audit') }}" @class(['active' => request()->routeIs('admin.audit')])>
                     AuditorÃ­a
                 </a>
             @endif
-            <a href="{{ route('admin.prize-delivery') }}" @class(['active' => request()->routeIs('admin.prize-delivery')])>
-                Entrega de premio
-            </a>
+            @if(auth()->user()?->isJury())
+                <a href="{{ route('admin.fonda-jury') }}" @class(['active' => request()->routeIs('admin.fonda-jury')])>
+                    Fonda Challenge · Evaluación
+                </a>
+            @endif
+            @if(auth()->user()?->isAdmin() || auth()->user()?->isSupervisor())
+                <a href="{{ route('admin.prize-delivery') }}" @class(['active' => request()->routeIs('admin.prize-delivery')])>
+                    Entrega de premio
+                </a>
+            @endif
         </nav>
     </div>
 

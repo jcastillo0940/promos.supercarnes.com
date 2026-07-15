@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\FondaJuryAssignment;
 use App\Models\FondaJuryEvaluation;
 use App\Models\FondaRegistration;
+use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,19 +19,35 @@ class FondaJuryController extends Controller
     public function index(Request $request): View
     {
         $campaign = $this->campaign();
+        $actingUser = $request->user();
+        $isAdmin = $actingUser?->isAdmin() ?? false;
+
+        $assignments = FondaJuryAssignment::query()->where('campaign_id', $campaign->id)
+            ->when(! $isAdmin, fn ($query) => $query->where('user_id', $actingUser->id))
+            ->latest()
+            ->get();
+
+        $evaluations = FondaJuryEvaluation::query()->where('campaign_id', $campaign->id)
+            ->when(! $isAdmin, fn ($query) => $query->where('user_id', $actingUser->id))
+            ->latest()
+            ->get();
 
         return view('admin.fonda-jury', [
             'campaign' => $campaign,
-            'registrations' => FondaRegistration::query()->where('campaign_id', $campaign->id)->where('status', 'approved')->get(),
-            'assignments' => FondaJuryAssignment::query()->where('campaign_id', $campaign->id)->latest()->get(),
-            'evaluations' => FondaJuryEvaluation::query()->where('campaign_id', $campaign->id)->latest()->get(),
+            'isAdmin' => $isAdmin,
+            'registrations' => $isAdmin
+                ? FondaRegistration::query()->where('campaign_id', $campaign->id)->where('status', 'approved')->get()
+                : FondaRegistration::query()->whereIn('id', $assignments->pluck('registration_id'))->get(),
+            'jurors' => $isAdmin ? User::query()->where('role', 'jurado')->where('is_active', true)->orderBy('full_name')->get() : collect(),
+            'assignments' => $assignments,
+            'evaluations' => $evaluations,
         ]);
     }
 
     public function assign(Request $request, FondaRegistration $registration): RedirectResponse
     {
         $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role', 'jurado')],
         ]);
 
         FondaJuryAssignment::query()->firstOrCreate([
@@ -51,6 +68,9 @@ class FondaJuryController extends Controller
 
     public function evaluate(Request $request, FondaJuryAssignment $assignment): RedirectResponse
     {
+        $actingUser = $request->user();
+        abort_unless($actingUser?->isAdmin() || $assignment->user_id === $actingUser?->id, 403);
+
         $validated = $request->validate([
             'sabor' => ['required', 'numeric', 'min:1', 'max:10'],
             'tecnica' => ['required', 'numeric', 'min:1', 'max:10'],

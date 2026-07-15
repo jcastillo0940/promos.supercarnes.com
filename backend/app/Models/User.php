@@ -129,4 +129,9 @@ class User extends Authenticatable
     {
         return $this->role === 'client';
     }
+
+    public function isJury(): bool
+    {
+        return $this->role === 'jurado';
+    }
 }

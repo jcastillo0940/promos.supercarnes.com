@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\FondaJuryController;
 use App\Http\Controllers\Admin\FondaMediaController;
 use App\Http\Controllers\Admin\FondaResultsController;
 use App\Http\Controllers\Admin\InvoiceBackofficeController;
+use App\Http\Controllers\Admin\JurorController;
 use App\Http\Controllers\FondaChallengeController;
 
 $frontendDist = realpath(base_path('../frontend/dist'));
@@ -99,12 +100,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/fonda-challenge/{registration}/reject', [AdminFondaChallengeController::class, 'reject'])->name('admin.fonda-challenge.reject');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/check-in', [AdminFondaChallengeController::class, 'checkIn'])->name('admin.fonda-challenge.check-in');
     Route::get('/adminrepus1car/fonda-challenge/ranking', [AdminFondaChallengeController::class, 'ranking'])->name('admin.fonda-challenge.ranking');
-    Route::get('/adminrepus1car/fonda-jury', [FondaJuryController::class, 'index'])->name('admin.fonda-jury');
     Route::post('/adminrepus1car/fonda-jury/{registration}/assign', [FondaJuryController::class, 'assign'])->name('admin.fonda-jury.assign');
-    Route::post('/adminrepus1car/fonda-jury/evaluations/{assignment}', [FondaJuryController::class, 'evaluate'])->name('admin.fonda-jury.evaluate');
     Route::post('/adminrepus1car/fonda-media/{registration}', [FondaMediaController::class, 'create'])->name('admin.fonda-media.create');
     Route::post('/adminrepus1car/fonda-results/freeze', [FondaResultsController::class, 'freeze'])->name('admin.fonda-results.freeze');
     Route::post('/adminrepus1car/fonda-results/publish', [FondaResultsController::class, 'publish'])->name('admin.fonda-results.publish');
+    Route::get('/adminrepus1car/jurados', [JurorController::class, 'index'])->name('admin.jurors');
+    Route::post('/adminrepus1car/jurados', [JurorController::class, 'store'])->name('admin.jurors.store');
+    Route::post('/adminrepus1car/jurados/{juror}/estado', [JurorController::class, 'toggleStatus'])->name('admin.jurors.toggle-status');
+});
+
+Route::middleware(['auth', 'role:admin,jurado'])->group(function () {
+    Route::get('/adminrepus1car/fonda-jury', [FondaJuryController::class, 'index'])->name('admin.fonda-jury');
+    Route::post('/adminrepus1car/fonda-jury/evaluations/{assignment}', [FondaJuryController::class, 'evaluate'])->name('admin.fonda-jury.evaluate');
 });
 
 Route::get('/{any?}', function () use ($frontendDist, $serveFrontendFile) {

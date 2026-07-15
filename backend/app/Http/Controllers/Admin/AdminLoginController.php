@@ -20,6 +20,10 @@ class AdminLoginController extends Controller
             return redirect()->route('admin.prize-delivery');
         }
 
+        if (Auth::check() && Auth::user()->isJury()) {
+            return redirect()->route('admin.fonda-jury');
+        }
+
         return view('admin.login');
     }
 
@@ -33,14 +37,25 @@ class AdminLoginController extends Controller
         if (Auth::attempt($credentials, remember: true)) {
             $user = Auth::user();
 
-            if (! $user || (! $user->isAdmin() && ! $user->isSupervisor())) {
+            if (! $user || (! $user->isAdmin() && ! $user->isSupervisor() && ! $user->isJury())) {
                 Auth::logout();
                 return back()->withErrors(['email' => 'No tienes permisos para acceder al backoffice.']);
             }
 
+            if (! $user->is_active) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Tu cuenta está desactivada.']);
+            }
+
             $request->session()->regenerate();
 
-            return redirect()->intended($user->isSupervisor() ? route('admin.prize-delivery') : route('admin.invoice-backoffice'));
+            $redirect = match (true) {
+                $user->isSupervisor() => route('admin.prize-delivery'),
+                $user->isJury() => route('admin.fonda-jury'),
+                default => route('admin.invoice-backoffice'),
+            };
+
+            return redirect()->intended($redirect);
         }
 
         return back()->withErrors(['email' => 'Credenciales incorrectas.'])->onlyInput('email');
