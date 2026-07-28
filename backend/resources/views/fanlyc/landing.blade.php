@@ -7,445 +7,568 @@
     <title>Fanlyc - Super Carnes</title>
     <style>
         :root{
-            --sky:#45b9e6;
-            --green:#30b232;
-            --orange:#ff7a2f;
-            --purple:#8c57ff;
-            --yellow:#ffca16;
-            --ink:#16324f;
-            --brown:#7a4411;
-            --shadow: rgba(18, 58, 86, .16);
+            --sky:#13a6e0;
+            --sky-soft:#d9f4ff;
+            --panel:#f8f6fb;
+            --panel-strong:#ffffff;
+            --ink:#173e83;
+            --purple:#7d3fe6;
+            --green:#4ac126;
+            --orange:#ff7b22;
+            --yellow:#f5bf1b;
+            --shadow:0 18px 32px rgba(17,69,133,.18);
         }
         *{box-sizing:border-box}
         body{
             margin:0;
             font-family:Inter, Arial, sans-serif;
             color:var(--ink);
-            background:linear-gradient(180deg, #59c2eb 0%, var(--sky) 100%);
+            background:
+                radial-gradient(circle at 8% 10%, rgba(255,255,255,.22), transparent 18%),
+                radial-gradient(circle at 92% 12%, rgba(255,255,255,.12), transparent 16%),
+                linear-gradient(180deg, #0ca0db 0%, #1699cf 100%);
             min-height:100vh;
         }
-        .wrap{width:min(1160px, calc(100vw - 20px)); margin:0 auto; padding:12px 0 24px}
-        .hero{
+        .wrap{
+            width:min(1440px, calc(100vw - 24px));
+            margin:0 auto;
+            padding:14px 0 20px;
+        }
+        .topbar{
+            display:grid;
+            grid-template-columns:auto 1fr auto;
+            gap:18px;
+            align-items:center;
+            padding:14px 20px;
+            border-radius:26px;
+            background:rgba(255,255,255,.95);
+            box-shadow:var(--shadow);
+        }
+        .brand{
+            display:flex;
+            align-items:center;
+            gap:16px;
+            min-width:0;
+        }
+        .brand img.logo{
+            width:112px;
+            display:block;
+        }
+        .brand-sep{
+            width:1px;
+            height:48px;
+            background:rgba(23,62,131,.15);
+        }
+        .brand-mark{
+            font-weight:900;
+            font-size:clamp(18px, 2.1vw, 30px);
+            letter-spacing:-.04em;
+            line-height:1;
+            color:#1852a7;
+            white-space:nowrap;
+        }
+        .nav{
+            display:flex;
+            justify-content:flex-end;
+            gap:30px;
+            flex-wrap:wrap;
+        }
+        .nav a{
+            color:#1852a7;
+            text-decoration:none;
+            font-weight:900;
+            font-size:15px;
+        }
+        .main-grid{
+            display:grid;
+            grid-template-columns:1.03fr .97fr;
+            gap:14px;
+            margin-top:14px;
+        }
+        .panel{
             position:relative;
             overflow:hidden;
-            border-radius:34px;
-            background:
-                radial-gradient(circle at 12% 14%, rgba(255,255,255,.32), transparent 14%),
-                radial-gradient(circle at 90% 12%, rgba(255,255,255,.2), transparent 12%),
-                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-            box-shadow:0 20px 50px var(--shadow);
-            padding:26px 24px 24px;
+            border-radius:32px;
+            box-shadow:var(--shadow);
         }
-        .hero::before,.hero::after{
+        .hero-panel{
+            min-height:640px;
+            padding:28px 28px 22px;
+            background:
+                radial-gradient(circle at 8% 18%, rgba(255,122,34,.95) 0 5px, transparent 6px),
+                radial-gradient(circle at 92% 20%, rgba(70,194,36,.95) 0 5px, transparent 6px),
+                radial-gradient(circle at 90% 82%, rgba(25,100,189,.95) 0 5px, transparent 6px),
+                linear-gradient(180deg, #92def6 0%, #a9e6fb 100%);
+        }
+        .hero-panel::before,
+        .hero-panel::after{
             content:'';
             position:absolute;
             pointer-events:none;
-            border-radius:50%;
-            border:16px solid rgba(255,202,22,.7);
-            opacity:.55;
         }
-        .hero::before{left:-126px; top:110px; width:220px; height:220px; border-color:rgba(255,122,47,.65)}
-        .hero::after{right:-122px; bottom:-100px; width:240px; height:240px; border-color:rgba(45,145,188,.5)}
-        .brand{display:flex; justify-content:center; margin-bottom:10px}
-        .brand img{width:min(210px, 56vw); display:block; filter: drop-shadow(0 10px 16px rgba(0,0,0,.12))}
+        .hero-panel::before{
+            left:-22px; top:104px;
+            width:120px; height:260px;
+            border-left:14px solid var(--orange);
+            border-top:14px solid var(--orange);
+            border-bottom:14px solid var(--orange);
+            border-radius:120px 0 0 120px;
+            transform:rotate(-8deg);
+        }
+        .hero-panel::after{
+            right:22px; top:14px;
+            width:96px; height:96px;
+            background:linear-gradient(135deg, rgba(102, 47, 214,.18), rgba(102, 47, 214,.18));
+            clip-path:polygon(50% 0%, 62% 36%, 100% 50%, 62% 64%, 50% 100%, 38% 64%, 0% 50%, 38% 36%);
+            opacity:.9;
+        }
         .hero-copy{
-            text-align:center;
-            color:#fff;
-            text-shadow:0 4px 18px rgba(0,0,0,.14);
-            padding:4px 0 10px;
-        }
-        .hero-kicker{
-            margin:0 0 8px;
-            font-size:13px;
-            font-weight:900;
-            letter-spacing:.18em;
-            text-transform:uppercase;
+            position:relative;
+            z-index:1;
+            height:100%;
+            display:grid;
+            grid-template-rows:auto auto auto 1fr auto;
+            align-content:start;
         }
         .hero-title{
-            margin:0;
-            font-size:clamp(38px, 6vw, 74px);
-            line-height:.92;
+            margin:40px 0 0;
             font-weight:900;
-            letter-spacing:-.05em;
+            letter-spacing:-.06em;
+            line-height:.9;
+            font-size:clamp(58px, 5.8vw, 96px);
+            color:#1d4da7;
         }
-        .hero-title .fanlyc{
-            background:linear-gradient(90deg,#ff2c5c 0%, #ff7d2f 25%, #ffcc17 50%, #35d64a 75%, #63d4ff 100%);
+        .hero-title .rainbow{
+            display:inline-block;
+            background:linear-gradient(90deg, #7a3bf1 0%, #f13c76 25%, #ff8f19 50%, #57c62a 75%, #ff3f7d 100%);
             -webkit-background-clip:text;
             background-clip:text;
             -webkit-text-fill-color:transparent;
         }
         .hero-sub{
-            margin:12px auto 0;
-            width:min(700px, 100%);
-            font-size:17px;
-            line-height:1.55;
-            max-width:44rem;
+            margin:12px 0 0;
+            max-width:520px;
+            font-size:clamp(18px, 1.6vw, 22px);
+            line-height:1.35;
+            color:#1c4c95;
         }
-        .chip-row{
-            display:flex; justify-content:center; flex-wrap:wrap; gap:10px;
-            margin-top:18px;
+        .hero-slogan{
+            margin:28px 0 0;
+            font-size:clamp(34px, 3vw, 58px);
+            line-height:.95;
+            font-weight:900;
+            color:#fff;
+            text-shadow:0 4px 0 rgba(21,76,155,.12);
+            font-family:"Comic Sans MS", "Trebuchet MS", cursive;
+            letter-spacing:.02em;
         }
-        .chip{
-            display:inline-flex; align-items:center; gap:8px;
-            padding:10px 14px;
-            border-radius:999px;
+        .how{
+            margin-top:32px;
+        }
+        .how h2{
+            margin:0 0 12px;
+            text-align:center;
+            color:#1c4c95;
+            font-size:clamp(24px, 2vw, 30px);
+        }
+        .steps{
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:12px;
+        }
+        .step{
+            display:grid;
+            justify-items:center;
+            gap:8px;
+            text-align:center;
+            color:#173e83;
+        }
+        .step-num{
+            width:36px;
+            height:36px;
+            border-radius:50%;
+            display:grid;
+            place-items:center;
             color:#fff;
             font-weight:900;
             box-shadow:0 10px 18px rgba(0,0,0,.12);
         }
-        .chip.yellow{background:var(--yellow); color:#4d3400}
-        .chip.green{background:var(--green)}
-        .chip.orange{background:var(--orange)}
-        .chip.purple{background:var(--purple)}
-        .content{
-            margin-top:14px;
+        .step:nth-child(1) .step-num{background:#ffbf0a}
+        .step:nth-child(2) .step-num{background:#5bc022}
+        .step:nth-child(3) .step-num{background:#7d3fe6}
+        .step-icon{
+            width:90px;
+            height:90px;
+            border-radius:50%;
+            background:rgba(255,255,255,.96);
+            box-shadow:0 14px 24px rgba(17,69,133,.10);
             display:grid;
-            grid-template-columns:1.1fr .9fr;
-            gap:14px;
+            place-items:center;
+            font-size:38px;
         }
-        .card{
-            position:relative;
-            overflow:hidden;
-            border-radius:30px;
-            background:rgba(255,255,255,.92);
-            box-shadow:0 18px 38px var(--shadow);
-            padding:22px;
+        .step-title{
+            font-weight:900;
+            font-size:16px;
+            line-height:1.15;
         }
-        .card h2{margin:0 0 8px; font-size:28px; line-height:1; color:var(--brown)}
-        .card p.copy{margin:0 0 14px; color:#35516e; line-height:1.55}
-        .steps{display:grid; gap:10px}
-        .step{
-            display:grid;
-            grid-template-columns:38px 1fr;
+        .chips{
+            display:flex;
+            flex-wrap:wrap;
             gap:10px;
-            padding:12px 14px;
-            border-radius:22px;
-            background:linear-gradient(90deg, rgba(69,185,230,.12), rgba(255,255,255,.72));
-            border:1px solid rgba(22,50,79,.08);
+            margin-top:24px;
+            justify-content:flex-start;
         }
-        .step-num{
-            width:38px; height:38px; border-radius:50%;
-            background:var(--yellow); color:#4d3400;
-            display:flex; align-items:center; justify-content:center;
-            font-weight:900; font-size:18px;
-            box-shadow:0 8px 16px rgba(255,202,22,.26);
+        .chip{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:10px 14px;
+            border-radius:999px;
+            color:#163b78;
+            background:#fff;
+            font-weight:900;
+            box-shadow:0 10px 18px rgba(17,69,133,.12);
         }
-        .step strong{display:block; margin-bottom:3px}
-        .step span{color:#56718b; font-size:14px; line-height:1.45}
-        .form-card{display:grid; gap:12px}
-        .form-layout{
-            display:grid;
-            grid-template-columns:1fr 1.05fr;
+        .chip.yellow{background:var(--yellow)}
+        .chip.green{background:#62c83a}
+        .chip.orange{background:#ff8c3a}
+        .chip.purple{background:#8b5cf6}
+        .form-panel{
+            min-height:640px;
+            padding:24px;
+            background:
+                radial-gradient(circle at 92% 10%, rgba(125,63,230,.22), transparent 11%),
+                linear-gradient(180deg, #fbfbfd 0%, #f3f0f8 100%);
+        }
+        .form-head{
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
             gap:12px;
-            align-items:start;
+            margin-bottom:16px;
         }
-        .form-intro{
-            display:grid;
-            gap:10px;
-            align-content:start;
-        }
-        .form-intro .summary-box{
-            padding:14px;
-            border-radius:20px;
-            background:linear-gradient(180deg, rgba(69,185,230,.12), rgba(255,255,255,.82));
-            border:1px solid rgba(22,50,79,.08);
-        }
-        .form-intro .summary-box strong{
-            display:block;
-            margin-bottom:4px;
-            font-size:15px;
-            color:#15324f;
-        }
-        .form-intro .summary-box p{
+        .form-head h2{
             margin:0;
-            color:#56718b;
-            line-height:1.5;
-            font-size:14px;
+            font-size:clamp(32px, 3vw, 50px);
+            line-height:1;
+            color:var(--purple);
+            font-weight:900;
         }
-        .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:0}
+        .sticky{
+            width:74px;
+            height:20px;
+            background:rgba(125,63,230,.5);
+            border-radius:3px;
+            transform:rotate(-12deg);
+            margin-top:4px;
+        }
+        .tabs{
+            display:grid;
+            grid-template-columns:repeat(3, 1fr);
+            gap:12px;
+            margin:14px 0 12px;
+        }
         .tab-btn{
             border:0;
-            border-radius:999px;
-            padding:9px 12px;
+            border-radius:14px;
+            background:#fff;
+            color:#1d4ea1;
             font-weight:900;
-            background:rgba(255,255,255,.72);
-            color:#22506f;
+            padding:14px 10px;
             cursor:pointer;
+            box-shadow:0 8px 18px rgba(17,69,133,.08);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            gap:8px;
+            min-height:58px;
         }
-        .tab-btn.is-active{background:var(--purple); color:#fff; box-shadow:0 12px 20px rgba(140,87,255,.24)}
+        .tab-btn.is-active{
+            background:linear-gradient(180deg, #8e44ff 0%, #6e2dd4 100%);
+            color:#fff;
+            box-shadow:0 12px 20px rgba(125,63,230,.26);
+        }
         .tab-panel[hidden]{display:none}
-        form{display:grid; gap:12px}
-        .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-        label{display:grid; gap:6px; font-size:13px; font-weight:800; color:#23486b}
+        form{
+            display:grid;
+            gap:14px;
+        }
+        .field-row{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+        }
+        label{
+            display:grid;
+            gap:6px;
+            font-size:13px;
+            font-weight:900;
+            color:#1e3f7e;
+        }
         input{
             width:100%;
-            border:0;
+            border:1px solid rgba(23,62,131,.12);
             border-radius:16px;
-            padding:11px 13px;
+            padding:13px 14px;
             font:inherit;
             background:#fff;
-            box-shadow:inset 0 0 0 2px rgba(22,50,79,.08);
+            box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
         }
-        input:focus{outline:none; box-shadow:inset 0 0 0 2px rgba(255,202,22,.95), 0 0 0 4px rgba(255,202,22,.2)}
-        .check{display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.5; font-weight:600; color:#23486b}
-        .check input{width:18px; height:18px; margin-top:2px; accent-color:var(--yellow)}
+        input:focus{outline:none; box-shadow:0 0 0 4px rgba(125,63,230,.14)}
+        .code-row{
+            margin-top:4px;
+            padding-top:8px;
+            border-top:2px solid rgba(23,62,131,.10);
+        }
+        .helper{
+            display:flex;
+            gap:8px;
+            align-items:flex-start;
+            color:#5b6f91;
+            font-size:13px;
+            line-height:1.45;
+            margin-top:8px;
+        }
+        .helper .icon{color:#7d3fe6; font-weight:900}
+        .check{
+            display:flex;
+            gap:10px;
+            align-items:flex-start;
+            font-size:13px;
+            line-height:1.45;
+            font-weight:700;
+            color:#1e3f7e;
+        }
+        .check input{
+            width:18px;
+            height:18px;
+            margin-top:2px;
+            accent-color:var(--purple);
+        }
         .btn{
             border:0;
-            border-radius:16px;
-            padding:12px 16px;
+            border-radius:18px;
+            padding:15px 18px;
             font:inherit;
             font-weight:900;
             cursor:pointer;
         }
         .btn-primary{
-            background:linear-gradient(180deg, #ffd31a, #f3b500);
-            color:#543800;
-            box-shadow:0 14px 22px rgba(243,181,0,.22);
+            background:linear-gradient(180deg, #ffcf2d 0%, #f3b10a 100%);
+            color:#5b3f00;
+            box-shadow:0 16px 24px rgba(243,177,10,.22);
         }
-        .btn-secondary{background:#fff; color:#255b86}
+        .btn-secondary{
+            background:#fff;
+            color:#1d4ea1;
+            box-shadow:inset 0 0 0 1px rgba(23,62,131,.12);
+        }
         .status,.error{
-            padding:10px 12px;
+            padding:12px 14px;
             border-radius:16px;
             font-size:13px;
             line-height:1.45;
         }
-        .status{background:#e7fff3; color:#0f6b47; border:1px solid #b9f2d2}
+        .status{background:#e8fff2; color:#0d6f49; border:1px solid #b7f0cf}
         .error{background:#fff0f0; color:#b42318; border:1px solid #ffc7c7}
-        .aside{
+        .mini-grid{
             display:grid;
+            grid-template-columns:repeat(3, 1fr);
             gap:14px;
-        }
-        .poster{
-            min-height:220px;
-            border-radius:28px;
-            overflow:hidden;
-            position:relative;
-            box-shadow:0 16px 28px rgba(0,0,0,.12);
-            border:6px solid rgba(255,255,255,.85);
-            background:#fff;
-        }
-        .poster img{width:100%; height:100%; object-fit:cover; display:block}
-        .poster .tag{
-            position:absolute; left:14px; top:14px;
-            background:#fff; color:#ff5e52;
-            font-weight:900;
-            padding:8px 12px;
-            border-radius:999px;
-            box-shadow:0 10px 18px rgba(0,0,0,.12);
-        }
-        .info-card{
-            border-radius:28px;
-            padding:20px;
-            background:rgba(255,255,255,.92);
-            box-shadow:0 16px 30px rgba(18,58,86,.12);
-        }
-        .info-card h3{margin:0 0 8px; font-size:22px; color:var(--brown)}
-        .info-card p{margin:0; line-height:1.55; color:#35516e}
-        .callouts{
             margin-top:14px;
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:14px;
         }
-        .callout{
-            min-height:148px;
+        .mini-card{
+            min-height:130px;
+            border-radius:22px;
             padding:18px;
-            border-radius:26px;
-            color:#fff;
-            box-shadow:0 16px 26px rgba(0,0,0,.12);
+            background:rgba(255,255,255,.92);
+            box-shadow:var(--shadow);
         }
-        .callout h3{margin:0 0 8px; font-size:22px; line-height:1}
-        .callout p{margin:0; line-height:1.45; font-size:14px}
-        .callout.blue{background:linear-gradient(180deg, #44c0e8, #2ca0d4)}
-        .callout.green{background:linear-gradient(180deg, #35b65d, #279944)}
-        .callout.orange{background:linear-gradient(180deg, #ff8536, #f36d21)}
-        .link-row{margin-top:12px; font-size:14px}
-        .link-row a{color:#0f6b47; font-weight:900; text-decoration:none}
+        .mini-card h3{
+            margin:0 0 8px;
+            font-size:20px;
+            line-height:1;
+        }
+        .mini-card p{
+            margin:0;
+            line-height:1.45;
+            color:#4e6786;
+            font-size:14px;
+        }
+        .mini-card.purple h3{color:#7d3fe6}
+        .mini-card.green h3{color:#3ca81d}
+        .mini-card.orange h3{color:#f07813}
         .footer-badge{
-            margin-top:16px;
-            display:flex;
-            justify-content:center;
+            margin-top:14px;
             color:#fff;
+            text-align:center;
             font-weight:900;
             letter-spacing:.14em;
             text-transform:uppercase;
             opacity:.95;
         }
-        @media (max-width: 980px){
-            .content,.callouts,.field-row,.form-layout{grid-template-columns:1fr}
+        @media (max-width: 1180px){
+            .main-grid,.mini-grid{grid-template-columns:1fr}
+            .hero-panel,.form-panel{min-height:auto}
         }
-        @media (max-width: 640px){
-            .wrap{width:min(100vw - 14px, 1160px)}
-            .hero,.card,.info-card{padding:18px}
-            .hero-title{font-size:34px}
-            .hero-sub{font-size:15px}
-            .step{grid-template-columns:34px 1fr}
-            .step-num{width:34px;height:34px;font-size:16px}
-            .tabs{gap:6px}
-            .tab-btn{padding:8px 10px; font-size:12px}
+        @media (max-width: 760px){
+            .wrap{width:min(100vw - 14px, 1440px)}
+            .topbar{
+                grid-template-columns:1fr;
+                justify-items:center;
+                text-align:center;
+            }
+            .brand{justify-content:center; flex-wrap:wrap}
+            .brand-sep{display:none}
+            .nav{justify-content:center; gap:14px}
+            .hero-panel,.form-panel{padding:18px}
+            .hero-title{font-size:48px}
+            .hero-sub{font-size:16px}
+            .hero-slogan{font-size:30px}
+            .steps,.tabs,.field-row{grid-template-columns:1fr}
         }
     </style>
 </head>
 <body>
 <main class="wrap">
-    <section class="hero">
+    <header class="topbar">
         <div class="brand">
-            <img src="/logo_web.jpg" alt="Super Carnes">
+            <img class="logo" src="/logo_web.jpg" alt="Super Carnes">
+            <div class="brand-sep" aria-hidden="true"></div>
+            <div class="brand-mark">Fanlyc ★ Relevo por la vida</div>
         </div>
-        <div class="hero-copy">
-            <div class="hero-kicker">Fanlyc ★ Relevo por la vida</div>
-            <h1 class="hero-title"><span class="fanlyc">Fanlyc</span> para tu factura</h1>
-            <p class="hero-sub">Registra tu factura de Super Carnes, valida tu cupón y canjéalo en la zona que te corresponde. El proceso es simple: escanea, completa tus datos y recibe tu QR.</p>
-            <div class="chip-row">
-                <span class="chip yellow">QR de factura</span>
-                <span class="chip green">Canje por zona</span>
-                <span class="chip orange">Premios</span>
-                <span class="chip purple">Apoyo comunitario</span>
-            </div>
-        </div>
-    </section>
+        <nav class="nav" aria-label="Secciones">
+            <a href="#inicio">Inicio</a>
+            <a href="#premios">Premios</a>
+            <a href="#zona">Zona asignada</a>
+            <a href="#apoyo">Apoyo comunitario</a>
+        </nav>
+    </header>
 
-    <section class="content">
-        <article class="card">
-            <h2>Cómo participar</h2>
-            <p class="copy">La experiencia debe sentirse rápida y clara, igual de alegre que la línea social, pero enfocada en convertir.</p>
-            <div class="steps">
-                <div class="step"><div class="step-num">1</div><div><strong>Escanea tu factura</strong><span>Puedes abrir la cámara o pegar el código del QR.</span></div></div>
-                <div class="step"><div class="step-num">2</div><div><strong>Llena tus datos</strong><span>Nombre, cédula, correo y teléfono para darte seguimiento.</span></div></div>
-                <div class="step"><div class="step-num">3</div><div><strong>Recibe tu cupón</strong><span>Te confirmamos el registro y tu cupón queda listo para el canje.</span></div></div>
-            </div>
-            <div class="link-row">
-                <p style="margin:0 0 8px;font-weight:900;">Consultar mis cupones</p>
-                <form method="GET" action="{{ route('fanlyc.status') }}" class="field-row" style="margin-top:0;">
-                    <label style="margin:0;">Cédula
-                        <input name="cedula" placeholder="8-123-4567" required>
-                    </label>
-                    <label style="margin:0;">Teléfono
-                        <input name="phone" placeholder="6000-0000" required>
-                    </label>
-                    <button class="btn btn-secondary" type="submit">Ver cupones</button>
-                </form>
-            </div>
-        </article>
+    <section id="inicio" class="main-grid">
+        <article class="panel hero-panel">
+            <div class="hero-copy">
+                <h1 class="hero-title"><span class="rainbow">Fanlyc</span><br>para tu factura</h1>
+                <p class="hero-sub">
+                    Registra tu factura de Super Carnes, valida tu cupón y canjéalo en la zona que te corresponde.
+                </p>
+                <div class="hero-slogan">Corre por su futuro</div>
 
-        <aside class="aside">
-            <article class="poster">
-                <img src="/fonda-assets/step-1.jpeg" alt="Fanlyc" loading="lazy">
-                <div class="tag">Fanlyc</div>
-            </article>
-            <article class="info-card">
-                <h3>Registro directo</h3>
-                <p>Escanea el QR de tu factura o escribe el CUFE. Esta sección es el punto de entrada, así que la dejamos clara, simple y con énfasis visual fuerte.</p>
-            </article>
-        </aside>
-    </section>
-
-    <section class="content" style="margin-top:14px;">
-        <article class="card form-card">
-            <div class="form-layout">
-                <div class="form-intro">
-                    <h2>Registrar factura</h2>
-                    <p class="copy">Registra aquí tu factura en un solo paso. Escanea el QR o escribe el CUFE y completa tus datos para seguir.</p>
-                    <div class="summary-box">
-                        <strong>Lo esencial</strong>
-                        <p>Tu nombre, cédula, correo y teléfono. Nada más.</p>
-                    </div>
-                    <div class="summary-box">
-                        <strong>Si necesitas ayuda</strong>
-                        <p>Después de registrar, podrás consultar tu estado con cédula y teléfono.</p>
+                <div class="how">
+                    <h2>Cómo participar</h2>
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-num">1</div>
+                            <div class="step-icon">▣</div>
+                            <div class="step-title">Escanea<br>tu factura</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">2</div>
+                            <div class="step-icon">▣</div>
+                            <div class="step-title">Llena<br>tus datos</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-num">3</div>
+                            <div class="step-icon">★</div>
+                            <div class="step-title">Recibe<br>tu cupón</div>
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <div class="tabs">
-                        <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
-                        <button type="button" class="tab-btn" data-tab="manual">Escribir CUFE</button>
-                        <button type="button" class="tab-btn" data-tab="whatsapp">WhatsApp</button>
-                    </div>
-
-                    <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
-                        @csrf
-                        <div class="field-row">
-                            <label>Nombre completo
-                                <input name="full_name" value="{{ old('full_name') }}" required>
-                            </label>
-                            <label>Cédula
-                                <input name="cedula" value="{{ old('cedula') }}" required>
-                            </label>
-                        </div>
-                        <div class="field-row">
-                            <label>Correo electrónico
-                                <input type="email" name="email" value="{{ old('email') }}" required>
-                            </label>
-                            <label>Teléfono
-                                <input name="phone" value="{{ old('phone') }}" required>
-                            </label>
-                        </div>
-
-                        <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
-
-                        <div id="scan-panel" class="tab-panel">
-                            <label>Código de factura (QR)
-                                <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el contenido del QR o usa la cámara" autocomplete="off">
-                            </label>
-                        </div>
-
-                        <div id="manual-panel" class="tab-panel" hidden>
-                            <label>Escribe el CUFE de tu factura
-                                <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
-                            </label>
-                        </div>
-
-                        <div id="whatsapp-panel" class="tab-panel" hidden>
-                            <div class="status" style="margin-top:0;">
-                                ¿Prefieres ayuda? Escríbenos por WhatsApp y te orientamos para registrar tu factura.
-                            </div>
-                            <a class="btn btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px;"
-                               target="_blank" rel="noopener"
-                               href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
-                                Contactar por WhatsApp
-                            </a>
-                        </div>
-
-                        <div id="form-field-error" class="error" style="display:none;"></div>
-
-                        <label class="check">
-                            <input type="checkbox" name="consent_terms" value="1" required>
-                            <span>Acepto los términos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
-                        </label>
-                        @if ($errors->any())
-                            <div class="error">{{ $errors->first() }}</div>
-                        @endif
-                        @if (session('status'))
-                            <div class="status">{{ session('status') }}</div>
-                        @endif
-                        <button class="btn btn-primary" type="submit">Registrar factura</button>
-                    </form>
+                <div class="chips">
+                    <span class="chip yellow">QR de factura</span>
+                    <span class="chip green">Canje por zona</span>
+                    <span class="chip orange">Premios</span>
+                    <span class="chip purple">Apoyo comunitario</span>
                 </div>
             </div>
         </article>
 
-        <aside class="aside">
-            <article class="info-card">
-                <h3>Fanlyc en corto</h3>
-                <p>Subimos la emoción de las piezas sociales a una navegación más funcional. Se siente promocional, pero no se vuelve pesada.</p>
-            </article>
-            <article class="poster">
-                <img src="/fonda-assets/step-2.jpeg" alt="Fanlyc paso 2" loading="lazy">
-            </article>
-        </aside>
+        <article class="panel form-panel">
+            <div class="form-head">
+                <h2>Registra tu factura</h2>
+                <div class="sticky" aria-hidden="true"></div>
+            </div>
+
+            <div class="tabs">
+                <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
+                <button type="button" class="tab-btn" data-tab="manual">Escribir CUFE</button>
+                <button type="button" class="tab-btn" data-tab="whatsapp">WhatsApp</button>
+            </div>
+
+            <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
+                @csrf
+                <div class="field-row">
+                    <label>Nombre completo
+                        <input name="full_name" value="{{ old('full_name') }}" placeholder="Ej. Juan Perez" required>
+                    </label>
+                    <label>Cedula
+                        <input name="cedula" value="{{ old('cedula') }}" placeholder="Ej. 8-123-4567" required>
+                    </label>
+                </div>
+                <div class="field-row">
+                    <label>Correo electronico
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="Ej. juan@gmail.com" required>
+                    </label>
+                    <label>Telefono
+                        <input name="phone" value="{{ old('phone') }}" placeholder="Ej. 6000-0000" required>
+                    </label>
+                </div>
+
+                <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
+
+                <div id="scan-panel" class="tab-panel code-row">
+                    <label>Codigo de factura (QR / CUFE)
+                        <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el codigo QR o CUFE aqui" autocomplete="off">
+                    </label>
+                    <div class="helper"><span class="icon">⌁</span><span>Puedes usar la camara para escanear o pegar el codigo directamente.</span></div>
+                </div>
+
+                <div id="manual-panel" class="tab-panel code-row" hidden>
+                    <label>Escribe el CUFE de tu factura
+                        <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
+                    </label>
+                </div>
+
+                <div id="whatsapp-panel" class="tab-panel code-row" hidden>
+                    <div class="status" style="margin-top:0;">
+                        ¿Prefieres ayuda? Escríbenos por WhatsApp y te guiamos para registrar tu factura.
+                    </div>
+                    <a class="btn btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;" target="_blank" rel="noopener"
+                       href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
+                        Contactar por WhatsApp
+                    </a>
+                </div>
+
+                <div id="form-field-error" class="error" style="display:none;"></div>
+
+                <label class="check">
+                    <input type="checkbox" name="consent_terms" value="1" required>
+                    <span>Acepto los terminos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
+                </label>
+
+                @if ($errors->any())
+                    <div class="error">{{ $errors->first() }}</div>
+                @endif
+                @if (session('status'))
+                    <div class="status">{{ session('status') }}</div>
+                @endif
+
+                <button class="btn btn-primary" type="submit">Registrar factura</button>
+            </form>
+        </article>
     </section>
 
-    <section class="callouts">
-        <article class="callout blue">
+    <section id="premios" class="mini-grid">
+        <article class="mini-card purple">
             <h3>Tu QR</h3>
             <p>Se genera al aprobar tu factura y queda listo para consulta y canje en tu zona.</p>
         </article>
-        <article class="callout green">
+        <article id="zona" class="mini-card green">
             <h3>Zona asignada</h3>
-            <p>El sistema detecta la sucursal y define la zona correcta para tu cupón.</p>
+            <p>El sistema detecta tu sucursal y define la zona correcta para tu cupón.</p>
         </article>
-        <article class="callout orange">
+        <article id="apoyo" class="mini-card orange">
             <h3>Canje seguro</h3>
             <p>El staff escanea el cupón, valida el estado y emite el ticket correspondiente.</p>
         </article>
@@ -484,16 +607,18 @@
             : activeTab === 'scan'
                 ? scanInput.value.trim()
                 : hiddenInput.value.trim();
+
         if (!value) {
             event.preventDefault();
             fieldError.textContent = activeTab === 'manual'
                 ? 'Escribe el CUFE de tu factura.'
                 : activeTab === 'scan'
-                    ? 'Escanea o pega el código de tu factura.'
+                    ? 'Escanea o pega el codigo de tu factura.'
                     : 'Usa WhatsApp si prefieres ayuda directa.';
             fieldError.style.display = 'block';
             return;
         }
+
         if (activeTab !== 'whatsapp') {
             hiddenInput.value = value;
         }
