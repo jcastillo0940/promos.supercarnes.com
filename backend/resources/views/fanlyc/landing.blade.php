@@ -133,11 +133,40 @@
         .step strong{display:block; margin-bottom:3px}
         .step span{color:#56718b; font-size:14px; line-height:1.45}
         .form-card{display:grid; gap:12px}
-        .tabs{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+        .form-layout{
+            display:grid;
+            grid-template-columns:1fr 1.05fr;
+            gap:12px;
+            align-items:start;
+        }
+        .form-intro{
+            display:grid;
+            gap:10px;
+            align-content:start;
+        }
+        .form-intro .summary-box{
+            padding:14px;
+            border-radius:20px;
+            background:linear-gradient(180deg, rgba(69,185,230,.12), rgba(255,255,255,.82));
+            border:1px solid rgba(22,50,79,.08);
+        }
+        .form-intro .summary-box strong{
+            display:block;
+            margin-bottom:4px;
+            font-size:15px;
+            color:#15324f;
+        }
+        .form-intro .summary-box p{
+            margin:0;
+            color:#56718b;
+            line-height:1.5;
+            font-size:14px;
+        }
+        .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:0}
         .tab-btn{
             border:0;
             border-radius:999px;
-            padding:10px 14px;
+            padding:9px 12px;
             font-weight:900;
             background:rgba(255,255,255,.72);
             color:#22506f;
@@ -152,7 +181,7 @@
             width:100%;
             border:0;
             border-radius:16px;
-            padding:13px 14px;
+            padding:11px 13px;
             font:inherit;
             background:#fff;
             box-shadow:inset 0 0 0 2px rgba(22,50,79,.08);
@@ -163,7 +192,7 @@
         .btn{
             border:0;
             border-radius:16px;
-            padding:14px 18px;
+            padding:12px 16px;
             font:inherit;
             font-weight:900;
             cursor:pointer;
@@ -175,9 +204,9 @@
         }
         .btn-secondary{background:#fff; color:#255b86}
         .status,.error{
-            padding:12px 14px;
+            padding:10px 12px;
             border-radius:16px;
-            font-size:14px;
+            font-size:13px;
             line-height:1.45;
         }
         .status{background:#e7fff3; color:#0f6b47; border:1px solid #b9f2d2}
@@ -243,7 +272,7 @@
             opacity:.95;
         }
         @media (max-width: 980px){
-            .content,.callouts,.field-row{grid-template-columns:1fr}
+            .content,.callouts,.field-row,.form-layout{grid-template-columns:1fr}
         }
         @media (max-width: 640px){
             .wrap{width:min(100vw - 14px, 1160px)}
@@ -252,6 +281,8 @@
             .hero-sub{font-size:15px}
             .step{grid-template-columns:34px 1fr}
             .step-num{width:34px;height:34px;font-size:16px}
+            .tabs{gap:6px}
+            .tab-btn{padding:8px 10px; font-size:12px}
         }
     </style>
 </head>
@@ -311,75 +342,87 @@
 
     <section class="content" style="margin-top:14px;">
         <article class="card form-card">
-            <h2>Registrar factura</h2>
-            <p class="copy">Elige cómo quieres darnos el código de tu factura.</p>
-
-            <div class="tabs">
-                <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
-                <button type="button" class="tab-btn" data-tab="manual">Escribir CUFE</button>
-                <button type="button" class="tab-btn" data-tab="whatsapp">WhatsApp</button>
-            </div>
-
-            <div id="whatsapp-panel" class="tab-panel" hidden>
-                <div class="status" style="margin-top:0;">
-                    ¿Prefieres ayuda? Escríbenos por WhatsApp con tus datos y un asesor te orienta.
-                </div>
-                <a class="btn btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;" target="_blank" rel="noopener"
-                   href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
-                    Contactar por WhatsApp
-                </a>
-            </div>
-
-            <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
-                @csrf
-                <div class="field-row">
-                    <label>Nombre completo
-                        <input name="full_name" value="{{ old('full_name') }}" required>
-                    </label>
-                    <label>Cédula
-                        <input name="cedula" value="{{ old('cedula') }}" required>
-                    </label>
-                </div>
-                <div class="field-row">
-                    <label>Correo electrónico
-                        <input type="email" name="email" value="{{ old('email') }}" required>
-                    </label>
-                    <label>Teléfono
-                        <input name="phone" value="{{ old('phone') }}" required>
-                    </label>
-                </div>
-
-                <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
-
-                <div id="scan-panel" class="tab-panel">
-                    <label>Código de factura (QR)
-                        <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el contenido del QR o usa la cámara" autocomplete="off">
-                    </label>
-                    <div class="status">
-                        Usa la cámara si deseas, o pega el código QR directamente.
+            <div class="form-layout">
+                <div class="form-intro">
+                    <h2>Registrar factura</h2>
+                    <p class="copy">Registra aquí tu factura en un solo paso. Escanea el QR o escribe el CUFE y completa tus datos para seguir.</p>
+                    <div class="summary-box">
+                        <strong>Lo esencial</strong>
+                        <p>Tu nombre, cédula, correo y teléfono. Nada más.</p>
+                    </div>
+                    <div class="summary-box">
+                        <strong>Si necesitas ayuda</strong>
+                        <p>Después de registrar, podrás consultar tu estado con cédula y teléfono.</p>
                     </div>
                 </div>
 
-                <div id="manual-panel" class="tab-panel" hidden>
-                    <label>Escribe el CUFE de tu factura
-                        <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
-                    </label>
+                <div>
+                    <div class="tabs">
+                        <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
+                        <button type="button" class="tab-btn" data-tab="manual">Escribir CUFE</button>
+                        <button type="button" class="tab-btn" data-tab="whatsapp">WhatsApp</button>
+                    </div>
+
+                    <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
+                        @csrf
+                        <div class="field-row">
+                            <label>Nombre completo
+                                <input name="full_name" value="{{ old('full_name') }}" required>
+                            </label>
+                            <label>Cédula
+                                <input name="cedula" value="{{ old('cedula') }}" required>
+                            </label>
+                        </div>
+                        <div class="field-row">
+                            <label>Correo electrónico
+                                <input type="email" name="email" value="{{ old('email') }}" required>
+                            </label>
+                            <label>Teléfono
+                                <input name="phone" value="{{ old('phone') }}" required>
+                            </label>
+                        </div>
+
+                        <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
+
+                        <div id="scan-panel" class="tab-panel">
+                            <label>Código de factura (QR)
+                                <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el contenido del QR o usa la cámara" autocomplete="off">
+                            </label>
+                        </div>
+
+                        <div id="manual-panel" class="tab-panel" hidden>
+                            <label>Escribe el CUFE de tu factura
+                                <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
+                            </label>
+                        </div>
+
+                        <div id="whatsapp-panel" class="tab-panel" hidden>
+                            <div class="status" style="margin-top:0;">
+                                ¿Prefieres ayuda? Escríbenos por WhatsApp y te orientamos para registrar tu factura.
+                            </div>
+                            <a class="btn btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px;"
+                               target="_blank" rel="noopener"
+                               href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
+                                Contactar por WhatsApp
+                            </a>
+                        </div>
+
+                        <div id="form-field-error" class="error" style="display:none;"></div>
+
+                        <label class="check">
+                            <input type="checkbox" name="consent_terms" value="1" required>
+                            <span>Acepto los términos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
+                        </label>
+                        @if ($errors->any())
+                            <div class="error">{{ $errors->first() }}</div>
+                        @endif
+                        @if (session('status'))
+                            <div class="status">{{ session('status') }}</div>
+                        @endif
+                        <button class="btn btn-primary" type="submit">Registrar factura</button>
+                    </form>
                 </div>
-
-                <div id="form-field-error" class="error" style="display:none;"></div>
-
-                <label class="check">
-                    <input type="checkbox" name="consent_terms" value="1" required>
-                    <span>Acepto los términos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
-                </label>
-                @if ($errors->any())
-                    <div class="error">{{ $errors->first() }}</div>
-                @endif
-                @if (session('status'))
-                    <div class="status">{{ session('status') }}</div>
-                @endif
-                <button class="btn btn-primary" type="submit">Registrar factura</button>
-            </form>
+            </div>
         </article>
 
         <aside class="aside">
@@ -430,23 +473,30 @@
         scanPanel.hidden = tab !== 'scan';
         manualPanel.hidden = tab !== 'manual';
         whatsappPanel.hidden = tab !== 'whatsapp';
-        registrationForm.style.display = tab === 'whatsapp' ? 'none' : 'grid';
         fieldError.style.display = 'none';
     };
 
     tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
 
     registrationForm?.addEventListener('submit', (event) => {
-        const value = activeTab === 'manual' ? manualInput.value.trim() : scanInput.value.trim();
+        const value = activeTab === 'manual'
+            ? manualInput.value.trim()
+            : activeTab === 'scan'
+                ? scanInput.value.trim()
+                : hiddenInput.value.trim();
         if (!value) {
             event.preventDefault();
             fieldError.textContent = activeTab === 'manual'
                 ? 'Escribe el CUFE de tu factura.'
-                : 'Escanea o pega el código de tu factura.';
+                : activeTab === 'scan'
+                    ? 'Escanea o pega el código de tu factura.'
+                    : 'Usa WhatsApp si prefieres ayuda directa.';
             fieldError.style.display = 'block';
             return;
         }
-        hiddenInput.value = value;
+        if (activeTab !== 'whatsapp') {
+            hiddenInput.value = value;
+        }
     });
 })();
 </script>
