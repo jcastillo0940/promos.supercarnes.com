@@ -301,11 +301,20 @@
         }
         .option{
             background:#fff;
+            width:100%;
+            border:0;
             border-radius:18px;
             padding:20px 22px;
             display:flex;
             align-items:center;
             gap:20px;
+            text-align:left;
+            cursor:pointer;
+            transition:transform .18s ease, box-shadow .18s ease;
+        }
+        .option:hover{transform:translateY(-2px);box-shadow:0 12px 22px rgba(3,22,68,.2)}
+        .option:focus-visible{outline:3px solid #ffc629;outline-offset:3px}
+        .option.is-active{box-shadow:0 0 0 3px rgba(255,198,41,.95),0 12px 22px rgba(3,22,68,.2)}
         }
         .option .bubble{
             width:68px;height:68px;min-width:68px;border-radius:50%;
@@ -370,6 +379,59 @@
         .form{
             display:none;
         }
+        .scan-helper{
+            display:flex;
+            gap:8px;
+            align-items:flex-start;
+            color:rgba(255,255,255,.85);
+            font-size:13px;
+            line-height:1.45;
+            margin-top:8px;
+        }
+        .scan-helper strong{color:#ffc629}
+        .scan-retry{
+            border:0;
+            border-bottom:1px solid #ffc629;
+            padding:0;
+            background:transparent;
+            color:#ffc629;
+            font:inherit;
+            font-weight:800;
+            cursor:pointer;
+        }
+        .scanner-modal{
+            position:fixed;
+            inset:0;
+            z-index:30;
+            display:grid;
+            place-items:center;
+            padding:20px;
+            background:rgba(4,19,57,.82);
+        }
+        .scanner-modal[hidden]{display:none}
+        .scanner-dialog{
+            width:min(100%,480px);
+            border-radius:24px;
+            padding:22px;
+            background:#fff;
+            box-shadow:0 24px 70px rgba(0,0,0,.35);
+        }
+        .scanner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+        .scanner-dialog h3{color:#0c2a63;font-size:22px;line-height:1.1}
+        .scanner-close{
+            width:38px;
+            height:38px;
+            border:0;
+            border-radius:50%;
+            background:#edf3ff;
+            color:#0c2a63;
+            font-size:24px;
+            line-height:1;
+            cursor:pointer;
+        }
+        .scanner-video-wrap{overflow:hidden;border-radius:18px;background:#081d47;aspect-ratio:3 / 4}
+        .scanner-video,.scanner-video video{width:100%;height:100%;display:block;object-fit:cover}
+        .scanner-status{margin:14px 0 0;color:#314c78;font-size:14px;line-height:1.45}
 
         @media (max-width: 1600px){
             .layout{
@@ -438,6 +500,7 @@
             .option .desc{font-size:13px;max-width:none}
             .option .bubble{width:54px;height:54px;min-width:54px}
             .footer-lockup .mini{width:240px}
+            .scanner-dialog{padding:18px;border-radius:20px}
         }
     </style>
 </head>
@@ -625,29 +688,26 @@
 
                     <div id="scan-panel" class="tab-panel" style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
                         <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Código de factura (QR / CUFE)
-                            <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el código QR o CUFE aquí" autocomplete="off">
+                            <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el código QR o CUFE aquí" autocomplete="off" maxlength="2048">
                         </label>
-                        <div style="display:flex;gap:8px;align-items:flex-start;color:rgba(255,255,255,.85);font-size:13px;line-height:1.45;margin-top:8px;">
-                            <span style="color:#ffc629;font-weight:900;">⌁</span>
-                            <span>Puedes usar la cámara para escanear o pegar el código directamente.</span>
+                        <div class="scan-helper">
+                            <strong aria-hidden="true">QR</strong>
+                            <span>La cámara se abre al elegir esta opción. También puedes <button class="scan-retry" id="open-qr-scanner" type="button">abrirla de nuevo</button> o pegar el código.</span>
                         </div>
+                        <p id="scan-status" class="scan-helper" role="status" aria-live="polite" hidden></p>
                     </div>
 
                     <div id="manual-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
-                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Escribe el CUFE de tu factura
-                            <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Escribe los últimos 60 dígitos del CUFE
+                            <input id="cufe_manual" placeholder="Solo los últimos 60 números" autocomplete="off" inputmode="numeric" pattern="[0-9]{60}" minlength="60">
                         </label>
+                        <div class="scan-helper"><strong>60</strong><span>Usa solamente los últimos 60 números que aparecen en tu factura.</span></div>
                     </div>
 
                     <div id="whatsapp-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
                         <div style="padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#eafbea;color:#0d6f49;border:1px solid #b8eccb;margin-top:0;">
-                            ¿Prefieres ayuda? Escríbenos por WhatsApp y te guiamos para registrar tu factura.
+                            Al continuar, te llevaremos a WhatsApp con tus datos listos. Envía una foto clara de tu factura y nuestro equipo completará el registro.
                         </div>
-                        <a class="btn btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;"
-                           target="_blank" rel="noopener"
-                           href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
-                            Contactar por WhatsApp
-                        </a>
                     </div>
 
                     <div id="form-field-error" style="display:none;padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#fff0f0;color:#b42318;border:1px solid #ffc7c7;"></div>
@@ -664,7 +724,7 @@
                         <div style="padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#eafbea;color:#0d6f49;border:1px solid #b8eccb;">{{ session('status') }}</div>
                     @endif
 
-                    <button class="btn" type="submit" style="background:linear-gradient(180deg,#ffcf2d 0%,#f2b70b 100%);color:#654400;box-shadow:0 16px 24px rgba(242,183,11,.20);">
+                    <button id="registration-submit" class="btn" type="submit" style="background:linear-gradient(180deg,#ffcf2d 0%,#f2b70b 100%);color:#654400;box-shadow:0 16px 24px rgba(242,183,11,.20);">
                         Registrar factura
                     </button>
                     <a href="{{ route('fanlyc.status') }}" style="display:inline-block;margin-top:10px;color:#ffc629;font-weight:700;text-decoration:none;">Ver mis cupones</a>
@@ -711,6 +771,20 @@
     </div>
 </div>
 
+<div id="qr-scanner-modal" class="scanner-modal" hidden role="dialog" aria-modal="true" aria-labelledby="qr-scanner-title">
+    <div class="scanner-dialog">
+        <header>
+            <h3 id="qr-scanner-title">Escanea el QR de tu factura</h3>
+            <button id="close-qr-scanner" class="scanner-close" type="button" aria-label="Cerrar cámara">×</button>
+        </header>
+        <div class="scanner-video-wrap">
+            <div id="qr-camera" class="scanner-video"></div>
+        </div>
+        <p id="qr-scanner-status" class="scanner-status" role="status" aria-live="polite">Solicitando acceso a la cámara…</p>
+    </div>
+</div>
+
+<script src="/fanlyc-assets/html5-qrcode.min.js"></script>
 <script>
 (() => {
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -722,38 +796,167 @@
     const scanInput = document.getElementById('qr_raw_text_scan');
     const manualInput = document.getElementById('cufe_manual');
     const fieldError = document.getElementById('form-field-error');
+    const submitButton = document.getElementById('registration-submit');
+    const scanStatus = document.getElementById('scan-status');
+    const scannerModal = document.getElementById('qr-scanner-modal');
+    const scannerStatus = document.getElementById('qr-scanner-status');
+    const openScannerButton = document.getElementById('open-qr-scanner');
+    const closeScannerButton = document.getElementById('close-qr-scanner');
+    let qrScanner = null;
     let activeTab = 'scan';
 
-    const setActiveTab = (tab) => {
+    const showFieldError = (message) => {
+        fieldError.textContent = message;
+        fieldError.style.display = 'block';
+    };
+
+    const setScanStatus = (message) => {
+        scanStatus.textContent = message;
+        scanStatus.hidden = !message;
+    };
+
+    const stopScanner = async () => {
+        if (!qrScanner) {
+            return;
+        }
+
+        const activeScanner = qrScanner;
+        qrScanner = null;
+
+        try {
+            await activeScanner.stop();
+        } catch (error) {
+            // It is safe to close even when the camera has already stopped.
+        }
+
+        try {
+            await activeScanner.clear();
+        } catch (error) {
+            // The scanner container may already be empty.
+        }
+    };
+
+    const closeScanner = () => {
+        scannerModal.hidden = true;
+        void stopScanner();
+    };
+
+    const openScanner = async () => {
+        if (!navigator.mediaDevices?.getUserMedia || !window.Html5Qrcode) {
+            setScanStatus('Tu navegador no permite usar la cámara. Pega el código QR de tu factura.');
+            return;
+        }
+
+        await stopScanner();
+        scannerModal.hidden = false;
+        scannerStatus.textContent = 'Solicitando acceso a la cámara…';
+
+        try {
+            qrScanner = new window.Html5Qrcode('qr-camera');
+            await qrScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    const value = decodedText.trim();
+
+                    if (!value) {
+                        return;
+                    }
+
+                    scanInput.value = value;
+                    hiddenInput.value = value;
+                    setScanStatus('Código QR leído correctamente.');
+                    closeScanner();
+                    scanInput.focus();
+                },
+                () => {},
+            );
+            scannerStatus.textContent = 'Apunta la cámara al QR de tu factura.';
+        } catch (error) {
+            qrScanner = null;
+            closeScanner();
+            setScanStatus('No pudimos activar la cámara. Revisa el permiso y vuelve a intentarlo, o pega el código QR.');
+        }
+    };
+
+    const normalizeManualCufe = () => {
+        const digits = manualInput.value.replace(/\D/g, '').slice(-60);
+        manualInput.value = digits;
+        return digits;
+    };
+
+    const setActiveTab = (tab, openCamera = false) => {
         activeTab = tab;
         tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.tab === tab));
         scanPanel.hidden = tab !== 'scan';
         manualPanel.hidden = tab !== 'manual';
         whatsappPanel.hidden = tab !== 'whatsapp';
         fieldError.style.display = 'none';
+        submitButton.textContent = tab === 'whatsapp' ? 'Continuar por WhatsApp' : 'Registrar factura';
+
+        if (tab !== 'scan') {
+            void stopScanner();
+            scannerModal.hidden = true;
+        }
+
+        if (tab === 'manual') {
+            manualInput.focus();
+        }
+
+        if (tab === 'scan' && openCamera) {
+            openScanner();
+        }
     };
 
-    tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
+    tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, btn.dataset.tab === 'scan')));
+    openScannerButton?.addEventListener('click', openScanner);
+    closeScannerButton?.addEventListener('click', closeScanner);
+    scannerModal?.addEventListener('click', (event) => {
+        if (event.target === scannerModal) {
+            closeScanner();
+        }
+    });
+    manualInput?.addEventListener('input', normalizeManualCufe);
+    window.addEventListener('pagehide', () => void stopScanner());
 
     registrationForm?.addEventListener('submit', (event) => {
-        const value = activeTab === 'manual'
-            ? manualInput.value.trim()
-            : activeTab === 'scan'
-                ? scanInput.value.trim()
-                : hiddenInput.value.trim();
-
-        if (activeTab !== 'whatsapp' && !value) {
+        if (activeTab === 'whatsapp') {
             event.preventDefault();
-            fieldError.textContent = activeTab === 'manual'
-                ? 'Escribe el CUFE de tu factura.'
-                : 'Escanea o pega el código de tu factura.';
-            fieldError.style.display = 'block';
+            const values = new FormData(registrationForm);
+            const message = [
+                'Hola Super Carnes, quiero registrar mi factura para Fanlyc.',
+                '',
+                `Nombre: ${values.get('full_name')}`,
+                `Cédula: ${values.get('cedula')}`,
+                `Correo: ${values.get('email')}`,
+                `Teléfono: ${values.get('phone')}`,
+                '',
+                'Adjunto una foto clara de mi factura para completar el registro.',
+            ].join('\n');
+
+            window.location.assign(`https://wa.me/50768982167?text=${encodeURIComponent(message)}`);
             return;
         }
 
-        if (activeTab !== 'whatsapp') {
-            hiddenInput.value = value;
+        const value = activeTab === 'manual'
+            ? normalizeManualCufe()
+            : scanInput.value.trim();
+
+        if (!value) {
+            event.preventDefault();
+            showFieldError(activeTab === 'manual'
+                ? 'Escribe los últimos 60 números del CUFE de tu factura.'
+                : 'Escanea o pega el código QR de tu factura.');
+            return;
         }
+
+        if (activeTab === 'manual' && value.length !== 60) {
+            event.preventDefault();
+            showFieldError('El CUFE debe contener exactamente los últimos 60 números de tu factura.');
+            return;
+        }
+
+        hiddenInput.value = value;
     });
 })();
 </script>
