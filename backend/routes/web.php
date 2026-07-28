@@ -69,6 +69,7 @@ Route::get('/fonda-challenge/{code}/qr', [FondaChallengeController::class, 'qr']
 
 Route::get('/fanlyc', [FanlycController::class, 'landing'])->name('fanlyc.landing');
 Route::post('/fanlyc/registro', [FanlycController::class, 'store'])->name('fanlyc.store');
+Route::get('/fanlyc/gracias', [FanlycController::class, 'thanks'])->name('fanlyc.thanks');
 Route::get('/fanlyc/estado', [FanlycController::class, 'status'])->name('fanlyc.status');
 Route::get('/fanlyc/cupon/{code}/qr', [FanlycController::class, 'couponQr'])->name('fanlyc.coupon.qr');
 

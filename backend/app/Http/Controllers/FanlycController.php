@@ -42,11 +42,49 @@ class FanlycController extends Controller
         $outcome = $this->registrationService->registerInvoice($validated);
 
         return redirect()
-            ->route('fanlyc.status', [
+            ->route('fanlyc.thanks', [
                 'cedula' => $outcome['participant']->cedula,
                 'phone' => $outcome['participant']->phone,
             ])
             ->with('status', $outcome['message']);
+    }
+
+    public function thanks(Request $request): View
+    {
+        $cedula = trim((string) $request->query('cedula', ''));
+        $phone = trim((string) $request->query('phone', ''));
+        $normalizedCedula = strtoupper(preg_replace('/[^0-9-]/', '', $cedula) ?? '');
+
+        $participant = null;
+        $invoice = null;
+        $coupon = null;
+
+        if ($normalizedCedula !== '' && $phone !== '') {
+            $participant = User::query()
+                ->where('cedula', $normalizedCedula)
+                ->where('phone', $phone)
+                ->first();
+
+            if ($participant) {
+                $invoice = $participant->invoices()
+                    ->with('fanlycZone', 'coupon.fanlycZone')
+                    ->latest()
+                    ->first();
+
+                $coupon = $participant->coupons()
+                    ->with('fanlycZone', 'fanlycInvoice')
+                    ->latest()
+                    ->first();
+            }
+        }
+
+        return view('fanlyc.thanks', [
+            'participant' => $participant,
+            'invoice' => $invoice,
+            'coupon' => $coupon,
+            'cedula' => $normalizedCedula,
+            'phone' => $phone,
+        ]);
     }
 
     public function status(Request $request): View

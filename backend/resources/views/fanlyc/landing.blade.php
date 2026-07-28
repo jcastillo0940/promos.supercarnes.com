@@ -8,15 +8,12 @@
     <style>
         :root{
             --sky:#45b9e6;
-            --sky-deep:#1fa0d7;
             --green:#30b232;
             --orange:#ff7a2f;
             --purple:#8c57ff;
             --yellow:#ffca16;
-            --red:#ff5e52;
             --ink:#16324f;
             --brown:#7a4411;
-            --paper:#f8f6ef;
             --shadow: rgba(18, 58, 86, .16);
         }
         *{box-sizing:border-box}
@@ -24,44 +21,33 @@
             margin:0;
             font-family:Inter, Arial, sans-serif;
             color:var(--ink);
-            background:
-                radial-gradient(circle at 8% 12%, rgba(255,255,255,.35), transparent 18%),
-                radial-gradient(circle at 88% 8%, rgba(255,255,255,.25), transparent 14%),
-                linear-gradient(180deg, #59c2eb 0%, var(--sky) 60%, #42b4e2 100%);
+            background:linear-gradient(180deg, #59c2eb 0%, var(--sky) 100%);
             min-height:100vh;
         }
-        .wrap{width:min(1180px, calc(100vw - 20px)); margin:0 auto; padding:12px 0 28px;}
+        .wrap{width:min(1160px, calc(100vw - 20px)); margin:0 auto; padding:12px 0 24px}
         .hero{
             position:relative;
             overflow:hidden;
             border-radius:34px;
             background:
-                radial-gradient(circle at 15% 18%, rgba(255,255,255,.18), transparent 18%),
-                radial-gradient(circle at 86% 20%, rgba(255,255,255,.18), transparent 16%),
-                linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+                radial-gradient(circle at 12% 14%, rgba(255,255,255,.32), transparent 14%),
+                radial-gradient(circle at 90% 12%, rgba(255,255,255,.2), transparent 12%),
+                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
             box-shadow:0 20px 50px var(--shadow);
-            padding:28px 24px 24px;
+            padding:26px 24px 24px;
         }
         .hero::before,.hero::after{
             content:'';
             position:absolute;
-            inset:auto;
-            width:220px;height:220px;
-            border-radius:50%;
-            border:18px solid rgba(255,196,0,.75);
-            opacity:.6;
             pointer-events:none;
+            border-radius:50%;
+            border:16px solid rgba(255,202,22,.7);
+            opacity:.55;
         }
-        .hero::before{left:-130px; top:120px; border-color:rgba(255,130,43,.75); transform:rotate(22deg)}
-        .hero::after{right:-120px; bottom:-90px; border-color:rgba(45,145,188,.55)}
-        .brand{
-            display:flex; justify-content:center; margin-bottom:10px;
-        }
-        .brand img{
-            width:min(210px, 56vw);
-            display:block;
-            filter: drop-shadow(0 10px 16px rgba(0,0,0,.12));
-        }
+        .hero::before{left:-126px; top:110px; width:220px; height:220px; border-color:rgba(255,122,47,.65)}
+        .hero::after{right:-122px; bottom:-100px; width:240px; height:240px; border-color:rgba(45,145,188,.5)}
+        .brand{display:flex; justify-content:center; margin-bottom:10px}
+        .brand img{width:min(210px, 56vw); display:block; filter: drop-shadow(0 10px 16px rgba(0,0,0,.12))}
         .hero-copy{
             text-align:center;
             color:#fff;
@@ -83,8 +69,7 @@
             letter-spacing:-.05em;
         }
         .hero-title .fanlyc{
-            color:#ff2c5c;
-            background:linear-gradient(90deg,#ff2c5c 0%, #ff7d2f 24%, #ffcc17 48%, #35d64a 72%, #63d4ff 100%);
+            background:linear-gradient(90deg,#ff2c5c 0%, #ff7d2f 25%, #ffcc17 50%, #35d64a 75%, #63d4ff 100%);
             -webkit-background-clip:text;
             background-clip:text;
             -webkit-text-fill-color:transparent;
@@ -112,35 +97,21 @@
         .chip.green{background:var(--green)}
         .chip.orange{background:var(--orange)}
         .chip.purple{background:var(--purple)}
-        .grid{
+        .content{
             margin-top:14px;
             display:grid;
-            grid-template-columns:1fr 1fr;
+            grid-template-columns:1.1fr .9fr;
             gap:14px;
         }
         .card{
             position:relative;
             overflow:hidden;
             border-radius:30px;
-            background:rgba(255,255,255,.9);
+            background:rgba(255,255,255,.92);
             box-shadow:0 18px 38px var(--shadow);
             padding:22px;
         }
-        .card::after{
-            content:'';
-            position:absolute;
-            inset:auto -30px -30px auto;
-            width:160px;height:160px;
-            background:rgba(255,255,255,.12);
-            border-radius:50%;
-            pointer-events:none;
-        }
-        .card h2{
-            margin:0 0 8px;
-            font-size:28px;
-            line-height:1;
-            color:var(--brown);
-        }
+        .card h2{margin:0 0 8px; font-size:28px; line-height:1; color:var(--brown)}
         .card p.copy{margin:0 0 14px; color:#35516e; line-height:1.55}
         .steps{display:grid; gap:10px}
         .step{
@@ -149,7 +120,7 @@
             gap:10px;
             padding:12px 14px;
             border-radius:22px;
-            background:linear-gradient(90deg, rgba(69,185,230,.10), rgba(255,255,255,.68));
+            background:linear-gradient(90deg, rgba(69,185,230,.12), rgba(255,255,255,.72));
             border:1px solid rgba(22,50,79,.08);
         }
         .step-num{
@@ -161,32 +132,19 @@
         }
         .step strong{display:block; margin-bottom:3px}
         .step span{color:#56718b; font-size:14px; line-height:1.45}
-        .photo-grid{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:12px;
+        .form-card{display:grid; gap:12px}
+        .tabs{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px}
+        .tab-btn{
+            border:0;
+            border-radius:999px;
+            padding:10px 14px;
+            font-weight:900;
+            background:rgba(255,255,255,.72);
+            color:#22506f;
+            cursor:pointer;
         }
-        .photo{
-            min-height:190px;
-            border-radius:24px;
-            overflow:hidden;
-            position:relative;
-            box-shadow:0 14px 24px rgba(0,0,0,.12);
-            border:6px solid rgba(255,255,255,.8);
-            transform:rotate(-1.5deg);
-        }
-        .photo:nth-child(2){transform:rotate(2deg)}
-        .photo img{width:100%; height:100%; object-fit:cover; display:block}
-        .photo.badge::before{
-            content:'Fanlyc';
-            position:absolute; left:14px; top:14px;
-            background:#fff; color:#ff5e52;
-            font-weight:900; letter-spacing:.06em;
-            padding:8px 12px; border-radius:999px;
-            box-shadow:0 10px 18px rgba(0,0,0,.12);
-            z-index:1;
-        }
-        .form-card{margin-top:14px}
+        .tab-btn.is-active{background:var(--purple); color:#fff; box-shadow:0 12px 20px rgba(140,87,255,.24)}
+        .tab-panel[hidden]{display:none}
         form{display:grid; gap:12px}
         .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
         label{display:grid; gap:6px; font-size:13px; font-weight:800; color:#23486b}
@@ -216,18 +174,6 @@
             box-shadow:0 14px 22px rgba(243,181,0,.22);
         }
         .btn-secondary{background:#fff; color:#255b86}
-        .tabs{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px}
-        .tab-btn{
-            border:0;
-            border-radius:999px;
-            padding:10px 14px;
-            font-weight:900;
-            background:rgba(255,255,255,.72);
-            color:#22506f;
-            cursor:pointer;
-        }
-        .tab-btn.is-active{background:var(--purple); color:#fff; box-shadow:0 12px 20px rgba(140,87,255,.24)}
-        .tab-panel[hidden]{display:none}
         .status,.error{
             padding:12px 14px;
             border-radius:16px;
@@ -236,6 +182,36 @@
         }
         .status{background:#e7fff3; color:#0f6b47; border:1px solid #b9f2d2}
         .error{background:#fff0f0; color:#b42318; border:1px solid #ffc7c7}
+        .aside{
+            display:grid;
+            gap:14px;
+        }
+        .poster{
+            min-height:220px;
+            border-radius:28px;
+            overflow:hidden;
+            position:relative;
+            box-shadow:0 16px 28px rgba(0,0,0,.12);
+            border:6px solid rgba(255,255,255,.85);
+            background:#fff;
+        }
+        .poster img{width:100%; height:100%; object-fit:cover; display:block}
+        .poster .tag{
+            position:absolute; left:14px; top:14px;
+            background:#fff; color:#ff5e52;
+            font-weight:900;
+            padding:8px 12px;
+            border-radius:999px;
+            box-shadow:0 10px 18px rgba(0,0,0,.12);
+        }
+        .info-card{
+            border-radius:28px;
+            padding:20px;
+            background:rgba(255,255,255,.92);
+            box-shadow:0 16px 30px rgba(18,58,86,.12);
+        }
+        .info-card h3{margin:0 0 8px; font-size:22px; color:var(--brown)}
+        .info-card p{margin:0; line-height:1.55; color:#35516e}
         .callouts{
             margin-top:14px;
             display:grid;
@@ -243,7 +219,7 @@
             gap:14px;
         }
         .callout{
-            min-height:155px;
+            min-height:148px;
             padding:18px;
             border-radius:26px;
             color:#fff;
@@ -254,15 +230,6 @@
         .callout.blue{background:linear-gradient(180deg, #44c0e8, #2ca0d4)}
         .callout.green{background:linear-gradient(180deg, #35b65d, #279944)}
         .callout.orange{background:linear-gradient(180deg, #ff8536, #f36d21)}
-        .rule{
-            margin-top:14px;
-            padding:14px 16px;
-            border-radius:20px;
-            background:rgba(255,255,255,.78);
-            color:#23486b;
-            font-size:14px;
-            line-height:1.55;
-        }
         .link-row{margin-top:12px; font-size:14px}
         .link-row a{color:#0f6b47; font-weight:900; text-decoration:none}
         .footer-badge{
@@ -276,7 +243,15 @@
             opacity:.95;
         }
         @media (max-width: 980px){
-            .grid,.callouts,.field-row,.photo-grid{grid-template-columns:1fr}
+            .content,.callouts,.field-row{grid-template-columns:1fr}
+        }
+        @media (max-width: 640px){
+            .wrap{width:min(100vw - 14px, 1160px)}
+            .hero,.card,.info-card{padding:18px}
+            .hero-title{font-size:34px}
+            .hero-sub{font-size:15px}
+            .step{grid-template-columns:34px 1fr}
+            .step-num{width:34px;height:34px;font-size:16px}
         }
     </style>
 </head>
@@ -294,15 +269,15 @@
                 <span class="chip yellow">QR de factura</span>
                 <span class="chip green">Canje por zona</span>
                 <span class="chip orange">Premios</span>
-                <span class="chip purple">Puntos de apoyo</span>
+                <span class="chip purple">Apoyo comunitario</span>
             </div>
         </div>
     </section>
 
-    <section class="grid">
+    <section class="content">
         <article class="card">
-            <h2>Descubre cómo apoyar</h2>
-            <p class="copy">Usamos una composición simple, colorida y muy visual, inspirada en las piezas de redes: bloques grandes, tipografía amable y colores intensos.</p>
+            <h2>Cómo participar</h2>
+            <p class="copy">La experiencia debe sentirse rápida y clara, igual de alegre que la línea social, pero enfocada en convertir.</p>
             <div class="steps">
                 <div class="step"><div class="step-num">1</div><div><strong>Escanea tu factura</strong><span>Puedes abrir la cámara o pegar el código del QR.</span></div></div>
                 <div class="step"><div class="step-num">2</div><div><strong>Llena tus datos</strong><span>Nombre, cédula, correo y teléfono para darte seguimiento.</span></div></div>
@@ -322,9 +297,22 @@
             </div>
         </article>
 
+        <aside class="aside">
+            <article class="poster">
+                <img src="/fonda-assets/step-1.jpeg" alt="Fanlyc" loading="lazy">
+                <div class="tag">Fanlyc</div>
+            </article>
+            <article class="info-card">
+                <h3>Registro directo</h3>
+                <p>Escanea el QR de tu factura o escribe el CUFE. Esta sección es el punto de entrada, así que la dejamos clara, simple y con énfasis visual fuerte.</p>
+            </article>
+        </aside>
+    </section>
+
+    <section class="content" style="margin-top:14px;">
         <article class="card form-card">
             <h2>Registrar factura</h2>
-            <p class="copy">Elige como quieres darnos el código de tu factura.</p>
+            <p class="copy">Elige cómo quieres darnos el código de tu factura.</p>
 
             <div class="tabs">
                 <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
@@ -333,7 +321,7 @@
             </div>
 
             <div id="whatsapp-panel" class="tab-panel" hidden>
-                <div class="rule" style="margin-top:0;">
+                <div class="status" style="margin-top:0;">
                     ¿Prefieres ayuda? Escríbenos por WhatsApp con tus datos y un asesor te orienta.
                 </div>
                 <a class="btn btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;" target="_blank" rel="noopener"
@@ -364,11 +352,11 @@
                 <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
 
                 <div id="scan-panel" class="tab-panel">
-                    <label>Codigo de factura (QR)
+                    <label>Código de factura (QR)
                         <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el contenido del QR o usa la cámara" autocomplete="off">
                     </label>
-                    <div class="rule">
-                        Usa la cámara si deseas, o pega el código QR directamente. Esta vista ya está pensada para móvil.
+                    <div class="status">
+                        Usa la cámara si deseas, o pega el código QR directamente.
                     </div>
                 </div>
 
@@ -393,6 +381,16 @@
                 <button class="btn btn-primary" type="submit">Registrar factura</button>
             </form>
         </article>
+
+        <aside class="aside">
+            <article class="info-card">
+                <h3>Fanlyc en corto</h3>
+                <p>Subimos la emoción de las piezas sociales a una navegación más funcional. Se siente promocional, pero no se vuelve pesada.</p>
+            </article>
+            <article class="poster">
+                <img src="/fonda-assets/step-2.jpeg" alt="Fanlyc paso 2" loading="lazy">
+            </article>
+        </aside>
     </section>
 
     <section class="callouts">
@@ -407,30 +405,6 @@
         <article class="callout orange">
             <h3>Canje seguro</h3>
             <p>El staff escanea el cupón, valida el estado y emite el ticket correspondiente.</p>
-        </article>
-    </section>
-
-    <section class="grid" style="margin-top:14px;">
-        <article class="card">
-            <h2>Fanlyc en 4 pasos</h2>
-            <div class="photo-grid">
-                <div class="photo badge"><img src="/fonda-assets/step-1.jpeg" alt="Paso 1 Fanlyc" loading="lazy"></div>
-                <div class="photo badge"><img src="/fonda-assets/step-2.jpeg" alt="Paso 2 Fanlyc" loading="lazy"></div>
-                <div class="photo badge"><img src="/fonda-assets/step-3.jpeg" alt="Paso 3 Fanlyc" loading="lazy"></div>
-                <div class="photo badge"><img src="/fonda-assets/step-4.jpeg" alt="Paso 4 Fanlyc" loading="lazy"></div>
-            </div>
-        </article>
-
-        <article class="card">
-            <h2>Importante</h2>
-            <div class="rule">
-                Fanlyc usa una línea visual alegre y muy legible para redes, pero aquí la llevamos a una experiencia web clara y rápida. El objetivo es que el registro se sienta igual de cercano, solo que más funcional.
-            </div>
-            @if ($campaign)
-                <div class="rule" style="margin-top:12px;">
-                    Campaña activa: <strong>{{ $campaign->name }}</strong>
-                </div>
-            @endif
         </article>
     </section>
 
