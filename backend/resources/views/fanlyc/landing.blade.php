@@ -315,7 +315,6 @@
         .option:hover{transform:translateY(-2px);box-shadow:0 12px 22px rgba(3,22,68,.2)}
         .option:focus-visible{outline:3px solid #ffc629;outline-offset:3px}
         .option.is-active{box-shadow:0 0 0 3px rgba(255,198,41,.95),0 12px 22px rgba(3,22,68,.2)}
-        }
         .option .bubble{
             width:68px;height:68px;min-width:68px;border-radius:50%;
             display:grid;place-items:center;
@@ -501,6 +500,174 @@
             .option .bubble{width:54px;height:54px;min-width:54px}
             .footer-lockup .mini{width:240px}
             .scanner-dialog{padding:18px;border-radius:20px}
+        }
+
+        /* The campaign is a responsive page, not a scaled artboard. */
+        html,body{overflow-x:hidden}
+        .page{padding:18px 24px 40px;overflow:clip}
+        .layout{
+            width:min(1440px,100%);
+            height:auto !important;
+            min-height:0;
+            margin:0 auto;
+            overflow:visible;
+            display:grid;
+            grid-template-columns:minmax(0,1fr) minmax(500px,.92fr);
+            grid-template-areas:
+                "topbar topbar"
+                "left right"
+                "mini mini";
+            gap:18px;
+            transform:none !important;
+        }
+        .topbar{
+            grid-area:topbar;
+            position:relative;
+            inset:auto;
+            width:auto;
+            min-height:96px;
+            height:auto;
+            margin:0;
+            padding:14px 28px;
+            border-radius:26px;
+        }
+        .brand{flex:0 1 auto}
+        .brand img:first-child{width:92px}
+        .brand img:last-of-type{display:none}
+        .brand::after{
+            content:'Fanlyc ★ Relevo por la vida';
+            color:#1b56aa;
+            font-size:clamp(18px,1.7vw,28px);
+            font-weight:800;
+            white-space:nowrap;
+        }
+        .nav{flex-wrap:nowrap;justify-content:flex-end;gap:24px}
+        .nav a{white-space:nowrap}
+        .left{
+            grid-area:left;
+            position:relative;
+            inset:auto;
+            width:auto;
+            height:auto;
+            min-height:750px;
+            margin:0;
+            border-radius:26px;
+        }
+        .left-inner{
+            min-height:750px;
+            height:100%;
+            padding:30px;
+            display:flex;
+            flex-direction:column;
+        }
+        /* The supplied cutout has a visible checkerboard background. Hide it until a true transparent source is available. */
+        .left .boy{display:none}
+        .left .star{top:24px;right:24px;width:96px;height:96px}
+        .left .logo-row img{width:190px}
+        .title-image{width:min(70%,400px);margin-top:18px;position:relative;z-index:2}
+        .desc{max-width:400px;margin-top:18px;font-size:17px}
+        .cta{margin-top:22px;font-size:clamp(34px,3vw,52px)}
+        .steps{
+            position:relative;
+            inset:auto;
+            width:auto;
+            margin-top:auto;
+            padding:18px;
+        }
+        .chips{position:relative;inset:auto;width:auto;margin-top:14px;flex-wrap:wrap}
+        .right{
+            grid-area:right;
+            position:relative;
+            inset:auto;
+            width:auto;
+            height:auto;
+            min-height:750px;
+            margin:0;
+            padding:32px;
+            border-radius:26px;
+        }
+        .right .head h2{font-size:clamp(26px,2.3vw,34px);text-align:center}
+        .right .sub{margin:8px 0 20px}
+        .options{gap:14px}
+        .option{min-height:96px;padding:16px 18px}
+        .option .bubble{width:58px;height:58px;min-width:58px}
+        .option .title{font-size:17px}
+        .option .desc{max-width:none;font-size:13px}
+        .right .form{margin-top:16px !important}
+        .right form{display:grid;gap:12px}
+        .right .field-row{margin:0}
+        .right input{
+            width:100%;
+            min-height:42px;
+            border:1px solid rgba(15,47,104,.16);
+            border-radius:12px;
+            background:#fff;
+            color:#18366d;
+            padding:10px 12px;
+            font:500 14px 'Poppins',sans-serif;
+            outline:none;
+        }
+        .right input:focus{border-color:#ffc629;box-shadow:0 0 0 3px rgba(255,198,41,.22)}
+        .right input[type="checkbox"]{width:18px;min-height:18px;padding:0;box-shadow:none}
+        .right .btn{
+            width:100%;
+            min-height:48px;
+            border:0;
+            border-radius:14px;
+            font:800 17px 'Poppins',sans-serif;
+            cursor:pointer;
+        }
+        .footer-lockup{margin-top:20px}
+        .footer-lockup .mini{width:230px}
+        .mini-grid{
+            grid-area:mini;
+            position:relative !important;
+            inset:auto !important;
+            width:auto;
+            margin:0 !important;
+            grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        }
+
+        @media (max-width:1100px){
+            .page{padding:12px 12px 28px}
+            .layout{
+                grid-template-columns:1fr;
+                grid-template-areas:"topbar" "left" "right" "mini";
+                gap:14px;
+            }
+            .topbar{padding:14px 16px;flex-direction:column;justify-content:center;gap:12px}
+            .brand{justify-content:center}
+            .brand .divider{display:none}
+            .brand::after{font-size:20px}
+            .nav{justify-content:center;gap:12px;flex-wrap:wrap}
+            .nav a{font-size:13px}
+            .left,.right{min-height:0}
+            .left-inner{min-height:0;padding:24px 20px}
+            .left .star{width:70px;height:70px}
+            .title-image{width:min(100%,360px)}
+            .desc{max-width:100%;font-size:15px}
+            .cta{font-size:34px}
+            .steps{margin-top:24px;flex-wrap:wrap}
+            .step{width:calc(33.333% - 8px);min-width:0}
+            .chips{justify-content:center}
+            .right{padding:24px 18px}
+            .right .field-row{grid-template-columns:1fr !important;gap:12px !important}
+            .mini-grid{grid-template-columns:1fr !important}
+            .mini-grid article{min-height:0 !important}
+        }
+        @media (max-width:540px){
+            .topbar .brand img:first-child{width:70px}
+            .brand::after{font-size:17px}
+            .nav a{font-size:12px}
+            .left .logo-row img{width:150px}
+            .right .head h2{font-size:24px}
+            .option{gap:12px;padding:14px}
+            .option .bubble{width:50px;height:50px;min-width:50px}
+            .option .title{font-size:15px}
+            .option .desc{font-size:12px}
+            .steps{padding:14px 8px}
+            .step .label{font-size:12px}
+            .step .sub{font-size:11px}
         }
     </style>
 </head>
