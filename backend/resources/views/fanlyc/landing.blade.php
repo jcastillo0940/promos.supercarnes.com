@@ -5,46 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Fanlyc - Super Carnes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root{
-            --blue:#0f84d7;
-            --blue-deep:#0b4f9a;
-            --panel:#0d4d97;
-            --white:#ffffff;
-            --ink:#123d87;
-            --text:#173e83;
-            --yellow:#ffcc11;
-            --green:#55c63b;
-            --orange:#ff7a1d;
-            --pink:#ef3b8f;
-            --purple:#8148e8;
-            --shadow:0 22px 40px rgba(8,56,122,.18);
-        }
-        *{box-sizing:border-box}
+        *{margin:0;padding:0;box-sizing:border-box}
         html{scroll-behavior:smooth}
         body{
-            margin:0;
-            font-family:Inter, Arial, sans-serif;
-            color:var(--text);
-            background:
-                radial-gradient(circle at 10% 10%, rgba(255,255,255,.10), transparent 20%),
-                linear-gradient(180deg, #1297d8 0%, #0786d0 100%);
+            background:#1361df;
             min-height:100vh;
+            font-family:'Poppins',sans-serif;
         }
-        .wrap{
-            width:min(1536px, calc(100vw - 26px));
+        .page{
+            width:100%;
+            min-height:100vh;
+            position:relative;
+            overflow:hidden;
+            background:linear-gradient(155deg,#1a72ef 0%,#1361df 55%,#0d54cc 100%);
+        }
+        .squiggle{
+            position:absolute;
+            width:220px;
+            height:220px;
+            opacity:.96;
+            pointer-events:none;
+        }
+        .squiggle.orange.tl{top:-10px;left:-10px}
+        .squiggle.green.bl{bottom:-20px;left:-10px;width:220px;height:260px}
+        .squiggle.orange.br{bottom:-30px;right:-10px;width:260px;height:260px}
+        .dots{
+            position:absolute;
+            right:100px;
+            bottom:10px;
+            width:150px;
+            height:150px;
+            opacity:.5;
+            pointer-events:none;
+        }
+        .layout{
+            width:1536px;
+            height:1024px;
+            position:relative;
             margin:0 auto;
-            padding:14px 0 18px;
+            overflow:hidden;
         }
         .topbar{
-            display:grid;
-            grid-template-columns:auto 1fr auto;
-            gap:18px;
-            align-items:center;
-            padding:12px 18px;
+            position:absolute;
+            left:0;
+            right:0;
+            top:18px;
+            height:118px;
+            margin:0 150px;
             border-radius:28px;
-            background:rgba(255,255,255,.96);
-            box-shadow:var(--shadow);
+            background:#f7fbff;
+            box-shadow:0 12px 28px rgba(0,0,0,.10);
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:0 26px 0 14px;
+            z-index:5;
         }
         .brand{
             display:flex;
@@ -53,698 +72,644 @@
             min-width:0;
         }
         .brand img{
-            width:120px;
+            width:92px;
             display:block;
         }
-        .brand-line{
+        .brand .divider{
             width:1px;
-            height:42px;
-            background:rgba(18,61,135,.18);
+            height:58px;
+            background:rgba(23,62,131,.22);
         }
-        .brand-text{
-            display:flex;
-            align-items:center;
-            gap:12px;
-            font-weight:900;
+        .brand .text{
+            color:#1b56aa;
+            font-weight:800;
+            font-size:28px;
             white-space:nowrap;
-            color:#1950a1;
-            font-size:clamp(18px, 2vw, 30px);
         }
         .nav{
             display:flex;
-            justify-content:flex-end;
-            gap:36px;
+            gap:34px;
             flex-wrap:wrap;
         }
         .nav a{
-            color:#1950a1;
+            color:#1b56aa;
             text-decoration:none;
-            font-weight:900;
+            font-weight:800;
             font-size:15px;
         }
-        .main-grid{
-            display:grid;
-            grid-template-columns:minmax(0, 1.05fr) minmax(440px, .95fr);
-            gap:14px;
-            margin-top:14px;
-            align-items:stretch;
-        }
-        .poster,
-        .form{
-            position:relative;
+        .left{
+            position:absolute;
+            top:150px;
+            left:150px;
+            width:650px;
+            height:774px;
+            border-radius:24px;
+            background:#1698da;
             overflow:hidden;
-            border-radius:32px;
-            box-shadow:var(--shadow);
+            box-shadow:0 14px 30px rgba(0,0,0,.10);
         }
-        .poster{
-            min-height:780px;
-            padding:26px 28px 22px;
-            background:
-                radial-gradient(circle at 12% 16%, rgba(255,148,31,.95) 0 5px, transparent 6px),
-                radial-gradient(circle at 92% 82%, rgba(255,170,0,.85) 0 5px, transparent 6px),
-                linear-gradient(180deg, #1596d8 0%, #0a84d1 100%);
-        }
-        .poster-inner{
+        .left-inner{
             position:relative;
-            z-index:1;
-            display:grid;
-            grid-template-rows:auto auto auto 1fr auto;
+            width:100%;
             height:100%;
+            padding:28px 30px 22px 26px;
         }
-        .hero-accents{
+        .left .star{
             position:absolute;
-            inset:0;
-            z-index:0;
-            pointer-events:none;
-        }
-        .hero-accents .squiggle{
-            position:absolute;
-            left:-54px;
-            top:-18px;
-            width:260px;
-            height:160px;
-            overflow:hidden;
-        }
-        .hero-accents .squiggle img{
-            width:100%;
-            max-width:none;
-            height:auto;
-            transform:rotate(-6deg);
-        }
-        .hero-accents .star{
-            position:absolute;
-            right:24px;
-            top:18px;
-            width:112px;
-            height:112px;
-            overflow:hidden;
-        }
-        .hero-accents .green{
-            position:absolute;
-            right:-14px;
-            top:56px;
-            width:220px;
+            right:20px;
+            top:22px;
+            width:120px;
             height:120px;
-            overflow:hidden;
+            z-index:1;
         }
-        .hero-accents .burst{
+        .left .boy{
             position:absolute;
-            right:26px;
-            bottom:28px;
-            width:140px;
-            height:100px;
-            overflow:hidden;
+            right:22px;
+            top:184px;
+            width:278px;
+            z-index:2;
+            filter:drop-shadow(0 20px 18px rgba(0,0,0,.14));
         }
-        .hero-accents .star img{
-            width:100%;
-            height:auto;
-            display:block;
-            transform:rotate(-2deg);
-        }
-        .hero-accents .green img,
-        .hero-accents .burst img{
+        .left .boy img,
+        .left .star img,
+        .left .squiggle img{
             width:100%;
             height:auto;
             display:block;
         }
-        .hero-brand{
+        .left .boy img{object-fit:contain}
+        .left .top{
+            position:relative;
+            z-index:3;
+        }
+        .left .logo-row{
             display:flex;
             flex-direction:column;
             align-items:flex-start;
-            gap:10px;
+            gap:14px;
         }
-        .hero-brand .mark{
+        .left .logo-row img{
+            width:220px;
+            height:auto;
+        }
+        .left .lockup{
             display:flex;
             align-items:center;
             gap:14px;
-            flex-wrap:wrap;
-        }
-        .hero-brand .mark img{
-            width:230px;
-            max-width:65vw;
-        }
-        .hero-brand .line{
-            display:flex;
-            align-items:center;
-            gap:18px;
-            flex-wrap:wrap;
-            margin-top:8px;
-            color:#fff;
-            font-weight:900;
-        }
-        .fanlyc-word{
-            font-size:clamp(60px, 5.9vw, 112px);
-            line-height:.9;
-            font-weight:900;
-            color:#fff;
-            letter-spacing:-.06em;
-            margin:18px 0 0;
-        }
-        .fanlyc-word .white{
-            display:block;
-            color:#fff;
-            text-shadow:0 8px 20px rgba(0,0,0,.06);
-        }
-        .fanlyc-word .yellow{
-            color:var(--yellow);
-            display:block;
-            margin-top:4px;
-        }
-        .hero-desc{
             margin-top:14px;
-            max-width:520px;
-            color:#ffffff;
-            font-size:clamp(17px, 1.5vw, 22px);
-            line-height:1.45;
+            font-weight:800;
+            color:#fff;
+            font-size:26px;
         }
-        .hero-boy{
-            position:absolute;
-            right:10px;
-            bottom:120px;
-            width:min(37vw, 460px);
-            z-index:0;
-            pointer-events:none;
+        .left .lockup .fan{
+            color:#ffc629;
         }
-        .hero-boy img{
+        .title-image{
+            margin-top:22px;
+            width:min(100%, 470px);
+            display:block;
+        }
+        .title-image img{
             width:100%;
             height:auto;
             display:block;
-            filter:drop-shadow(0 20px 24px rgba(0,0,0,.18));
         }
-        .hero-cta{
-            margin-top:18px;
-            font-size:clamp(32px, 2.7vw, 58px);
-            line-height:.95;
+        .desc{
+            margin-top:22px;
+            max-width:392px;
+            color:#eaf2ff;
+            font-size:19px;
+            line-height:1.5;
+            font-weight:500;
+        }
+        .cta{
+            margin-top:24px;
             color:#fff;
-            font-weight:900;
-            font-family:"Comic Sans MS", "Trebuchet MS", cursive;
-            letter-spacing:.02em;
-        }
-        .how{
-            margin-top:30px;
-        }
-        .how h2{
-            margin:0 0 16px;
-            color:#fff;
-            font-size:clamp(22px, 2vw, 32px);
-            text-align:center;
+            font-family:'Archivo Black',sans-serif;
+            font-size:56px;
+            line-height:1;
+            letter-spacing:.5px;
+            position:relative;
+            z-index:3;
         }
         .steps{
-            display:grid;
-            grid-template-columns:repeat(3, 1fr);
-            gap:14px;
+            position:absolute;
+            left:24px;
+            right:24px;
+            bottom:94px;
+            display:flex;
+            justify-content:space-between;
+            gap:10px;
+            background:#0b2a63;
+            border-radius:22px;
+            padding:20px 24px;
+            z-index:3;
         }
         .step{
-            display:grid;
-            justify-items:center;
+            width:150px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
             gap:8px;
+            color:#fff;
             text-align:center;
+        }
+        .step .num{
+            width:28px;height:28px;border-radius:50%;
+            background:#ffc629;
+            display:grid;place-items:center;
+            font-weight:800;
+            font-size:14px;
             color:#fff;
         }
-        .step-num{
-            width:32px;height:32px;
-            border-radius:50%;
-            display:grid;
-            place-items:center;
-            font-weight:900;
-            color:#fff;
-            box-shadow:0 10px 18px rgba(0,0,0,.12);
+        .step .icon{
+            width:52px;height:52px;border-radius:50%;
+            background:#fff;
+            display:grid;place-items:center;
+            box-shadow:0 8px 18px rgba(0,0,0,.12);
         }
-        .step:nth-child(1) .step-num{background:#ffbf0a}
-        .step:nth-child(2) .step-num{background:#55c63b}
-        .step:nth-child(3) .step-num{background:#7d3fe6}
-        .step-icon{
-            width:92px;height:92px;
-            border-radius:50%;
-            background:rgba(255,255,255,.96);
-            box-shadow:0 14px 24px rgba(8,56,122,.10);
-            display:grid;
-            place-items:center;
-            overflow:hidden;
+        .step .label{
+            text-transform:uppercase;
+            font-weight:800;
+            font-size:14px;
+            line-height:1.25;
         }
-        .step-icon svg{width:42px;height:42px}
-        .step-title{
-            font-weight:900;
-            font-size:16px;
-            line-height:1.12;
-            text-shadow:0 1px 0 rgba(0,0,0,.08);
+        .step .sub{
+            font-size:13px;
+            font-weight:500;
+            color:#bcd0f5;
+            line-height:1.2;
         }
         .chips{
+            position:absolute;
+            left:22px;
+            bottom:22px;
             display:flex;
-            flex-wrap:wrap;
-            gap:10px;
-            margin-top:24px;
+            gap:8px;
+            z-index:3;
         }
         .chip{
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-            padding:10px 14px;
+            padding:8px 14px;
             border-radius:999px;
-            background:#fff;
-            color:#173e83;
-            font-weight:900;
-            box-shadow:0 10px 18px rgba(8,56,122,.14);
+            font-weight:700;
+            font-size:13px;
+            color:#183778;
+            white-space:nowrap;
         }
-        .chip:nth-child(1){background:var(--yellow)}
-        .chip:nth-child(2){background:#5acb3d}
-        .chip:nth-child(3){background:#ff7f34}
-        .chip:nth-child(4){background:#8a55ed}
+        .chip.yellow{background:#ffc629}
+        .chip.green{background:#6dc24b}
+        .chip.orange{background:#ff8a3d}
+        .chip.purple{background:#8d59e8}
 
-        .form{
-            min-height:780px;
-            padding:26px 24px 24px;
-            background:
-                radial-gradient(circle at 92% 10%, rgba(125,63,230,.16), transparent 10%),
-                linear-gradient(180deg, #183f7a 0%, #12478f 100%);
+        .right{
+            position:absolute;
+            top:76px;
+            right:56px;
+            width:610px;
+            height:872px;
+            background:#0c2a63;
+            border-radius:26px;
+            padding:40px 44px;
+            display:flex;
+            flex-direction:column;
+            box-shadow:0 14px 30px rgba(0,0,0,.10);
         }
-        .form-head{
-            text-align:center;
-            color:#fff;
-            padding:6px 0 10px;
-        }
-        .form-head h2{
-            margin:0;
-            font-size:clamp(30px, 3vw, 48px);
-            line-height:1;
-            font-weight:900;
-            letter-spacing:-.04em;
-            text-transform:uppercase;
-        }
-        .form-head p{
-            margin:10px auto 0;
-            max-width:430px;
-            font-size:16px;
-            line-height:1.4;
-            color:rgba(255,255,255,.93);
-        }
-        .tabs{
-            display:grid;
-            grid-template-columns:repeat(3, 1fr);
-            gap:12px;
-            margin:18px 0 12px;
-        }
-        .tab-btn{
-            border:0;
-            border-radius:16px;
-            background:#fff;
-            color:#1d4ea1;
-            font-weight:900;
-            padding:14px 10px;
-            cursor:pointer;
-            box-shadow:0 10px 18px rgba(0,0,0,.10);
+        .right .head{
             display:flex;
             align-items:center;
             justify-content:center;
-            gap:10px;
-            min-height:62px;
-        }
-        .tab-btn.is-active{
-            background:linear-gradient(180deg, #8d48ff 0%, #6b2cd6 100%);
-            color:#fff;
-            box-shadow:0 12px 20px rgba(123,59,230,.22);
-        }
-        .tab-panel[hidden]{display:none}
-        form{
-            display:grid;
             gap:14px;
         }
-        .field-row{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:12px;
-        }
-        label{
-            display:grid;
-            gap:6px;
-            font-size:13px;
-            font-weight:900;
+        .right .head h2{
+            font-family:'Archivo Black',sans-serif;
             color:#fff;
+            font-size:34px;
+            letter-spacing:.5px;
         }
-        input{
-            width:100%;
-            border:1px solid rgba(255,255,255,.14);
-            border-radius:16px;
-            padding:13px 14px;
-            font:inherit;
+        .right .sub{
+            color:#dbe6fb;
+            text-align:center;
+            font-size:16px;
+            margin:10px 0 30px;
+            font-weight:500;
+            line-height:1.4;
+        }
+        .options{
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+        }
+        .option{
             background:#fff;
-            color:#19366f;
-            box-shadow:inset 0 0 0 1px rgba(255,255,255,.65);
-        }
-        input::placeholder{color:#8d97b3}
-        input:focus{outline:none; box-shadow:0 0 0 4px rgba(255,255,255,.14)}
-        .code-row{
-            padding-top:10px;
-            border-top:1px solid rgba(255,255,255,.18);
-        }
-        .helper{
+            border-radius:18px;
+            padding:20px 22px;
             display:flex;
-            gap:8px;
-            align-items:flex-start;
-            color:rgba(255,255,255,.85);
-            font-size:13px;
-            line-height:1.45;
-            margin-top:8px;
+            align-items:center;
+            gap:20px;
         }
-        .helper .icon{color:var(--yellow); font-weight:900}
-        .check{
-            display:flex;
-            gap:10px;
-            align-items:flex-start;
-            font-size:13px;
-            line-height:1.45;
-            color:#fff;
+        .option .bubble{
+            width:68px;height:68px;min-width:68px;border-radius:50%;
+            display:grid;place-items:center;
+        }
+        .option .content{
+            flex:1;
+        }
+        .option .title{
+            font-weight:800;
+            font-size:19px;
+            text-transform:uppercase;
+            letter-spacing:.3px;
+            line-height:1.1;
+            font-family:'Poppins',sans-serif;
+            margin:0;
+        }
+        .option .desc{
+            margin-top:4px;
+            color:#425169;
+            font-size:14.5px;
+            line-height:1.4;
+            font-weight:500;
+            max-width:260px;
+        }
+        .option .arrow{
+            color:currentColor;
+            font-size:26px;
             font-weight:700;
         }
-        .check input{
-            width:18px;
-            height:18px;
-            margin-top:2px;
-            accent-color:var(--yellow);
+        .option.purple .title,.option.purple .arrow{color:#6d3fd6}
+        .option.green .title,.option.green .arrow{color:#1ea34d}
+        .option.blue .title,.option.blue .arrow{color:#1a72ef}
+        .option.purple .bubble{background:#e7defc}
+        .option.green .bubble{background:#d9f4e3}
+        .option.blue .bubble{background:#dcebfc}
+        .footer-lockup{
+            margin-top:auto;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            gap:6px;
         }
-        .btn{
-            border:0;
-            border-radius:18px;
-            padding:15px 18px;
-            font:inherit;
-            font-weight:900;
-            cursor:pointer;
-        }
-        .btn-primary{
-            background:linear-gradient(180deg, #ffcf2d 0%, #f2b70b 100%);
-            color:#654400;
-            box-shadow:0 16px 24px rgba(242,183,11,.20);
-        }
-        .btn-secondary{
-            background:#fff;
-            color:#1d4ea1;
-            box-shadow:0 10px 18px rgba(0,0,0,.10);
-        }
-        .status,.error{
-            padding:12px 14px;
-            border-radius:16px;
-            font-size:13px;
-            line-height:1.45;
-        }
-        .status{background:#eafbea; color:#0d6f49; border:1px solid #b8eccb}
-        .error{background:#fff0f0; color:#b42318; border:1px solid #ffc7c7}
-        .status-link{
-            margin-top:12px;
-            color:#ffcf2d;
-            text-decoration:none;
-            font-weight:900;
-        }
-        .mini-grid{
-            margin-top:14px;
-            display:grid;
-            grid-template-columns:repeat(3, 1fr);
-            gap:14px;
-        }
-        .mini-card{
-            min-height:130px;
-            border-radius:22px;
-            padding:18px;
-            background:rgba(255,255,255,.92);
-            box-shadow:var(--shadow);
-            position:relative;
-            overflow:hidden;
-        }
-        .mini-card h3{
-            margin:0 0 8px;
-            font-size:20px;
-            line-height:1;
-        }
-        .mini-card p{
-            margin:0;
-            line-height:1.45;
-            color:#4e6786;
-            font-size:14px;
-            max-width:240px;
-        }
-        .mini-card .icon-badge{
-            width:74px;height:74px;
-            border-radius:50%;
-            display:grid;
-            place-items:center;
-            margin-bottom:10px;
-            background:rgba(125,63,230,.13);
-        }
-        .mini-card.green .icon-badge{background:rgba(85,198,59,.16)}
-        .mini-card.orange .icon-badge{background:rgba(255,122,29,.16)}
-        .mini-card.purple h3{color:#7b3be6}
-        .mini-card.green h3{color:#3ca81d}
-        .mini-card.orange h3{color:#f07813}
-        .footer-badge{
-            margin-top:14px;
-            color:#fff;
-            text-align:center;
-            font-weight:900;
-            letter-spacing:.14em;
-            text-transform:uppercase;
-            opacity:.95;
-        }
-        .logo-lock{
+        .footer-lockup .mini{
+            width:320px;
+            max-width:100%;
             display:flex;
             justify-content:center;
-            margin:10px auto 0;
-            max-width:280px;
         }
-        .logo-lock img{width:100%; display:block}
-        @media (max-width: 1180px){
-            .main-grid,.mini-grid{grid-template-columns:1fr}
-            .poster,.form{min-height:auto}
+        .footer-lockup .mini img{
+            width:100%;
+            height:auto;
+            display:block;
+        }
+        .footer-lockup .claim{
+            color:#fff;
+            font-size:15px;
+            font-weight:600;
+        }
+        .footer-lockup .claim span{color:#ffc629}
+
+        .form{
+            display:none;
+        }
+
+        @media (max-width: 1600px){
+            .layout{
+                transform:scale(.92);
+                transform-origin:top center;
+                height:940px;
+            }
+        }
+        @media (max-width: 1400px){
+            .layout{
+                transform:scale(.84);
+                height:860px;
+            }
+        }
+        @media (max-width: 1200px){
+            .layout{
+                transform:none;
+                width:100%;
+                height:auto;
+                min-height:100vh;
+            }
+            .topbar,.left,.right{position:relative;left:auto;top:auto;right:auto}
+            .topbar,.left,.right{margin:14px auto 0}
+            .topbar{width:calc(100vw - 24px)}
+            .left,.right{width:calc(100vw - 24px)}
+            .left{height:auto;min-height:0;padding-bottom:170px}
+            .right{height:auto;padding-bottom:30px}
+            .steps{position:relative;left:auto;right:auto;bottom:auto;margin-top:24px;flex-wrap:wrap;justify-content:center}
+            .chips{position:relative;left:auto;bottom:auto;margin:16px 0 0}
+            .left .boy{position:absolute;right:16px;top:210px;width:min(38vw,280px)}
         }
         @media (max-width: 760px){
-            .wrap{width:min(100vw - 14px, 1536px)}
             .topbar{
-                grid-template-columns:1fr;
-                justify-items:center;
-                text-align:center;
+                height:auto;
+                padding:14px;
+                flex-direction:column;
+                gap:10px;
+                align-items:center;
             }
             .brand{
-                justify-content:center;
+                gap:10px;
                 flex-wrap:wrap;
+                justify-content:center;
             }
-            .brand-line{display:none}
-            .nav{justify-content:center; gap:14px}
-            .poster,.form{padding:18px}
-            .fanlyc-word{font-size:50px}
-            .tabs,.field-row,.steps{grid-template-columns:1fr}
-            .how{margin-top:22px}
-            .step-title{font-size:15px}
+            .brand .divider{display:none}
+            .brand .text{font-size:18px;text-align:center}
+            .nav{justify-content:center;gap:14px}
+            .left{padding:18px 16px 24px}
+            .left .logo-row img{width:168px}
+            .title-image{width:min(100%, 330px)}
+            .desc{font-size:16px;max-width:100%}
+            .cta{font-size:28px}
+            .left .boy{
+                position:relative;
+                top:auto;right:auto;
+                width:60%;
+                margin:14px auto -10px;
+            }
+            .steps{padding:16px;gap:12px}
+            .step{width:45%;min-width:120px}
+            .right{padding:22px 16px}
+            .right .head h2{font-size:24px;text-align:center}
+            .right .sub{font-size:14px}
+            .option{padding:16px;gap:14px}
+            .option .title{font-size:15px}
+            .option .desc{font-size:13px;max-width:none}
+            .option .bubble{width:54px;height:54px;min-width:54px}
+            .footer-lockup .mini{width:240px}
         }
     </style>
 </head>
 <body>
-<main class="wrap">
-    <header class="topbar">
-        <div class="brand">
-            <img src="/logo_web.jpg" alt="Super Carnes">
-            <div class="brand-line" aria-hidden="true"></div>
-            <div class="brand-text">Fanlyc ★ Relevo por la vida</div>
-        </div>
-        <nav class="nav" aria-label="Secciones">
-            <a href="#inicio">Inicio</a>
-            <a href="#premios">Premios</a>
-            <a href="#zona">Zona asignada</a>
-            <a href="#apoyo">Apoyo comunitario</a>
-        </nav>
-    </header>
+<div class="page">
+    <svg class="squiggle orange tl" viewBox="0 0 220 220" fill="none" aria-hidden="true">
+        <path d="M10 40 C 60 10, 60 90, 20 100 C -20 110, -10 190, 60 190" stroke="#ff8a3d" stroke-width="16" stroke-linecap="round"></path>
+    </svg>
+    <svg class="squiggle green bl" viewBox="0 0 220 260" fill="none" aria-hidden="true">
+        <path d="M10 250 C 60 220, 40 170, 90 150 C 140 130, 120 70, 60 30" stroke="#6dc24b" stroke-width="16" stroke-linecap="round"></path>
+    </svg>
+    <svg class="squiggle orange br" viewBox="0 0 260 260" fill="none" aria-hidden="true">
+        <path d="M10 60 C 80 30, 90 120, 160 130 C 230 140, 220 220, 260 250" stroke="#ff8a3d" stroke-width="16" stroke-linecap="round"></path>
+    </svg>
+    <svg class="dots" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="10" cy="10" r="3" fill="#ffc629"></circle><circle cx="30" cy="10" r="3" fill="#ffc629"></circle><circle cx="50" cy="10" r="3" fill="#ffc629"></circle>
+        <circle cx="10" cy="30" r="3" fill="#ffc629"></circle><circle cx="30" cy="30" r="3" fill="#ffc629"></circle><circle cx="50" cy="30" r="3" fill="#ffc629"></circle>
+        <circle cx="10" cy="50" r="3" fill="#ffc629"></circle><circle cx="30" cy="50" r="3" fill="#ffc629"></circle><circle cx="50" cy="50" r="3" fill="#ffc629"></circle>
+    </svg>
 
-    <section id="inicio" class="main-grid">
-        <article class="poster">
-            <div class="hero-accents" aria-hidden="true">
-                <div class="squiggle"><img src="/fanlyc-assets/fanlyc-squiggle-orange.png" alt=""></div>
-                <div class="green"><img src="/fanlyc-assets/fanlyc-squiggle-green.png" alt=""></div>
-                <div class="star"><img src="/fanlyc-assets/fanlyc-star-yellow.png" alt=""></div>
-                <div class="burst"><img src="/fanlyc-assets/fanlyc-burst-yellow.png" alt=""></div>
+    <div class="layout">
+        <header class="topbar">
+            <div class="brand">
+                <img src="/fanlyc-assets/fanlyc-supercarnes-mark-crop.png" alt="Super Carnes">
+                <div class="divider" aria-hidden="true"></div>
+                <img src="/fanlyc-assets/fanlyc-fanlyc-relevo-mark-crop.png" alt="Fanlyc Relevo por la vida" style="width:min(100%,260px);height:auto;">
             </div>
-            <div class="poster-inner">
-                <div class="hero-brand">
-                    <div class="mark">
-                        <img src="/logo_web.jpg" alt="Super Carnes">
+            <nav class="nav" aria-label="Secciones">
+                <a href="#inicio">Inicio</a>
+                <a href="#premios">Premios</a>
+                <a href="#zona">Zona asignada</a>
+                <a href="#apoyo">Apoyo comunitario</a>
+            </nav>
+        </header>
+
+        <section id="inicio" class="left" aria-label="Portada Fanlyc">
+            <div class="left-inner">
+                <div class="top">
+                    <div class="logo-row">
+                        <img src="/fanlyc-assets/fanlyc-supercarnes-mark-crop.png" alt="Super Carnes">
                     </div>
-                    <div class="line">
-                        <span style="font-size:28px;color:#ffd21a;">FANLYC</span>
-                        <span style="font-size:28px;color:#ffd21a;">★</span>
-                        <span style="font-size:28px;color:#ffffff;">RELEVO POR LA VIDA</span>
-                    </div>
+                    <img class="title-image" src="/fanlyc-assets/fanlyc-fanlyc-relevo-mark-crop.png" alt="Fanlyc Relevo por la vida">
                 </div>
 
-                <h1 class="fanlyc-word">
-                    <span class="white">FANLYC</span>
-                    <span class="yellow">PARA TU FACTURA</span>
-                </h1>
+                <div class="star">
+                    <img src="/fanlyc-assets/fanlyc-star-yellow.png" alt="" aria-hidden="true">
+                </div>
+                <div class="boy">
+                    <img src="/fanlyc-assets/fanlyc-boy-hero-crop.png" alt="Niño celebrando Fanlyc">
+                </div>
 
-                <p class="hero-desc">
+                <div class="title-image">
+                    <img src="/fanlyc-assets/fanlyc-grandes-guerros-crop.png" alt="Grandes Guerreros">
+                </div>
+
+                <p class="desc">
                     Registra tu factura de Super Carnes, valida tu cupón y canjéalo en la zona que te corresponde.
                     El proceso es simple: escanea, completa tus datos y recibe tu QR.
                 </p>
-                <div class="hero-boy">
-                    <img src="/fanlyc-assets/fanlyc-boy-hero-transparent.png" alt="Niño celebrando Fanlyc">
-                </div>
 
-                <div class="hero-cta">Corre por su futuro</div>
+                <div class="cta">Corre por su futuro</div>
 
-                <div class="how">
-                    <h2>Cómo participar</h2>
-                    <div class="steps">
-                        <div class="step">
-                            <div class="step-num">1</div>
-                            <div class="step-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 4h16v16H4z"></path>
-                                    <path d="M8 8h8v8H8z"></path>
-                                    <path d="M10 10h4v4h-4z"></path>
-                                </svg>
-                            </div>
-                            <div class="step-title">Escanea<br>tu factura</div>
+                <div class="steps">
+                    <div class="step">
+                        <div class="num">1</div>
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                                <line x1="14" y1="14" x2="21" y2="14"></line>
+                                <line x1="14" y1="21" x2="21" y2="21"></line>
+                                <line x1="17.5" y1="14" x2="17.5" y2="21"></line>
+                            </svg>
                         </div>
-                        <div class="step">
-                            <div class="step-num">2</div>
-                            <div class="step-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="4" width="18" height="14" rx="2"></rect>
-                                    <path d="M7 18v2M17 18v2M8 8h8"></path>
-                                </svg>
-                            </div>
-                            <div class="step-title">Llena<br>tus datos</div>
+                        <div class="label">Escanea<br>tu factura</div>
+                    </div>
+                    <div class="step">
+                        <div class="num" style="background:#1ea34d;">2</div>
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+                                <path d="M8 19v2M16 19v2M7 9h10"></path>
+                            </svg>
                         </div>
-                        <div class="step">
-                            <div class="step-num">3</div>
-                            <div class="step-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 21s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11Z"></path>
-                                    <circle cx="12" cy="10" r="2"></circle>
-                                </svg>
-                            </div>
-                            <div class="step-title">Recibe<br>tu cupón</div>
+                        <div class="label">Llena<br>tus datos</div>
+                    </div>
+                    <div class="step">
+                        <div class="num" style="background:#8d59e8;">3</div>
+                        <div class="icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ea1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 21s7-4.6 7-11a7 7 0 0 0-14 0c0 6.4 7 11 7 11Z"></path>
+                                <circle cx="12" cy="10" r="2"></circle>
+                            </svg>
                         </div>
+                        <div class="label">Recibe<br>tu cupón</div>
                     </div>
                 </div>
 
                 <div class="chips">
-                    <span class="chip">QR de factura</span>
-                    <span class="chip">Canje por zona</span>
-                    <span class="chip">Premios</span>
-                    <span class="chip">Apoyo comunitario</span>
+                    <span class="chip yellow">QR de factura</span>
+                    <span class="chip green">Canje por zona</span>
+                    <span class="chip orange">Premios</span>
+                    <span class="chip purple">Apoyo comunitario</span>
                 </div>
             </div>
-        </article>
+        </section>
 
-        <article class="form">
-            <div class="form-head">
-                <h2>Registra tu factura</h2>
-                <p>Elige cómo deseas registrar tu factura y sigue los pasos.</p>
+        <aside class="right" aria-label="Registro">
+            <div class="head">
+                <span style="color:#ffc629;font-size:22px;">✦</span>
+                <h2>REGISTRA TU FACTURA</h2>
+                <span style="color:#ffc629;font-size:22px;">✦</span>
             </div>
+            <p class="sub">Elige cómo deseas registrar tu factura<br>y sigue los pasos.</p>
 
-            <div class="tabs">
-                <button type="button" class="tab-btn is-active" data-tab="scan">Escanear QR</button>
-                <button type="button" class="tab-btn" data-tab="manual">Escribir CUFE</button>
-                <button type="button" class="tab-btn" data-tab="whatsapp">WhatsApp</button>
-            </div>
-
-            <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
-                @csrf
-                <div class="field-row">
-                    <label>Nombre completo
-                        <input name="full_name" value="{{ old('full_name') }}" placeholder="Ej. Juan Pérez" required>
-                    </label>
-                    <label>Cédula
-                        <input name="cedula" value="{{ old('cedula') }}" placeholder="Ej. 8-123-4567" required>
-                    </label>
-                </div>
-                <div class="field-row">
-                    <label>Correo electrónico
-                        <input type="email" name="email" value="{{ old('email') }}" placeholder="Ej. juan@gmail.com" required>
-                    </label>
-                    <label>Teléfono
-                        <input name="phone" value="{{ old('phone') }}" placeholder="Ej. 6000-0000" required>
-                    </label>
-                </div>
-
-                <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
-
-                <div id="scan-panel" class="tab-panel code-row">
-                    <label>Código de factura (QR / CUFE)
-                        <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el código QR o CUFE aquí" autocomplete="off">
-                    </label>
-                    <div class="helper"><span class="icon">⌁</span><span>Puedes usar la cámara para escanear o pegar el código directamente.</span></div>
-                </div>
-
-                <div id="manual-panel" class="tab-panel code-row" hidden>
-                    <label>Escribe el CUFE de tu factura
-                        <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
-                    </label>
-                </div>
-
-                <div id="whatsapp-panel" class="tab-panel code-row" hidden>
-                    <div class="status" style="margin-top:0;">
-                        ¿Prefieres ayuda? Escríbenos por WhatsApp y te guiamos para registrar tu factura.
+            <div class="options">
+                <button type="button" class="option purple tab-btn is-active" data-tab="scan">
+                    <div class="bubble">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#6d3fd6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <line x1="14" y1="14" x2="21" y2="14"></line>
+                            <line x1="14" y1="21" x2="21" y2="21"></line>
+                            <line x1="17.5" y1="14" x2="17.5" y2="21"></line>
+                        </svg>
                     </div>
-                    <a class="btn btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;"
-                       target="_blank" rel="noopener"
-                       href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
-                        Contactar por WhatsApp
-                    </a>
+                    <div class="content">
+                        <div class="title">Escaneando el CUFE (QR)</div>
+                        <div class="desc">Usa la cámara de tu celular para escanear el código QR de tu factura.</div>
+                    </div>
+                    <div class="arrow">›</div>
+                </button>
+
+                <button type="button" class="option green tab-btn" data-tab="whatsapp">
+                    <div class="bubble">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M20 3.9A10 10 0 0 0 2.7 16.3L1 23l6.9-1.8A10 10 0 1 0 20 3.9zm-8 15.4a8.3 8.3 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3a8.4 8.4 0 1 1 6.9 3.7zm4.6-6.3c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.6.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.6-1.5-.9-2-.2-.5-.5-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s1 2.5 1.1 2.6c.1.2 2 3 4.8 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z"></path>
+                        </svg>
+                    </div>
+                    <div class="content">
+                        <div class="title">Por WhatsApp</div>
+                        <div class="desc">Envía tu factura por WhatsApp y nosotros la registramos por ti.</div>
+                    </div>
+                    <div class="arrow">›</div>
+                </button>
+
+                <button type="button" class="option blue tab-btn" data-tab="manual">
+                    <div class="bubble">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1a72ef" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+                        </svg>
+                    </div>
+                    <div class="content">
+                        <div class="title">Escribiendo el CUFE</div>
+                        <div class="desc">Ingresa manualmente el código CUFE de tu factura.</div>
+                    </div>
+                    <div class="arrow">›</div>
+                </button>
+            </div>
+
+            <div class="form" style="display:block;margin-top:18px;">
+                <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
+                    @csrf
+                    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Nombre completo
+                            <input name="full_name" value="{{ old('full_name') }}" placeholder="Ej. Juan Pérez" required>
+                        </label>
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Cédula
+                            <input name="cedula" value="{{ old('cedula') }}" placeholder="Ej. 8-123-4567" required>
+                        </label>
+                    </div>
+                    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Correo electrónico
+                            <input type="email" name="email" value="{{ old('email') }}" placeholder="Ej. juan@gmail.com" required>
+                        </label>
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Teléfono
+                            <input name="phone" value="{{ old('phone') }}" placeholder="Ej. 6000-0000" required>
+                        </label>
+                    </div>
+
+                    <input type="hidden" id="qr_raw_text" name="qr_raw_text" value="{{ old('qr_raw_text') }}">
+
+                    <div id="scan-panel" class="tab-panel" style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Código de factura (QR / CUFE)
+                            <input id="qr_raw_text_scan" value="{{ old('qr_raw_text') }}" placeholder="Pega el código QR o CUFE aquí" autocomplete="off">
+                        </label>
+                        <div style="display:flex;gap:8px;align-items:flex-start;color:rgba(255,255,255,.85);font-size:13px;line-height:1.45;margin-top:8px;">
+                            <span style="color:#ffc629;font-weight:900;">⌁</span>
+                            <span>Puedes usar la cámara para escanear o pegar el código directamente.</span>
+                        </div>
+                    </div>
+
+                    <div id="manual-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Escribe el CUFE de tu factura
+                            <input id="cufe_manual" placeholder="Ej: FE0120000000032812-2-249262-..." autocomplete="off">
+                        </label>
+                    </div>
+
+                    <div id="whatsapp-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
+                        <div style="padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#eafbea;color:#0d6f49;border:1px solid #b8eccb;margin-top:0;">
+                            ¿Prefieres ayuda? Escríbenos por WhatsApp y te guiamos para registrar tu factura.
+                        </div>
+                        <a class="btn btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:12px;"
+                           target="_blank" rel="noopener"
+                           href="https://wa.me/50768982167?text=Hola%20Super%20Carnes,%20quiero%20registrar%20mi%20factura%20para%20Fanlyc">
+                            Contactar por WhatsApp
+                        </a>
+                    </div>
+
+                    <div id="form-field-error" style="display:none;padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#fff0f0;color:#b42318;border:1px solid #ffc7c7;"></div>
+
+                    <label style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;color:#fff;font-weight:700;">
+                        <input type="checkbox" name="consent_terms" value="1" required style="width:18px;height:18px;margin-top:2px;accent-color:#ffc629;">
+                        <span>Acepto los términos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
+                    </label>
+
+                    @if ($errors->any())
+                        <div style="padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#fff0f0;color:#b42318;border:1px solid #ffc7c7;">{{ $errors->first() }}</div>
+                    @endif
+                    @if (session('status'))
+                        <div style="padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45;background:#eafbea;color:#0d6f49;border:1px solid #b8eccb;">{{ session('status') }}</div>
+                    @endif
+
+                    <button class="btn" type="submit" style="background:linear-gradient(180deg,#ffcf2d 0%,#f2b70b 100%);color:#654400;box-shadow:0 16px 24px rgba(242,183,11,.20);">
+                        Registrar factura
+                    </button>
+                    <a href="{{ route('fanlyc.status') }}" style="display:inline-block;margin-top:10px;color:#ffc629;font-weight:700;text-decoration:none;">Ver mis cupones</a>
+                </form>
+            </div>
+
+            <div class="footer-lockup">
+                <div class="mini">
+                    <img src="/fanlyc-assets/fanlyc-supercarnes-mark-crop.png" alt="Super Carnes">
                 </div>
-
-                <div id="form-field-error" class="error" style="display:none;"></div>
-
-                <label class="check">
-                    <input type="checkbox" name="consent_terms" value="1" required>
-                    <span>Acepto los términos de Fanlyc y autorizo a Super Carnes a validar mi factura.</span>
-                </label>
-
-                @if ($errors->any())
-                    <div class="error">{{ $errors->first() }}</div>
-                @endif
-                @if (session('status'))
-                    <div class="status">{{ session('status') }}</div>
-                @endif
-
-                <button class="btn btn-primary" type="submit">Registrar factura</button>
-                <a class="status-link" href="{{ route('fanlyc.status') }}">Ver mis cupones</a>
-            </form>
-        </article>
-    </section>
-
-    <section id="premios" class="mini-grid">
-        <article class="mini-card purple">
-            <div class="icon-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#7d3fe6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 4h16v12H4z"></path>
-                    <path d="M7 20h10"></path>
-                    <path d="M12 8v4M10 10h4"></path>
-                </svg>
+                <div class="claim">Juntos <span>transformamos</span> vidas.</div>
             </div>
-            <h3>Tu QR</h3>
-            <p>Se genera al aprobar tu factura y queda listo para consulta y canje en tu zona.</p>
-        </article>
-        <article id="zona" class="mini-card green">
-            <div class="icon-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#3ca81d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 21s6-4.2 6-10a6 6 0 0 0-12 0c0 5.8 6 10 6 10Z"></path>
-                    <circle cx="12" cy="11" r="2.2"></circle>
-                </svg>
-            </div>
-            <h3>Zona asignada</h3>
-            <p>El sistema detecta tu sucursal y define la zona correcta para tu cupón.</p>
-        </article>
-        <article id="apoyo" class="mini-card orange">
-            <div class="icon-badge" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#f07813" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 21s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11Z"></path>
-                    <path d="M9 10h6"></path>
-                </svg>
-            </div>
-            <h3>Canje seguro</h3>
-            <p>El staff escanea el cupón, valida el estado y emite el ticket correspondiente.</p>
-        </article>
-    </section>
+        </aside>
 
-    <div class="footer-badge">Super Carnes · Fanlyc</div>
-</main>
+        <section id="premios" class="mini-grid" style="position:absolute;left:150px;right:56px;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+            <article id="premios" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
+                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(109,63,214,.13);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#7d3fe6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
+                        <path d="M6 3h12v10H6z"></path><path d="M9 21h6"></path><path d="M12 13v8"></path><path d="M9 21l-1-4h8l-1 4"></path>
+                    </svg>
+                </div>
+                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#7b3be6;font-family:'Poppins',sans-serif;">Tu QR</h3>
+                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">Se genera al aprobar tu factura y queda listo para consulta y canje en tu zona.</p>
+            </article>
+            <article id="zona" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
+                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(85,198,59,.16);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3ca81d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
+                        <path d="M12 21s6-4.2 6-10a6 6 0 0 0-12 0c0 5.8 6 10 6 10Z"></path><circle cx="12" cy="11" r="2.2"></circle>
+                    </svg>
+                </div>
+                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#3ca81d;font-family:'Poppins',sans-serif;">Zona asignada</h3>
+                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">El sistema detecta tu sucursal y define la zona correcta para tu cupón.</p>
+            </article>
+            <article id="apoyo" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
+                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(255,122,29,.16);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#f07813" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
+                        <path d="M12 21s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11Z"></path><path d="M9 10h6"></path>
+                    </svg>
+                </div>
+                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#f07813;font-family:'Poppins',sans-serif;">Canje seguro</h3>
+                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">El staff escanea el cupón, valida el estado y emite el ticket correspondiente.</p>
+            </article>
+        </section>
+    </div>
+</div>
 
 <script>
 (() => {
