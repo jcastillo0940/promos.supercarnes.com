@@ -49,54 +49,6 @@
             margin:0 auto;
             overflow:hidden;
         }
-        .topbar{
-            position:absolute;
-            left:0;
-            right:0;
-            top:18px;
-            height:118px;
-            margin:0 150px;
-            border-radius:28px;
-            background:#f7fbff;
-            box-shadow:0 12px 28px rgba(0,0,0,.10);
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            padding:0 26px 0 14px;
-            z-index:5;
-        }
-        .brand{
-            display:flex;
-            align-items:center;
-            gap:18px;
-            min-width:0;
-        }
-        .brand img{
-            width:92px;
-            display:block;
-        }
-        .brand .divider{
-            width:1px;
-            height:58px;
-            background:rgba(23,62,131,.22);
-        }
-        .brand .text{
-            color:#1b56aa;
-            font-weight:800;
-            font-size:28px;
-            white-space:nowrap;
-        }
-        .nav{
-            display:flex;
-            gap:34px;
-            flex-wrap:wrap;
-        }
-        .nav a{
-            color:#1b56aa;
-            text-decoration:none;
-            font-weight:800;
-            font-size:15px;
-        }
         .left{
             position:absolute;
             top:150px;
@@ -350,6 +302,20 @@
         .option.purple .bubble{background:#e7defc}
         .option.green .bubble{background:#d9f4e3}
         .option.blue .bubble{background:#dcebfc}
+        .method-back{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            background:none;
+            border:0;
+            color:#ffc629;
+            font-weight:800;
+            font-size:14px;
+            padding:0 0 14px;
+            margin:0;
+            cursor:pointer;
+        }
+        .method-back:hover{text-decoration:underline}
         .footer-lockup{
             margin-top:auto;
             display:flex;
@@ -452,9 +418,8 @@
                 height:auto;
                 min-height:100vh;
             }
-            .topbar,.left,.right{position:relative;left:auto;top:auto;right:auto}
-            .topbar,.left,.right{margin:14px auto 0}
-            .topbar{width:calc(100vw - 24px)}
+            .left,.right{position:relative;left:auto;top:auto;right:auto}
+            .left,.right{margin:14px auto 0}
             .left,.right{width:calc(100vw - 24px)}
             .left{height:auto;min-height:0;padding-bottom:170px}
             .right{height:auto;padding-bottom:30px}
@@ -514,7 +479,6 @@
             display:grid;
             grid-template-columns:minmax(0,1fr) minmax(500px,.92fr);
             grid-template-areas:
-                "topbar topbar"
                 "left right"
                 "mini mini";
             gap:18px;
@@ -632,7 +596,7 @@
             .page{padding:12px 12px 28px}
             .layout{
                 grid-template-columns:1fr;
-                grid-template-areas:"topbar" "left" "right" "mini";
+                grid-template-areas:"left" "right" "mini";
                 gap:14px;
             }
             .topbar{padding:14px 16px;flex-direction:column;justify-content:center;gap:12px}
@@ -689,20 +653,6 @@
     </svg>
 
     <div class="layout">
-        <header class="topbar">
-            <div class="brand">
-                <img src="/fanlyc-assets/fanlyc-supercarnes-mark-crop.png" alt="Super Carnes">
-                <div class="divider" aria-hidden="true"></div>
-                <img src="/fanlyc-assets/fanlyc-fanlyc-relevo-mark-crop.png" alt="Fanlyc Relevo por la vida" style="width:min(100%,260px);height:auto;">
-            </div>
-            <nav class="nav" aria-label="Secciones">
-                <a href="#inicio">Inicio</a>
-                <a href="#premios">Premios</a>
-                <a href="#zona">Zona asignada</a>
-                <a href="#apoyo">Apoyo comunitario</a>
-            </nav>
-        </header>
-
         <section id="inicio" class="left" aria-label="Portada Fanlyc">
             <div class="left-inner">
                 <div class="top">
@@ -782,9 +732,9 @@
                 <h2>REGISTRA TU FACTURA</h2>
                 <span style="color:#ffc629;font-size:22px;">✦</span>
             </div>
-            <p class="sub">Elige cómo deseas registrar tu factura<br>y sigue los pasos.</p>
+            <p class="sub" id="method-sub">Elige cómo deseas registrar tu factura<br>y sigue los pasos.</p>
 
-            <div class="options">
+            <div class="options" id="method-options">
                 <button type="button" class="option purple tab-btn is-active" data-tab="scan">
                     <div class="bubble">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#6d3fd6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -831,7 +781,8 @@
                 </button>
             </div>
 
-            <div class="form" style="display:block;margin-top:18px;">
+            <div class="form" id="registration-form-wrapper" style="display:none;margin-top:18px;">
+                <button type="button" id="method-back" class="method-back">‹ Cambiar método</button>
                 <form id="registration-form" method="POST" action="{{ route('fanlyc.store') }}">
                     @csrf
                     <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -955,6 +906,10 @@
 <script>
 (() => {
     const tabButtons = document.querySelectorAll('.tab-btn');
+    const methodOptions = document.getElementById('method-options');
+    const methodSub = document.getElementById('method-sub');
+    const formWrapper = document.getElementById('registration-form-wrapper');
+    const methodBack = document.getElementById('method-back');
     const scanPanel = document.getElementById('scan-panel');
     const manualPanel = document.getElementById('manual-panel');
     const whatsappPanel = document.getElementById('whatsapp-panel');
@@ -1075,7 +1030,23 @@
         }
     };
 
-    tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, btn.dataset.tab === 'scan')));
+    const showMethodPicker = () => {
+        methodOptions.style.display = 'flex';
+        methodSub.style.display = 'block';
+        formWrapper.style.display = 'none';
+        void stopScanner();
+        scannerModal.hidden = true;
+    };
+
+    const showForm = (tab) => {
+        methodOptions.style.display = 'none';
+        methodSub.style.display = 'none';
+        formWrapper.style.display = 'block';
+        setActiveTab(tab, tab === 'scan');
+    };
+
+    tabButtons.forEach((btn) => btn.addEventListener('click', () => showForm(btn.dataset.tab)));
+    methodBack?.addEventListener('click', showMethodPicker);
     openScannerButton?.addEventListener('click', openScanner);
     closeScannerButton?.addEventListener('click', closeScanner);
     scannerModal?.addEventListener('click', (event) => {
