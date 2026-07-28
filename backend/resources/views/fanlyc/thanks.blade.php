@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Gracias por registrarte - Fanlyc</title>
+    <title>¡Gracias por registrarte! - Fanlyc</title>
     <style>
         :root{
             --sky:#45b9e6;
@@ -357,12 +357,12 @@
                 <p class="eyebrow">Fanlyc ★ Relevo por la vida</p>
                 <h1>¡Gracias <span>por registrarte!</span></h1>
                 <p class="lead">
-                    Recibimos tu factura y tus datos. Ya quedaste dentro del flujo de evaluación, así que ahora te mostramos el siguiente paso sin complicarte.
+                    Recibimos tu factura y tus datos con éxito. Ya quedaste dentro de Fanlyc, y en esta misma pantalla te dejamos lo que sigue, de forma simple y clara.
                 </p>
                 <div class="pills">
                     <span class="pill yellow">Registro recibido</span>
                     <span class="pill white">Seguimiento por cédula</span>
-                    <span class="pill green">Flujo simple</span>
+                    <span class="pill green">Todo en orden</span>
                 </div>
             </div>
             <div class="summary">
@@ -370,9 +370,9 @@
                     <h2>Tu estado</h2>
                     <p>
                         @if($invoice)
-                            Factura {{ $invoice->status === 'approved' ? 'aprobada' : 'registrada' }} correctamente.
+                            Tu factura quedó {{ $invoice->status === 'approved' ? 'aprobada' : 'registrada' }} correctamente.
                         @else
-                            Ya dejamos tu registro preparado para revisión.
+                            Ya dejamos tu registro listo para revisión.
                         @endif
                     </p>
                     @if (session('status'))
@@ -401,28 +401,28 @@
         <article class="big-card">
             <h3>¿Qué sigue ahora?</h3>
             <p>
-                Mantuvimos el viaje corto: registras, confirmas y luego consultas tu avance. Si tu factura fue aprobada, tu cupón queda listo para canje; si quedó en revisión, te avisamos por correo cuando se resuelva.
+                Vamos paso a paso contigo: primero registras, luego confirmas y después revisas tu avance. Si tu factura fue aprobada, tu cupón queda listo para canje; si quedó en revisión, te avisamos por correo en cuanto se resuelva.
             </p>
             <div class="steps">
                 <div class="step">
                     <div class="step-num">1</div>
                     <div>
                         <strong>Guarda tu cédula y teléfono</strong>
-                        <span>Son tus datos de consulta para ver el avance del registro.</span>
+                        <span>Con esos datos podrás revisar tu registro cuando quieras.</span>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-num">2</div>
                     <div>
                         <strong>Revisa tu estado</strong>
-                        <span>Desde la pantalla de estado podrás ver si ya hay cupón disponible.</span>
+                        <span>Ahí verás si tu cupón ya está disponible o si sigue en proceso.</span>
                     </div>
                 </div>
                 <div class="step">
                     <div class="step-num">3</div>
                     <div>
                         <strong>Canjea cuando esté listo</strong>
-                        <span>El staff valida el cupón por QR y completa el canje en la zona asignada.</span>
+                        <span>Cuando aparezca tu cupón, ya podrás usarlo en la zona asignada.</span>
                     </div>
                 </div>
             </div>
@@ -432,9 +432,9 @@
             <h3>Tu cupón Fanlyc</h3>
             <p>
                 @if($coupon)
-                    Este es el cupón más reciente asociado a tu registro.
+                    Este es tu cupón más reciente, listo para mostrar cuando lo necesites.
                 @else
-                    Si tu factura quedó aprobada, aquí aparecerá tu cupón QR.
+                    Si tu factura fue aprobada, aquí aparecerá tu cupón QR.
                 @endif
             </p>
 
@@ -456,9 +456,9 @@
                     <div class="coupon-code">Revisión {{ strtoupper($invoice->status) }}</div>
                     <div class="coupon-meta">
                         @if($invoice->status === 'pending_review')
-                            Tu factura quedó en revisión manual. Te avisaremos por correo cuando se resuelva.
+                            Tu factura quedó en revisión manual. Te avisaremos por correo apenas se resuelva.
                         @else
-                            Tu registro fue recibido correctamente. Ya puedes consultar el avance en cualquier momento.
+                            Tu registro fue recibido correctamente. Puedes consultar el avance cuando quieras.
                         @endif
                     </div>
                 </div>
@@ -467,7 +467,7 @@
                     <span class="label">Sin datos</span>
                     <div class="coupon-code">Consulta pendiente</div>
                     <div class="coupon-meta">
-                        Para ver tu cupón o tu estado, vuelve a ingresar tu cédula y teléfono desde la pantalla de consulta.
+                        Para ver tu cupón o tu estado, vuelve a ingresar tu cédula y teléfono en la pantalla de consulta.
                     </div>
                 </div>
             @endif
