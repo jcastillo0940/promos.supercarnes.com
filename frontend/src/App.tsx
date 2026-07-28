@@ -447,7 +447,7 @@ function PromoCatalog({
                   {campaign.card_image_url ? <img src={campaign.card_image_url} alt={campaign.name} loading="lazy" /> : null}
                 </div>
                 <div className="promo-card-body">
-                  <span>{campaign.participation_mode === 'threshold_form' ? `Meta: $${Number(campaign.entry_threshold_amount ?? 300).toFixed(0)} en facturas` : campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
+                  <span>{campaign.participation_mode === 'threshold_form' ? `Meta: $${Number(campaign.entry_threshold_amount ?? 100).toFixed(0)} en facturas` : campaign.status === 'active' ? 'Activa' : 'Disponible'}</span>
                   <strong>{campaign.name}</strong>
                   <p>{campaign.description ?? 'Abre esta promoción para participar.'}</p>
                   <em>Participar ahora →</em>
@@ -479,7 +479,7 @@ function PromoLanding({
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
   const [campaignTotal, setCampaignTotal] = useState(0)
-  const [campaignThreshold] = useState(campaign?.slug === 'del-sueno-al-puesto' ? 300 : 0)
+  const [campaignThreshold] = useState(Number(campaign?.entry_threshold_amount ?? 0))
 
   const steps = useMemo(
     () => [
@@ -625,12 +625,12 @@ function PromoLanding({
               <div className="promo-tracker">
                 <div className="promo-tracker-head">
                   <strong>Acumulado</strong>
-                  <span>${Math.min(campaignTotal, campaignThreshold || 300).toFixed(2)} / ${(campaignThreshold || 300).toFixed(2)}</span>
+                  <span>${Math.min(campaignTotal, campaignThreshold || 100).toFixed(2)} / ${(campaignThreshold || 100).toFixed(2)}</span>
                 </div>
                 <div className="promo-tracker-bar">
-                  <i style={{ width: `${Math.min(100, ((campaignTotal / (campaignThreshold || 300)) * 100))}%` }} />
+                  <i style={{ width: `${Math.min(100, ((campaignTotal / (campaignThreshold || 100)) * 100))}%` }} />
                 </div>
-                <p>{campaignTotal >= (campaignThreshold || 300) ? 'Ya puedes participar en la selección principal.' : `Te faltan $${Math.max((campaignThreshold || 300) - campaignTotal, 0).toFixed(2)} para llegar al límite.`}</p>
+                <p>{campaignTotal >= (campaignThreshold || 100) ? 'Ya puedes participar en la selección principal.' : `Te faltan $${Math.max((campaignThreshold || 100) - campaignTotal, 0).toFixed(2)} para llegar al límite.`}</p>
               </div>
             ) : null}
             <div className="promo-stepper">
@@ -889,7 +889,7 @@ function ThresholdPromoLanding({
   const [animatedTotal, setAnimatedTotal] = useState(0)
   const animatedTotalRef = useRef(0)
 
-  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 300)
+  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 100)
   const campaignQualified = campaignTotal >= thresholdAmount
   const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
   const profileCompleted = Boolean(user.entrepreneur_name && user.entrepreneur_province && user.entrepreneur_reason)
@@ -1292,7 +1292,7 @@ export function LegacyThresholdPromoLanding({
   const [branchOptions, setBranchOptions] = useState<BranchOption[]>([])
   const [branchError, setBranchError] = useState<string | null>(null)
 
-  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 300)
+  const thresholdAmount = Number(campaign?.entry_threshold_amount ?? 100)
   const campaignQualified = campaignTotal >= thresholdAmount
   const remainingAmount = Math.max(thresholdAmount - campaignTotal, 0)
 
@@ -1527,7 +1527,7 @@ export function LegacyThresholdPromoLanding({
 
           <div className="promo-art">
             <div className="promo-paper">
-              <span>Umbral $300</span>
+              <span>Umbral ${thresholdAmount.toFixed(0)}</span>
               <div className="promo-paper-lines">
                 <i />
                 <i />

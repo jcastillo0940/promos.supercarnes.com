@@ -3,12 +3,18 @@
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminLoginController;
+use App\Http\Controllers\Admin\BlacklistController;
+use App\Http\Controllers\Admin\FanlycController as AdminFanlycController;
+use App\Http\Controllers\Admin\FanlycRedemptionController;
+use App\Http\Controllers\Admin\FanlycStaffController;
+use App\Http\Controllers\Admin\FanlycZoneController;
 use App\Http\Controllers\Admin\FondaChallengeController as AdminFondaChallengeController;
 use App\Http\Controllers\Admin\FondaJuryController;
 use App\Http\Controllers\Admin\FondaMediaController;
 use App\Http\Controllers\Admin\FondaResultsController;
 use App\Http\Controllers\Admin\InvoiceBackofficeController;
 use App\Http\Controllers\Admin\JurorController;
+use App\Http\Controllers\FanlycController;
 use App\Http\Controllers\FondaChallengeController;
 
 $frontendDist = realpath(base_path('../frontend/dist'));
@@ -61,6 +67,11 @@ Route::post('/fonda-challenge', [FondaChallengeController::class, 'store'])->nam
 Route::get('/fonda-challenge/{code}', [FondaChallengeController::class, 'show'])->name('fonda-challenge.show');
 Route::get('/fonda-challenge/{code}/qr', [FondaChallengeController::class, 'qr'])->name('fonda-challenge.qr');
 
+Route::get('/fanlyc', [FanlycController::class, 'landing'])->name('fanlyc.landing');
+Route::post('/fanlyc/registro', [FanlycController::class, 'store'])->name('fanlyc.store');
+Route::get('/fanlyc/estado', [FanlycController::class, 'status'])->name('fanlyc.status');
+Route::get('/fanlyc/cupon/{code}/qr', [FanlycController::class, 'couponQr'])->name('fanlyc.coupon.qr');
+
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/dashboard', [InvoiceBackofficeController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/adminrepus1car', [InvoiceBackofficeController::class, 'index'])->name('admin.invoice-backoffice');
@@ -77,9 +88,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'markCustomerAsWinner'])->name('admin.customers.mark-winner');
     Route::delete('/adminrepus1car/clientes/{user}/ganador', [InvoiceBackofficeController::class, 'unmarkCustomerAsWinner'])->name('admin.customers.unmark-winner');
     Route::get('/adminrepus1car/emprendedores', [InvoiceBackofficeController::class, 'entrepreneurs'])->name('admin.entrepreneurs');
+    Route::get('/adminrepus1car/emprendedores/exportar', [InvoiceBackofficeController::class, 'entrepreneursExport'])->name('admin.entrepreneurs.export');
     Route::get('/adminrepus1car/emprendedores/{user}', [InvoiceBackofficeController::class, 'entrepreneurEdit'])->name('admin.entrepreneurs.edit');
     Route::post('/adminrepus1car/emprendedores/{user}', [InvoiceBackofficeController::class, 'entrepreneurUpdate'])->name('admin.entrepreneurs.update');
     Route::post('/adminrepus1car/emprendedores/{user}/facturas', [InvoiceBackofficeController::class, 'entrepreneurInvoiceStore'])->name('admin.entrepreneurs.invoices.store');
+    Route::get('/adminrepus1car/blacklist', [BlacklistController::class, 'index'])->name('admin.blacklist');
+    Route::post('/adminrepus1car/blacklist', [BlacklistController::class, 'store'])->name('admin.blacklist.store');
+    Route::post('/adminrepus1car/blacklist/{entry}/quitar', [BlacklistController::class, 'destroy'])->name('admin.blacklist.remove');
 });
 
 Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () {
@@ -109,6 +124,26 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/jurados', [JurorController::class, 'index'])->name('admin.jurors');
     Route::post('/adminrepus1car/jurados', [JurorController::class, 'store'])->name('admin.jurors.store');
     Route::post('/adminrepus1car/jurados/{juror}/estado', [JurorController::class, 'toggleStatus'])->name('admin.jurors.toggle-status');
+
+    Route::get('/adminrepus1car/fanlyc', [AdminFanlycController::class, 'index'])->name('admin.fanlyc');
+    Route::post('/adminrepus1car/fanlyc/registrar-manual', [AdminFanlycController::class, 'manualRegister'])->name('admin.fanlyc.manual-register');
+    Route::get('/adminrepus1car/fanlyc/{invoice}', [AdminFanlycController::class, 'show'])->name('admin.fanlyc.show');
+    Route::post('/adminrepus1car/fanlyc/{invoice}/aprobar', [AdminFanlycController::class, 'approve'])->name('admin.fanlyc.approve');
+    Route::post('/adminrepus1car/fanlyc/{invoice}/rechazar', [AdminFanlycController::class, 'reject'])->name('admin.fanlyc.reject');
+    Route::post('/adminrepus1car/fanlyc/cupones/{coupon}/anular', [AdminFanlycController::class, 'voidCoupon'])->name('admin.fanlyc.void-coupon');
+    Route::get('/adminrepus1car/fanlyc-zonas', [FanlycZoneController::class, 'index'])->name('admin.fanlyc.zones');
+    Route::post('/adminrepus1car/fanlyc-zonas/asignar', [FanlycZoneController::class, 'assignBranch'])->name('admin.fanlyc.zones.assign');
+    Route::post('/adminrepus1car/fanlyc-zonas/{mapping}/quitar', [FanlycZoneController::class, 'unassignBranch'])->name('admin.fanlyc.zones.unassign');
+    Route::get('/adminrepus1car/fanlyc-staff', [FanlycStaffController::class, 'index'])->name('admin.fanlyc-staff');
+    Route::post('/adminrepus1car/fanlyc-staff', [FanlycStaffController::class, 'store'])->name('admin.fanlyc-staff.store');
+    Route::post('/adminrepus1car/fanlyc-staff/{staff}/estado', [FanlycStaffController::class, 'toggleStatus'])->name('admin.fanlyc-staff.toggle-status');
+});
+
+Route::middleware(['auth', 'role:admin,staff_fanlyc'])->group(function () {
+    Route::get('/adminrepus1car/fanlyc-canje/{zoneCode}', [FanlycRedemptionController::class, 'index'])->name('admin.fanlyc.redeem');
+    Route::post('/adminrepus1car/fanlyc-canje/{zoneCode}', [FanlycRedemptionController::class, 'lookup'])->name('admin.fanlyc.redeem.lookup');
+    Route::post('/adminrepus1car/fanlyc-canje/{zoneCode}/buscar', [FanlycRedemptionController::class, 'findAjax'])->name('admin.fanlyc.redeem.find');
+    Route::post('/adminrepus1car/fanlyc-canje/{zoneCode}/cupones/{coupon}', [FanlycRedemptionController::class, 'store'])->name('admin.fanlyc.redeem.store');
 });
 
 Route::middleware(['auth', 'role:admin,jurado'])->group(function () {

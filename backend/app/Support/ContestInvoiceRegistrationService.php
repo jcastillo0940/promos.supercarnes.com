@@ -30,6 +30,7 @@ class ContestInvoiceRegistrationService
         private readonly ContestRules $rules,
         private readonly WalletService $walletService,
         private readonly InvoicePeriodResolver $phaseResolver,
+        private readonly BlacklistService $blacklist,
     ) {
     }
 
@@ -363,6 +364,12 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
+        if ($this->blacklist->isBlocked($documentNumber, $data['phone'] ?? null)) {
+            throw ValidationException::withMessages([
+                'document_number' => 'No es posible completar tu registro en este momento. Contacta a servicio al cliente.',
+            ]);
+        }
+
         if (! $this->usesThresholdParticipation($campaign) && RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
             throw ValidationException::withMessages([
                 'document_number' => 'Este documento ya registro una factura y no puede participar dos veces.',
@@ -446,7 +453,7 @@ class ContestInvoiceRegistrationService
     {
         $amount = (float) ($campaign->entry_threshold_amount ?? 0);
 
-        return $amount > 0 ? $amount : 300.0;
+        return $amount > 0 ? $amount : 100.0;
     }
 
     private function campaignBalance(User $user, Campaign $campaign): float

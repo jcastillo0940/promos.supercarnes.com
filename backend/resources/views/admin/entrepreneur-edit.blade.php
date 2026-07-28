@@ -41,6 +41,35 @@
             </div>
         </div>
 
+        @if($blacklistEntry)
+            <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                <div class="error" style="margin-bottom:0;">
+                    <strong>Emprendedor en blacklist.</strong> Motivo: {{ $blacklistEntry->reason }}
+                    <form method="POST" action="{{ route('admin.blacklist.remove', $blacklistEntry) }}" style="margin-top:.6rem;" onsubmit="return confirm('¿Quitar a esta persona de la blacklist?');">
+                        @csrf
+                        <button class="btn btn-gray" type="submit">Quitar de la blacklist</button>
+                    </form>
+                </div>
+            </div>
+        @else
+            <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                <details>
+                    <summary style="cursor:pointer;font-weight:700;color:#b91c1c;">Marcar como fraude / blacklist</summary>
+                    <form method="POST" action="{{ route('admin.blacklist.store') }}" class="form-grid" style="margin-top:.75rem;grid-template-columns: 1fr auto;">
+                        @csrf
+                        <input type="hidden" name="user_id" value="{{ $entrepreneur->id }}">
+                        <div class="field">
+                            <label>Motivo del bloqueo</label>
+                            <input type="text" name="reason" placeholder="Ej: Facturas duplicadas confirmadas" required>
+                        </div>
+                        <div style="align-self:end;">
+                            <button class="btn btn-red" type="submit">Bloquear de todas las promociones</button>
+                        </div>
+                    </form>
+                </details>
+            </div>
+        @endif
+
         <div class="page-section" style="border-top:1px solid #e5e7eb;">
             <form method="POST" action="{{ route('admin.entrepreneurs.update', $entrepreneur) }}" class="stack">
                 @csrf
@@ -120,7 +149,7 @@
         <div class="page-title">
             <div>
                 <h1>Facturas de la promo</h1>
-                <p>{{ count($invoices) }} factura(s) · Acumulado ${{ number_format($total, 2) }}@if($dreamCampaign) de ${{ number_format((float) ($dreamCampaign->entry_threshold_amount ?: 300), 2) }} @endif</p>
+                <p>{{ count($invoices) }} factura(s) · Acumulado ${{ number_format($total, 2) }}@if($dreamCampaign) de ${{ number_format((float) ($dreamCampaign->entry_threshold_amount ?: 100), 2) }} @endif</p>
             </div>
         </div>
 

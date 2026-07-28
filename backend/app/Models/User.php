@@ -134,4 +134,9 @@ class User extends Authenticatable
     {
         return $this->role === 'jurado';
     }
+
+    public function isFanlycStaff(): bool
+    {
+        return $this->role === 'staff_fanlyc';
+    }
 }

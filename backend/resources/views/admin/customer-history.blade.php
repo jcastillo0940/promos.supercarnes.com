@@ -47,6 +47,34 @@
                 @endif
             </div>
         </div>
+        @if($blacklistEntry)
+            <div class="page-section">
+                <div class="error" style="margin-bottom:0;">
+                    <strong>Cliente en blacklist.</strong> Motivo: {{ $blacklistEntry->reason }}
+                    <form method="POST" action="{{ route('admin.blacklist.remove', $blacklistEntry) }}" style="margin-top:.6rem;" onsubmit="return confirm('¿Quitar a este cliente de la blacklist?');">
+                        @csrf
+                        <button class="btn btn-gray" type="submit">Quitar de la blacklist</button>
+                    </form>
+                </div>
+            </div>
+        @else
+            <div class="page-section">
+                <details>
+                    <summary style="cursor:pointer;font-weight:700;color:#b91c1c;">Marcar como fraude / blacklist</summary>
+                    <form method="POST" action="{{ route('admin.blacklist.store') }}" class="form-grid" style="margin-top:.75rem;grid-template-columns: 1fr auto;">
+                        @csrf
+                        <input type="hidden" name="user_id" value="{{ $user->id }}">
+                        <div class="field">
+                            <label>Motivo del bloqueo</label>
+                            <input type="text" name="reason" placeholder="Ej: Facturas duplicadas confirmadas" required>
+                        </div>
+                        <div style="align-self:end;">
+                            <button class="btn btn-red" type="submit">Bloquear de todas las promociones</button>
+                        </div>
+                    </form>
+                </details>
+            </div>
+        @endif
     </div>
 
     <div class="page-card">
@@ -157,7 +185,7 @@
                                     @if($campaign->participation_mode === 'threshold_form')
                                         <div style="margin-top:.3rem;">
                                             <span class="badge badge-{{ $thresholdReached ? 'green' : 'yellow' }}">{{ $thresholdReached ? 'Activa' : 'Pendiente' }}</span>
-                                            <small style="display:block;color:#64748b;margin-top:.25rem;">Meta ${{ number_format($thresholdAmount > 0 ? $thresholdAmount : 300, 2) }}</small>
+                                            <small style="display:block;color:#64748b;margin-top:.25rem;">Meta ${{ number_format($thresholdAmount > 0 ? $thresholdAmount : 100, 2) }}</small>
                                         </div>
                                     @endif
                                 </td>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\FondaChallengeRegistrationConfirmation;
 use App\Models\Campaign;
 use App\Models\FondaRegistration;
+use App\Support\BlacklistService;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
@@ -12,10 +13,15 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class FondaChallengeController extends Controller
 {
+    public function __construct(private readonly BlacklistService $blacklist)
+    {
+    }
+
     public function landing(): View
     {
         $campaign = Campaign::query()
@@ -46,6 +52,12 @@ class FondaChallengeController extends Controller
             'dish_name' => ['required', 'string', 'max:150'],
             'consent_terms' => ['accepted'],
         ]);
+
+        if ($this->blacklist->isBlocked($validated['cedula'], $validated['phone'] ?? null)) {
+            throw ValidationException::withMessages([
+                'cedula' => 'No es posible completar tu inscripcion en este momento. Contacta a servicio al cliente.',
+            ]);
+        }
 
         $registration = FondaRegistration::query()->firstOrNew([
             'campaign_id' => $campaign->id,

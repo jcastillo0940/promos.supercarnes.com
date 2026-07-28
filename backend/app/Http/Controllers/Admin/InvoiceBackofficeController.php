@@ -12,6 +12,7 @@ use App\Models\RegisteredInvoice;
 use App\Models\User;
 use App\Models\SiteSetting;
 use App\Support\Audit;
+use App\Support\BlacklistService;
 use App\Support\ContestInvoiceRegistrationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -114,7 +115,7 @@ class InvoiceBackofficeController extends Controller
             $thresholdAmount = $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount;
 
             if ($mode === 'threshold_form' && ($thresholdAmount === null || $thresholdAmount === '')) {
-                $thresholdAmount = 300;
+                $thresholdAmount = 100;
             }
 
             $campaign->forceFill([
@@ -204,7 +205,7 @@ class InvoiceBackofficeController extends Controller
         $thresholdAmount = $validated['entry_threshold_amount'] ?? null;
 
         if ($mode === 'threshold_form' && ($thresholdAmount === null || $thresholdAmount === '')) {
-            $thresholdAmount = 300;
+            $thresholdAmount = 100;
         }
 
         if (Campaign::query()->where('slug', $slug)->exists()) {
@@ -376,7 +377,7 @@ class InvoiceBackofficeController extends Controller
         return back()->with('status', 'Ganador removido correctamente.');
     }
 
-    public function customerHistory(User $user): View
+    public function customerHistory(User $user, BlacklistService $blacklist): View
     {
         $user->load([
             'invoices.campaign',
@@ -400,6 +401,7 @@ class InvoiceBackofficeController extends Controller
             'winner' => $winner,
             'campaignTotals' => $campaignTotals,
             'campaigns' => Campaign::query()->orderBy('name')->get(),
+            'blacklistEntry' => $blacklist->activeEntryForUser($user),
         ]);
     }
 
@@ -452,9 +454,9 @@ class InvoiceBackofficeController extends Controller
         return back()->with('status', 'Cliente marcado como no ganador.');
     }
 
-    public function entrepreneurs(Request $request): View
+    private function entrepreneursFilteredQuery(Request $request)
     {
-        $query = User::query()
+        return User::query()
             ->where(function ($query) {
                 $query->whereNotNull('entrepreneur_name')
                     ->orWhereNotNull('dream_promo_qualified_at');
@@ -471,6 +473,10 @@ class InvoiceBackofficeController extends Controller
                 $term = trim((string) $request->input('cedula'));
                 $query->where('cedula', 'like', "%{$term}%");
             })
+            ->when($request->filled('phone'), function ($query) use ($request) {
+                $term = trim((string) $request->input('phone'));
+                $query->where('phone', 'like', "%{$term}%");
+            })
             ->when($request->filled('province'), function ($query) use ($request) {
                 $term = trim((string) $request->input('province'));
                 $query->where('entrepreneur_province', 'like', "%{$term}%");
@@ -482,16 +488,87 @@ class InvoiceBackofficeController extends Controller
                     $query->whereNull('dream_promo_qualified_at');
                 }
             });
+    }
 
+    private function applyEntrepreneursSort($query, Request $request, ?Campaign $dreamCampaign)
+    {
+        $sort = (string) $request->input('sort', '');
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+
+        $directColumns = [
+            'phone' => 'phone',
+            'entrepreneur_name' => 'entrepreneur_name',
+            'province' => 'entrepreneur_province',
+            'type' => 'entrepreneur_type',
+            'status' => 'dream_promo_qualified_at',
+        ];
+
+        if ($sort === 'branch') {
+            return $query->leftJoin('branches', 'branches.id', '=', 'users.nearest_branch_id')
+                ->select('users.*')
+                ->orderBy('branches.name', $direction)
+                ->orderByDesc('users.id');
+        }
+
+        if ($sort === 'total') {
+            if ($dreamCampaign) {
+                $totalsSub = RegisteredInvoice::query()
+                    ->select('user_id', DB::raw('SUM(purchase_amount) as total_amount'))
+                    ->where('campaign_id', $dreamCampaign->id)
+                    ->groupBy('user_id');
+
+                $query->leftJoinSub($totalsSub, 'invoice_totals', function ($join) {
+                    $join->on('invoice_totals.user_id', '=', 'users.id');
+                })
+                    ->select('users.*', DB::raw('COALESCE(invoice_totals.total_amount, 0) as total_amount'))
+                    ->orderBy('total_amount', $direction);
+            }
+
+            return $query->orderByDesc('users.id');
+        }
+
+        if ($sort === 'name') {
+            return $query->orderByRaw('COALESCE(full_name, name) ' . $direction)->orderByDesc('id');
+        }
+
+        if (array_key_exists($sort, $directColumns)) {
+            return $query->orderBy($directColumns[$sort], $direction)->orderByDesc('id');
+        }
+
+        return $query->orderByDesc('dream_promo_qualified_at')->orderByDesc('id');
+    }
+
+    public function entrepreneurs(Request $request): View
+    {
         $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
 
-        $entrepreneurs = $query
-            ->with('branch')
-            ->orderByDesc('dream_promo_qualified_at')
-            ->orderByDesc('id')
-            ->paginate(30);
+        $counts = (clone $this->entrepreneursFilteredQuery($request))
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN dream_promo_qualified_at IS NOT NULL THEN 1 ELSE 0 END) as qualified')
+            ->first();
 
-        $entrepreneurs->appends($request->only(['name', 'cedula', 'province', 'qualified']));
+        $totalAmount = 0.0;
+        if ($dreamCampaign) {
+            $filteredUserIds = (clone $this->entrepreneursFilteredQuery($request))->pluck('id');
+            $totalAmount = (float) RegisteredInvoice::query()
+                ->where('campaign_id', $dreamCampaign->id)
+                ->whereIn('user_id', $filteredUserIds)
+                ->sum('purchase_amount');
+        }
+
+        $stats = [
+            'total' => (int) ($counts->total ?? 0),
+            'qualified' => (int) ($counts->qualified ?? 0),
+            'pending' => (int) ($counts->total ?? 0) - (int) ($counts->qualified ?? 0),
+            'totalAmount' => $totalAmount,
+        ];
+
+        $entrepreneurs = $this->applyEntrepreneursSort(
+            $this->entrepreneursFilteredQuery($request)->with('branch'),
+            $request,
+            $dreamCampaign
+        )->paginate(30);
+
+        $entrepreneurs->appends($request->only(['name', 'cedula', 'phone', 'province', 'qualified', 'sort', 'direction']));
 
         $totalsByUser = collect();
         if ($dreamCampaign) {
@@ -507,10 +584,63 @@ class InvoiceBackofficeController extends Controller
             'entrepreneurs' => $entrepreneurs,
             'totalsByUser' => $totalsByUser,
             'dreamCampaign' => $dreamCampaign,
+            'stats' => $stats,
         ]);
     }
 
-    public function entrepreneurEdit(User $user): View
+    public function entrepreneursExport(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
+
+        $entrepreneurs = $this->applyEntrepreneursSort(
+            $this->entrepreneursFilteredQuery($request)->with('branch'),
+            $request,
+            $dreamCampaign
+        )->get();
+
+        $totalsByUser = collect();
+        if ($dreamCampaign) {
+            $totalsByUser = RegisteredInvoice::query()
+                ->where('campaign_id', $dreamCampaign->id)
+                ->whereIn('user_id', $entrepreneurs->pluck('id'))
+                ->selectRaw('user_id, SUM(purchase_amount) as total')
+                ->groupBy('user_id')
+                ->pluck('total', 'user_id');
+        }
+
+        $filename = 'emprendedores-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($entrepreneurs, $totalsByUser) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, ['Nombre', 'Cedula', 'Telefono', 'Correo', 'Emprendimiento', 'Provincia', 'Sucursal cercana', 'Tipo', 'Acumulado', 'Estado', 'Fecha calificacion']);
+
+            foreach ($entrepreneurs as $person) {
+                $total = (float) ($totalsByUser[$person->id] ?? 0);
+
+                fputcsv($handle, [
+                    $person->full_name ?? $person->name ?? '',
+                    $person->cedula ?? '',
+                    $person->phone ?? '',
+                    $person->email ?? '',
+                    $person->entrepreneur_name ?? '',
+                    $person->entrepreneur_province ?? '',
+                    $person->branch?->name ?? '',
+                    $person->entrepreneur_type ?? '',
+                    number_format($total, 2, '.', ''),
+                    $person->dream_promo_qualified_at ? 'Calificado' : 'Pendiente',
+                    $person->dream_promo_qualified_at?->format('d/m/Y H:i') ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function entrepreneurEdit(User $user, BlacklistService $blacklist): View
     {
         $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
 
@@ -533,6 +663,7 @@ class InvoiceBackofficeController extends Controller
             'dreamCampaign' => $dreamCampaign,
             'invoices' => $invoices,
             'total' => $total,
+            'blacklistEntry' => $blacklist->activeEntryForUser($user),
         ]);
     }
 

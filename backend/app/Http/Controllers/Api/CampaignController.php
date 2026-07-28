@@ -50,7 +50,7 @@ class CampaignController extends Controller
                 ->sum('purchase_amount')
             : 0.0;
         $threshold = (float) ($campaign->entry_threshold_amount ?? 0);
-        $threshold = $threshold > 0 ? $threshold : 300.0;
+        $threshold = $threshold > 0 ? $threshold : 100.0;
 
         return response()->json([
             'data' => [
