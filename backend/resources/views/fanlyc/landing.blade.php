@@ -479,8 +479,7 @@
             display:grid;
             grid-template-columns:minmax(0,1fr) minmax(500px,.92fr);
             grid-template-areas:
-                "left right"
-                "mini mini";
+                "left right";
             gap:18px;
             transform:none !important;
         }
@@ -583,20 +582,12 @@
         }
         .footer-lockup{margin-top:20px}
         .footer-lockup .mini{width:230px}
-        .mini-grid{
-            grid-area:mini;
-            position:relative !important;
-            inset:auto !important;
-            width:auto;
-            margin:0 !important;
-            grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-        }
 
         @media (max-width:1100px){
             .page{padding:12px 12px 28px}
             .layout{
                 grid-template-columns:1fr;
-                grid-template-areas:"left" "right" "mini";
+                grid-template-areas:"left" "right";
                 gap:14px;
             }
             .topbar{padding:14px 16px;flex-direction:column;justify-content:center;gap:12px}
@@ -616,8 +607,6 @@
             .chips{justify-content:center}
             .right{padding:24px 18px}
             .right .field-row{grid-template-columns:1fr !important;gap:12px !important}
-            .mini-grid{grid-template-columns:1fr !important}
-            .mini-grid article{min-height:0 !important}
         }
         @media (max-width:540px){
             .topbar .brand img:first-child{width:70px}
@@ -856,36 +845,6 @@
                 <div class="claim">Juntos <span>transformamos</span> vidas.</div>
             </div>
         </aside>
-
-        <section id="premios" class="mini-grid" style="position:absolute;left:150px;right:56px;bottom:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
-            <article id="premios" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
-                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(109,63,214,.13);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#7d3fe6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
-                        <path d="M6 3h12v10H6z"></path><path d="M9 21h6"></path><path d="M12 13v8"></path><path d="M9 21l-1-4h8l-1 4"></path>
-                    </svg>
-                </div>
-                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#7b3be6;font-family:'Poppins',sans-serif;">Tu QR</h3>
-                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">Se genera al aprobar tu factura y queda listo para consulta y canje en tu zona.</p>
-            </article>
-            <article id="zona" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
-                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(85,198,59,.16);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#3ca81d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
-                        <path d="M12 21s6-4.2 6-10a6 6 0 0 0-12 0c0 5.8 6 10 6 10Z"></path><circle cx="12" cy="11" r="2.2"></circle>
-                    </svg>
-                </div>
-                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#3ca81d;font-family:'Poppins',sans-serif;">Zona asignada</h3>
-                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">El sistema detecta tu sucursal y define la zona correcta para tu cupón.</p>
-            </article>
-            <article id="apoyo" style="min-height:172px;border-radius:22px;padding:18px;background:#f7fbff;box-shadow:0 22px 40px rgba(8,56,122,.18);">
-                <div style="width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px;background:rgba(255,122,29,.16);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#f07813" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;">
-                        <path d="M12 21s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11Z"></path><path d="M9 10h6"></path>
-                    </svg>
-                </div>
-                <h3 style="margin:0 0 8px;font-size:20px;line-height:1;color:#f07813;font-family:'Poppins',sans-serif;">Canje seguro</h3>
-                <p style="margin:0;line-height:1.45;color:#4e6786;font-size:14px;max-width:240px;">El staff escanea el cupón, valida el estado y emite el ticket correspondiente.</p>
-            </article>
-        </section>
     </div>
 </div>
 
