@@ -474,6 +474,41 @@ class InvoiceBackofficeController extends Controller
         ]);
     }
 
+    public function exportProductRanking(Request $request, Campaign $campaign, ProductRankingService $rankingService): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking', 404);
+
+        $ranking = $rankingService->leaderboard($campaign);
+        $minimumAge = (int) data_get($campaign->rules, 'minimum_age', 18);
+        $filename = Str::slug($campaign->slug ?: $campaign->name).'-ranking.csv';
+
+        return response()->streamDownload(function () use ($ranking, $minimumAge): void {
+            $handle = fopen('php://output', 'wb');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Posición', 'Nombre', 'Cédula', 'Correo', 'Unidades aprobadas', 'Primer alcance', 'Elegibilidad'], ';');
+
+            foreach ($ranking as $position => $participant) {
+                $eligible = $participant->email
+                    && !$participant->is_employee
+                    && !$participant->disqualified_at
+                    && $participant->birthdate?->age >= $minimumAge;
+
+                fputcsv($handle, [
+                    $position + 1,
+                    $participant->full_name ?? $participant->name,
+                    $participant->cedula,
+                    $participant->email,
+                    $participant->total_units,
+                    $participant->first_reached_at,
+                    $eligible ? 'Elegible' : 'Revisar',
+                ], ';');
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function storeManualProductInvoice(
         Request $request,
         Campaign $campaign,

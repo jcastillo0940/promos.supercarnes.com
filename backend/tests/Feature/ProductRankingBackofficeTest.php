@@ -45,9 +45,42 @@ class ProductRankingBackofficeTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.campaigns.product-ranking.operations', $this->campaign))
             ->assertOk()
-            ->assertSee('Factura manual auditada')
+            ->assertSee('Cargar factura manual')
             ->assertSee('Prevención de fraude')
-            ->assertSee('Ranking en tiempo real');
+            ->assertSee('Ranking y participantes');
+    }
+
+    public function test_admin_can_export_a_summary_of_the_malta_ranking(): void
+    {
+        $participant = User::factory()->create([
+            'role' => 'client',
+            'cedula' => '8-777-0001',
+            'full_name' => 'Participante Exportado',
+            'birthdate' => '1990-01-01',
+        ]);
+        RegisteredInvoice::query()->create([
+            'user_id' => $participant->id,
+            'campaign_id' => $this->campaign->id,
+            'cufe' => 'EXPORT-CUFE-1',
+            'qr_raw_text' => 'EXPORT-QR-1',
+            'invoice_number' => 'EXPORT-INV-1',
+            'purchase_amount' => 0,
+            'status' => 'approved',
+            'validation_status' => 'approved',
+            'eligible_units' => 4,
+            'product_validation_status' => 'matched',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('admin.campaigns.product-ranking.export', $this->campaign));
+
+        $response->assertOk()->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Cédula', $csv);
+        $this->assertStringContainsString('Participante Exportado', $csv);
+        $this->assertStringContainsString('8-777-0001', $csv);
+        $this->assertStringNotContainsString('EXPORT-CUFE-1', $csv);
+        $this->assertStringNotContainsString('EXPORT-QR-1', $csv);
     }
 
     public function test_admin_can_register_a_manual_invoice_with_multiple_product_lines_and_audit_it(): void
@@ -77,6 +110,19 @@ class ProductRankingBackofficeTest extends TestCase
         $this->assertSame('approved', $invoice->validation_status);
         $this->assertSame('admin_manual_entry', data_get($invoice->dgi_response_payload, 'source'));
         $this->assertCount(2, $invoice->items);
+        $invoice->items()->create([
+            'barcode' => 'NON-MALTA-001',
+            'description' => 'Producto ajeno a Malta Vigor',
+            'quantity' => 4,
+            'is_eligible' => false,
+        ]);
+        $this->actingAs($this->admin)
+            ->get(route('admin.campaigns.product-ranking.operations', $this->campaign))
+            ->assertOk()
+            ->assertSee('Código:')
+            ->assertSee($this->product->barcode)
+            ->assertSee('Malta Vigor')
+            ->assertDontSee('Producto ajeno a Malta Vigor');
         $this->assertDatabaseHas('audit_logs', [
             'event_type' => 'invoice.manual_product_entry',
             'entity_type' => 'registered_invoice',

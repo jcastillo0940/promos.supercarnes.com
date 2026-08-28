@@ -85,6 +85,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car/ganadores', [InvoiceBackofficeController::class, 'winners'])->name('admin.winners');
     Route::get('/adminrepus1car/promociones/{campaign}/ranking', [InvoiceBackofficeController::class, 'productRanking'])->name('admin.campaigns.product-ranking');
     Route::post('/adminrepus1car/promociones/{campaign}/ranking/freeze', [InvoiceBackofficeController::class, 'freezeProductRanking'])->name('admin.campaigns.product-ranking.freeze');
+    Route::get('/adminrepus1car/promociones/{campaign}/operacion/exportar', [InvoiceBackofficeController::class, 'exportProductRanking'])->name('admin.campaigns.product-ranking.export');
     Route::get('/adminrepus1car/promociones/{campaign}/operacion', [InvoiceBackofficeController::class, 'productRankingOperations'])->name('admin.campaigns.product-ranking.operations');
     Route::post('/adminrepus1car/promociones/{campaign}/facturas-manuales', [InvoiceBackofficeController::class, 'storeManualProductInvoice'])->name('admin.campaigns.product-ranking.manual-invoice');
     Route::post('/adminrepus1car/promociones/{campaign}/ganadores/{winner}/reemplazar', [InvoiceBackofficeController::class, 'replaceProductRankingWinner'])->name('admin.campaigns.product-ranking.replace-winner');
