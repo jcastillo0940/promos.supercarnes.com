@@ -10711,6 +10711,7 @@ a {
 
 .promo-shell-malta .promo-panel-highlight { margin-bottom: 28px; }
 .promo-shell-malta .promo-panel-label { color: #a8e52a; font-size: 17px; }
+.promo-shell-malta .promo-panel-label::before { content: none; }
 .promo-shell-malta .promo-panel-highlight h2 { margin-top: 12px; font: 900 clamp(30px, 3vw, 43px)/1 'Archivo Narrow', sans-serif; letter-spacing: .02em; }
 .promo-shell-malta .promo-panel-highlight > p:last-child { margin-top: 18px; color: rgba(255,255,255,.76); font-size: 18px; }
 .promo-shell-malta .promo-mode-switch { border: 1px solid rgba(168,229,42,.42); border-radius: 10px 10px 0 0; }
@@ -10850,19 +10851,22 @@ a {
 @media (max-width: 640px) {
   .promo-shell-malta .promo-layout { padding: 18px 15px 42px; gap: 28px; }
   .promo-shell-malta .promo-hero { min-height: auto; padding-top: 72px; }
-  .promo-shell-malta .promo-back { left: 0; }
+  .promo-shell-malta .promo-back { top: 8px; left: 0; z-index: 4; }
   .malta-campaign-copy { padding-top: 0; }
-  .malta-brand-lockup { height: 94px; gap: 14px; }
+  .malta-brand-lockup { height: 94px; gap: 14px; margin-top: 34px; }
   .malta-brand-lockup img:first-child { width: 150px; max-height: 90px; }
   .malta-brand-lockup img:last-child { width: 116px; max-height: 70px; }
   .malta-brand-lockup i { height: 70px; }
   .malta-promo-chip { font-size: 12px !important; }
-  .promo-shell-malta .malta-headline { font-size: clamp(54px, 17vw, 76px); }
-  .promo-shell-malta .malta-subheadline { font-size: 20px !important; }
+  .promo-shell-malta .malta-headline { font-size: clamp(48px, 14vw, 64px); }
+  .promo-shell-malta .malta-headline strong { white-space: nowrap; }
+  .promo-shell-malta .malta-subheadline { margin: 10px 0 18px !important; font-size: 16px !important; white-space: nowrap; }
   .malta-promo-summary { grid-template-columns: 62px 1fr; gap: 15px; }
   .malta-promo-summary > span { width: 62px; height: 62px; font-size: 28px; }
   .promo-shell-malta .promo-hero .malta-promo-summary p { font-size: 15px; }
   .promo-shell-malta .promo-panel { padding: 26px 20px; border-radius: 22px; }
+  .promo-shell-malta .promo-panel-highlight { margin-bottom: 20px; }
+  .promo-shell-malta .promo-panel-highlight h2 { margin-top: 0; }
   .promo-shell-malta .promo-panel-highlight h2 { font-size: 30px; }
   .promo-shell-malta .promo-mode-switch button { min-height: 58px; gap: 5px; padding: 0 5px; font-size: 12px; }
   .promo-shell-malta .promo-mode-switch button .material-symbols-outlined { font-size: 19px; }

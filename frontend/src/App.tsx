@@ -928,16 +928,16 @@ function PromoLanding({
 
         <aside className="promo-panel">
           <div className="promo-panel-card promo-panel-highlight">
-            <p className="promo-panel-label">{showProgressLookup ? 'Tu progreso' : 'Acumula y gana'}</p>
-            <h2>{showProgressLookup ? 'Consulta tus botellas' : campaign?.status === 'active' ? 'Registra tu factura' : 'Promoción disponible'}</h2>
-            <p>{showProgressLookup ? 'Ingresa tu cédula y correo para ver tu acumulado.' : invoiceValidated ? 'Factura con Malta Vigor detectada. Identifícate para registrarla.' : 'Escanea tu factura de Super Carnes para comenzar.'}</p>
+            {showProgressLookup ? <p className="promo-panel-label">Mi ranking</p> : null}
+            <h2>{showProgressLookup ? 'Consultar mi ranking' : campaign?.status === 'active' ? 'Registra tu factura' : 'Promoción disponible'}</h2>
+            <p>{showProgressLookup ? 'Ingresa tu cédula y correo para consultar tu ranking en la promoción Malta Vigor de Super Carnes.' : invoiceValidated ? 'Factura con Malta Vigor detectada. Identifícate para registrarla.' : 'Escanea tu factura de Super Carnes para entrar al ranking y comenzar.'}</p>
           </div>
 
           {showProgressLookup ? (
             <form className="promo-panel-card promo-form promo-progress-lookup" onSubmit={handleProgressLookup}>
               <div className="promo-form-head">
-                <p>Mi acumulado</p>
-                <h3>¿Cuántas botellas llevo?</h3>
+                <p>Mi ranking</p>
+                <h3>Consultar mi ranking</h3>
               </div>
               <label>
                 Número de cédula
@@ -968,7 +968,7 @@ function PromoLanding({
                 </div>
               ) : null}
               <button className="promo-primary" type="submit" disabled={progressLoading}>
-                {progressLoading ? 'Consultando...' : 'Consultar mis botellas'}
+                {progressLoading ? 'Consultando...' : 'Consultar mi ranking'}
               </button>
               <button className="malta-text-button" type="button" onClick={() => { setShowProgressLookup(false); setProgressError(null); setProgressResult(null) }}>
                 Volver a registrar una factura
@@ -1107,7 +1107,7 @@ function PromoLanding({
                   }}
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">monitoring</span>
-                  Consultar cuántas botellas llevo
+                  Consultar mi ranking
                 </button>
               ) : null}
             </div>
