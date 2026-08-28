@@ -40,7 +40,7 @@ $serveFrontendFile = function (string $filePath) {
         'woff2' => 'font/woff2',
     ];
 
-    return response(File::get($filePath), 200, [
+    return response()->file($filePath, [
         'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
         'Cache-Control' => $extension === 'html' ? 'no-cache' : 'public, max-age=31536000, immutable',
     ]);

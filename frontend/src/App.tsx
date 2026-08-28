@@ -214,7 +214,10 @@ function createInvoiceScanner() {
 
 function ApiDebugPanel() {
   const [entries, setEntries] = useState<ApiDebugEntry[]>([])
-  const enabled = new URLSearchParams(window.location.search).get('debug') === '1'
+  // Disabled in public builds: keep the diagnostic panel for internal support,
+  // but do not allow a public query string such as ?debug=1 to expose it.
+  // const enabled = new URLSearchParams(window.location.search).get('debug') === '1'
+  const enabled = false
 
   useEffect(() => {
     const onDebug = (event: Event) => {
@@ -843,11 +846,11 @@ function PromoLanding({
         <div className="malta-product-atmosphere" aria-hidden="true">
           <span className="malta-light-beam malta-light-beam-one" />
           <span className="malta-light-beam malta-light-beam-two" />
-          <img className="malta-bottle malta-bottle-top" src="/malta-vigor/reference/bottle-blur.png" alt="" />
-          <img className="malta-bottle malta-bottle-far" src="/malta-vigor/reference/bottle-soft.png" alt="" />
-          <img className="malta-bottle malta-bottle-right" src="/malta-vigor/reference/bottle-hero.png" alt="" />
-          <img className="malta-bottle malta-bottle-bottom" src="/malta-vigor/reference/bottle-angle.png" alt="" />
-          <img className="malta-bottle malta-bottle-bottom-blur" src="/malta-vigor/reference/bottle-blur.png" alt="" />
+          <img className="malta-bottle malta-bottle-top" src="/malta-vigor/reference/bottle-blur.webp" alt="" loading="lazy" decoding="async" />
+          <img className="malta-bottle malta-bottle-far" src="/malta-vigor/reference/bottle-soft.webp" alt="" loading="lazy" decoding="async" />
+          <img className="malta-bottle malta-bottle-right" src="/malta-vigor/reference/bottle-hero.webp" alt="" width="1024" height="1536" fetchPriority="high" decoding="async" />
+          <img className="malta-bottle malta-bottle-bottom" src="/malta-vigor/reference/bottle-angle.webp" alt="" loading="lazy" decoding="async" />
+          <img className="malta-bottle malta-bottle-bottom-blur" src="/malta-vigor/reference/bottle-blur.webp" alt="" loading="lazy" decoding="async" />
         </div>
       ) : null}
       <main className="promo-layout">
@@ -859,9 +862,9 @@ function PromoLanding({
             {isMaltaCampaign ? (
               <div className="malta-campaign-copy">
                 <div className="malta-brand-lockup">
-                  <img src="/malta-vigor/reference/malta-logo.png" alt="Malta Vigor" />
+                  <img src="/malta-vigor/reference/malta-logo.webp" alt="Malta Vigor" width="1254" height="1254" decoding="async" />
                   <i />
-                  <img src="/malta-vigor/reference/super-carnes-logo.png" alt="Super Carnes" />
+                  <img src="/malta-vigor/reference/super-carnes-logo.webp" alt="Super Carnes" width="1448" height="1086" decoding="async" />
                 </div>
                 <p className="malta-promo-chip">Malta Vigor + Super Carnes</p>
                 <h1 className="malta-headline">
