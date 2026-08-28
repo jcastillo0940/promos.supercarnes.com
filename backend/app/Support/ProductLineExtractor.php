@@ -29,9 +29,9 @@ class ProductLineExtractor
             if (! is_array($item)) {
                 continue;
             }
-            $barcode = $this->firstValue($item, ['barcode', 'bar_code', 'sku', 'codigo', 'codigoProducto', 'cod_articulo', 'codItem', 'item_code']);
+            $barcode = $this->firstValue($item, ['barcode', 'bar_code', 'sku', 'código', 'codigo', 'codigoProducto', 'cod_articulo', 'codItem', 'item_code']);
             $quantity = (float) ($this->firstValue($item, ['quantity', 'cantidad', 'qty', 'unidades', 'cantidadVendida']) ?? 0);
-            $description = $this->firstValue($item, ['description', 'descripcion', 'nombre', 'product_name', 'detalle']);
+            $description = $this->firstValue($item, ['description', 'descripción', 'descripcion', 'nombre', 'product_name', 'detalle']);
             $unitPrice = $this->firstValue($item, ['unit_price', 'precio_unitario', 'precio', 'price']);
             $rule = $rules->get(strtoupper(trim((string) $barcode)));
 
