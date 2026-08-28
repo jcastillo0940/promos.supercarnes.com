@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from 'html5-qrcode'
-import { api, setApiToken } from './api'
+import { api, type ApiDebugEntry, setApiToken } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
 type EntryMode = 'scan' | 'manual' | 'whatsapp'
@@ -154,6 +154,37 @@ function createInvoiceScanner() {
     verbose: false,
     formatsToSupport: INVOICE_SCANNER_FORMATS,
   })
+}
+
+function ApiDebugPanel() {
+  const [entries, setEntries] = useState<ApiDebugEntry[]>([])
+  const enabled = new URLSearchParams(window.location.search).get('debug') === '1'
+
+  useEffect(() => {
+    const onDebug = (event: Event) => {
+      const detail = (event as CustomEvent<ApiDebugEntry>).detail
+      setEntries((current) => [...current, detail].slice(-30))
+    }
+    window.addEventListener('supercarnes:api-debug', onDebug)
+    return () => window.removeEventListener('supercarnes:api-debug', onDebug)
+  }, [])
+
+  if (!enabled) return null
+
+  return (
+    <aside style={{ position: 'fixed', zIndex: 99999, bottom: 12, left: 12, right: 12, maxHeight: '42vh', overflow: 'auto', padding: 12, borderRadius: 12, background: 'rgba(10,18,30,.96)', color: '#dbeafe', font: '12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace', boxShadow: '0 8px 32px rgba(0,0,0,.35)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+        <strong>Diagnóstico API ({entries.length})</strong>
+        <button type="button" onClick={() => setEntries([])} style={{ padding: '4px 8px', cursor: 'pointer' }}>Limpiar</button>
+      </div>
+      {entries.length === 0 ? <div>Esperando solicitudes… Abre DevTools → Console para ver las mismas trazas.</div> : entries.map((entry) => (
+        <details key={entry.id} open={entry.phase === 'error'} style={{ marginTop: 6, color: entry.phase === 'error' ? '#fecaca' : '#dbeafe' }}>
+          <summary>{entry.timestamp} · {entry.phase} · {entry.method} {entry.url} · {entry.status ?? ''} · {entry.durationMs ?? ''}ms</summary>
+          <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', color: '#e2e8f0' }}>{JSON.stringify(entry.payload ?? entry.error ?? {}, null, 2)}</pre>
+        </details>
+      ))}
+    </aside>
+  )
 }
 
 async function safelyStopInvoiceScanner(scanner: Html5Qrcode | null) {
@@ -744,7 +775,9 @@ function PromoLanding({
   }
 
   return (
-    <div className={`promo-shell ${isMaltaCampaign ? 'promo-shell-malta' : ''}`}>
+    <>
+      <ApiDebugPanel />
+      <div className={`promo-shell ${isMaltaCampaign ? 'promo-shell-malta' : ''}`}>
       <div className="promo-ambient" />
       {isMaltaCampaign ? (
         <div className="malta-product-atmosphere" aria-hidden="true">
@@ -1179,7 +1212,8 @@ function PromoLanding({
           )}
         </aside>
       </main>
-    </div>
+      </div>
+    </>
   )
 }
 

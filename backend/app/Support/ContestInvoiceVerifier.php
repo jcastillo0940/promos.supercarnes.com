@@ -6,6 +6,7 @@ use App\Models\InvoiceGoalSetting;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class ContestInvoiceVerifier
@@ -47,6 +48,19 @@ class ContestInvoiceVerifier
 
         /** @var array<string, mixed> $body */
         $body = $response->json() ?? [];
+
+        Log::info('invoice.dgi.resolve', [
+            'cufe_tail' => substr($cufe, -12),
+            'endpoint' => $endpoint,
+            'http_status' => $response->status(),
+            'successful' => $response->successful(),
+            'body_keys' => is_array($body) ? array_keys($body) : [],
+            'datos_keys' => is_array(data_get($body, 'datos')) ? array_keys(data_get($body, 'datos')) : [],
+            'item_paths_found' => collect(['datos.items', 'datos.detalle', 'datos.productos', 'datos.detalleFactura', 'datos.listaItems', 'items', 'detalle', 'productos'])
+                ->filter(fn ($path) => is_array(data_get($body, $path)) && data_get($body, $path) !== [])
+                ->values()
+                ->all(),
+        ]);
 
         // Si la API devuelve un error (HTTP o en el cuerpo), lo mostramos tal cual al usuario
         $apiError = data_get($body, 'error') ?? data_get($body, 'mensaje') ?? data_get($body, 'message');

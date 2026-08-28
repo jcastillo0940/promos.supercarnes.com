@@ -16,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -405,6 +406,19 @@ class ContestInvoiceRegistrationService
         $productEvaluation = $campaign?->participation_mode === 'product_ranking'
             ? $this->productRanking->evaluate($campaign, $resolved)
             : null;
+
+        if ($campaign?->participation_mode === 'product_ranking') {
+            Log::info('invoice.product-ranking.evaluation', [
+                'campaign_slug' => $campaign->slug,
+                'cufe_tail' => substr((string) ($resolved['cufe'] ?? ''), -12),
+                'dgi_payload_keys' => is_array($resolved['payload'] ?? null) ? array_keys($resolved['payload']) : [],
+                'datos_keys' => is_array(data_get($resolved, 'payload.datos')) ? array_keys(data_get($resolved, 'payload.datos')) : [],
+                'status' => $productEvaluation['status'] ?? null,
+                'eligible_units' => $productEvaluation['eligible_units'] ?? 0,
+                'matched_products' => collect($productEvaluation['matched_products'] ?? [])->map(fn ($item) => collect($item)->except('source_payload')->all())->values()->all(),
+                'configured_rules' => $campaign->productRules()->where('is_active', true)->pluck('barcode')->values()->all(),
+            ]);
+        }
 
         return [
             'cufe' => $resolved['cufe'],
