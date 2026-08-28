@@ -333,8 +333,10 @@ export function App() {
 
   useSeoMetadata(path, selectedCampaign)
 
-  if (selectedSlug && !selectedCampaign && !loadingCampaigns) {
-    return <PromoNotFound onBack={() => goHome(setPath)} />
+  if (selectedSlug && !selectedCampaign) {
+    return loadingCampaigns
+      ? <PromoRouteLoading />
+      : <PromoNotFound onBack={() => goHome(setPath)} />
   }
 
   if (!selectedSlug) {
@@ -1275,6 +1277,21 @@ function PromoLanding({
       </main>
       </div>
     </>
+  )
+}
+
+function PromoRouteLoading() {
+  return (
+    <div className="promo-shell promo-shell-malta promo-shell-catalog">
+      <div className="promo-ambient" />
+      <main className="promo-catalog-layout">
+        <div className="promo-state" role="status" aria-live="polite">
+          <p className="promo-kicker">SUPER CARNES · MALTA VIGOR</p>
+          <h1>Cargando promoción</h1>
+          <p>Estamos preparando la promo de Super Carnes y Malta Vigor.</p>
+        </div>
+      </main>
+    </div>
   )
 }
 
