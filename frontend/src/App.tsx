@@ -24,6 +24,8 @@ interface Campaign {
   terms_text?: string | null
   terms_version?: string | null
   ranking_frozen_at?: string | null
+  starts_at?: string | null
+  ends_at?: string | null
 }
 
 interface BranchOption {
@@ -56,6 +58,60 @@ interface InvoiceFormState {
   accepted_terms: boolean
   eligible_units: number
   product_validation_status: string
+}
+
+function upsertMeta(attribute: 'name' | 'property', key: string, content: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`)
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attribute, key)
+    document.head.appendChild(element)
+  }
+  element.content = content
+}
+
+function useSeoMetadata(path: string, campaign: Campaign | null) {
+  useEffect(() => {
+    const slug = path.replace(/^\/+|\/+$/g, '').split('/')[0] ?? ''
+    const isMalta = slug === 'malta-vigor' || campaign?.participation_mode === 'product_ranking'
+    const title = isMalta ? 'Promo Super Carnes y Malta Vigor' : 'Promociones Super Carnes'
+    const description = isMalta
+      ? 'Participa en la promo de Super Carnes y Malta Vigor: registra tus facturas y acumula unidades para participar por celulares HONOR Magic7 Lite.'
+      : 'Conoce las promociones de Super Carnes y participa registrando tus facturas.'
+    const canonicalUrl = `${window.location.origin}${isMalta ? '/malta-vigor' : slug ? `/${slug}` : '/'}`
+
+    document.title = title
+    upsertMeta('name', 'description', description)
+    upsertMeta('property', 'og:title', title)
+    upsertMeta('property', 'og:description', description)
+    upsertMeta('property', 'og:url', canonicalUrl)
+    upsertMeta('name', 'twitter:title', title)
+    upsertMeta('name', 'twitter:description', description)
+
+    const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (canonical) canonical.href = canonicalUrl
+
+    const jsonLd = document.getElementById('seo-jsonld')
+    if (jsonLd && isMalta) {
+      jsonLd.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: title,
+        url: canonicalUrl,
+        description,
+        isPartOf: { '@type': 'WebSite', name: 'Super Carnes', url: `${window.location.origin}/` },
+        about: { '@type': 'Brand', name: 'Super Carnes' },
+        mainEntity: {
+          '@type': 'Event',
+          name: title,
+          description,
+          startDate: campaign?.starts_at ?? '2026-09-01T00:00:00-05:00',
+          endDate: campaign?.ends_at ?? '2026-10-30T23:59:59-05:00',
+          organizer: { '@type': 'Organization', name: 'Super Carnes', url: `${window.location.origin}/` },
+        },
+      })
+    }
+  }, [path, campaign])
 }
 
 const QR_READER_ELEMENT_ID = 'invoice-qr-reader'
@@ -274,6 +330,8 @@ export function App() {
   }, [path])
 
   const selectedCampaign = useMemo(() => campaigns.find((campaign) => campaign.slug === selectedSlug) ?? null, [campaigns, selectedSlug])
+
+  useSeoMetadata(path, selectedCampaign)
 
   if (selectedSlug && !selectedCampaign && !loadingCampaigns) {
     return <PromoNotFound onBack={() => goHome(setPath)} />
