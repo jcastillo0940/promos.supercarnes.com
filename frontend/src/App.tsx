@@ -1161,7 +1161,10 @@ function PromoLanding({
                     </label>
                     <label className="promo-form-wide promo-checkbox-row">
                       <input checked={invoiceForm.accepted_terms} onChange={(e) => setInvoiceForm((current) => ({ ...current, accepted_terms: e.target.checked }))} type="checkbox" required />
-                      <span>Acepto los términos y condiciones de la promoción{campaign.terms_version ? ` (versión ${campaign.terms_version})` : ''}.</span>
+                      <span>
+                        <strong>Acepto los Términos y Condiciones de la promoción.</strong>
+                        {campaign.terms_version ? <small>Versión vigente: {campaign.terms_version}</small> : null}
+                      </span>
                     </label>
                     {campaign.terms_text ? <details className="promo-form-wide"><summary>Leer términos y condiciones</summary><p className="promo-help">{campaign.terms_text}</p></details> : null}
                   </>

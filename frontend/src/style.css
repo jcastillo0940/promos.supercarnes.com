@@ -7315,6 +7315,69 @@ a {
   grid-column: 1 / -1;
 }
 
+.promo-form label.promo-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .045);
+  cursor: pointer;
+}
+
+.promo-form label.promo-checkbox-row input[type='checkbox'] {
+  appearance: none;
+  width: 23px;
+  min-width: 23px;
+  height: 23px;
+  min-height: 23px;
+  margin: 1px 0 0;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, .68);
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.promo-form label.promo-checkbox-row input[type='checkbox']:checked {
+  position: relative;
+  border-color: var(--malta-yellow, #baff35);
+  background: var(--malta-yellow, #baff35);
+}
+
+.promo-form label.promo-checkbox-row input[type='checkbox']:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: -2px 0 0;
+  color: #06150d;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 21px;
+  text-align: center;
+}
+
+.promo-form label.promo-checkbox-row input[type='checkbox']:focus-visible {
+  outline: 3px solid rgba(186, 255, 53, .4);
+  outline-offset: 2px;
+}
+
+.promo-form label.promo-checkbox-row > span {
+  display: grid;
+  gap: 3px;
+  color: rgba(241, 244, 255, .92);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.promo-form label.promo-checkbox-row small {
+  color: rgba(241, 244, 255, .62);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .promo-locked h3 {
   margin: 0;
 }
