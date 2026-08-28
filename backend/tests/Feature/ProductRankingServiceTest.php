@@ -14,7 +14,7 @@ class ProductRankingServiceTest extends TestCase
 
     public function test_it_counts_only_units_matching_an_active_campaign_barcode(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill([
             'name' => 'Malta Vigor + Super Carnes',
             'status' => 'active',
@@ -51,7 +51,7 @@ class ProductRankingServiceTest extends TestCase
 
     public function test_it_returns_zero_when_invoice_lines_have_no_participating_barcode(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill([
             'name' => 'Malta Vigor + Super Carnes',
             'status' => 'active',
@@ -85,7 +85,7 @@ class ProductRankingServiceTest extends TestCase
 
     public function test_it_reads_dgi_accented_product_fields(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill([
             'name' => 'Malta Vigor + Super Carnes',
             'status' => 'active',

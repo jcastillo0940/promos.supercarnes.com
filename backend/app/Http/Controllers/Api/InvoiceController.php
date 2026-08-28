@@ -21,13 +21,13 @@ class InvoiceController extends Controller
     public function store(Request $request): JsonResponse
     {
         $authUser = $request->user('sanctum');
-        $isMaltaCampaign = $request->string('campaign_slug')->toString() === 'malta-vigor-honor';
+        $isMaltaCampaign = $request->string('campaign_slug')->toString() === 'malta-vigor';
         $requestedCedula = preg_replace('/[^0-9-]/', '', $request->string('document_number')->toString()) ?? '';
         $existingMaltaParticipant = $isMaltaCampaign && $requestedCedula !== ''
             ? User::query()->where('cedula', $requestedCedula)->where('role', 'client')->first()
             : null;
         $maltaCampaign = $isMaltaCampaign
-            ? Campaign::query()->where('slug', 'malta-vigor-honor')->first()
+            ? Campaign::query()->where('slug', 'malta-vigor')->first()
             : null;
         $hasCurrentMaltaConsent = $existingMaltaParticipant && $maltaCampaign?->terms_version
             ? CampaignParticipantConsent::query()

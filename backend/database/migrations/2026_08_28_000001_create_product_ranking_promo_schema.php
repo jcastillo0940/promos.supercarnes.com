@@ -70,10 +70,10 @@ return new class extends Migration
             $table->unique(['campaign_id', 'user_id']);
         });
 
-        if (! DB::table('campaigns')->where('slug', 'malta-vigor-honor')->exists()) {
+        if (! DB::table('campaigns')->where('slug', 'malta-vigor')->exists()) {
             DB::table('campaigns')->insert([
                 'name' => 'Malta Vigor te premia con HONOR',
-                'slug' => 'malta-vigor-honor',
+                'slug' => 'malta-vigor',
                 'description' => 'Compra Malta Vigor, registra tus facturas y acumula unidades para competir por uno de 5 celulares HONOR Magic7 Lite.',
                 'status' => 'draft',
                 'participation_mode' => 'product_ranking',

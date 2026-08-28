@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class MaltaPublicController extends Controller
 {
-    private const CAMPAIGN_SLUG = 'malta-vigor-honor';
+    private const CAMPAIGN_SLUG = 'malta-vigor';
 
     public function __construct(private readonly ProductRankingService $productRanking)
     {

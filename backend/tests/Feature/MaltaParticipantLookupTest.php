@@ -17,7 +17,7 @@ class MaltaParticipantLookupTest extends TestCase
 
     public function test_existing_participant_with_current_consent_can_register_with_only_their_cedula(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill(['terms_version' => 'v1'])->save();
         $user = User::factory()->create([
             'name' => 'Jeremy Castillo',
@@ -61,7 +61,7 @@ class MaltaParticipantLookupTest extends TestCase
 
     public function test_progress_requires_matching_cedula_and_email(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill(['terms_version' => 'v1'])->save();
         User::factory()->create([
             'cedula' => '8-864-1164',
@@ -84,7 +84,7 @@ class MaltaParticipantLookupTest extends TestCase
             'email' => 'jeremy@example.com',
             'role' => 'client',
         ]);
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         RegisteredInvoice::query()->create([
             'user_id' => $user->id,
             'campaign_id' => $campaign->id,
@@ -119,7 +119,7 @@ class MaltaParticipantLookupTest extends TestCase
 
     public function test_returning_participant_can_submit_an_invoice_with_only_their_cedula(): void
     {
-        $campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $campaign->forceFill(['terms_version' => 'v1'])->save();
         $user = User::factory()->create([
             'name' => 'Jeremy Castillo',
@@ -156,7 +156,7 @@ class MaltaParticipantLookupTest extends TestCase
             'document_type' => 'cedula',
             'document_number' => '8-864-1164',
             'cedula' => '8-864-1164',
-            'campaign_slug' => 'malta-vigor-honor',
+            'campaign_slug' => 'malta-vigor',
         ])
             ->assertCreated()
             ->assertJsonPath('campaign_units_total', 5)
@@ -171,7 +171,7 @@ class MaltaParticipantLookupTest extends TestCase
             'document_type' => 'cedula',
             'document_number' => '8-999-9999',
             'cedula' => '8-999-9999',
-            'campaign_slug' => 'malta-vigor-honor',
+            'campaign_slug' => 'malta-vigor',
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['first_name', 'last_name', 'full_name', 'phone', 'email', 'birthdate']);

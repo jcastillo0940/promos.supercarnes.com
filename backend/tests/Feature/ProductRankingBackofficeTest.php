@@ -24,7 +24,7 @@ class ProductRankingBackofficeTest extends TestCase
     {
         parent::setUp();
         $this->admin = User::factory()->create(['role' => 'admin']);
-        $this->campaign = Campaign::query()->where('slug', 'malta-vigor-honor')->firstOrFail();
+        $this->campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
         $this->campaign->forceFill([
             'status' => 'active',
             'participation_mode' => 'product_ranking',
