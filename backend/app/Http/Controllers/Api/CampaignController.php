@@ -43,6 +43,13 @@ class CampaignController extends Controller
 
         $campaign = Campaign::query()->where('slug', $slug)->firstOrFail();
         $authUser = $request->user('sanctum');
+
+        // Malta Vigor has its own identity-verified progress endpoint. Do not
+        // allow the generic document-only endpoint to disclose its totals.
+        if ($campaign->participation_mode === 'product_ranking' && ! $authUser) {
+            abort(403, 'Consulta no autorizada.');
+        }
+
         $documentNumber = strtoupper(trim((string) ($validated['document_number'] ?? $authUser?->cedula ?? '')));
         $user = $authUser ?: ($documentNumber !== '' ? User::query()->where('cedula', $documentNumber)->first() : null);
         $total = $user

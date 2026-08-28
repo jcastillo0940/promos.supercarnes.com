@@ -9,6 +9,12 @@
                 <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice')])>
                     ConfiguraciÃ³n
                 </a>
+                @php($maltaCampaign = \App\Models\Campaign::query()->where('slug', 'malta-vigor')->where('participation_mode', 'product_ranking')->first())
+                @if($maltaCampaign)
+                    <a href="{{ route('admin.campaigns.product-ranking.operations', $maltaCampaign) }}" @class(['active' => request()->routeIs('admin.campaigns.product-ranking.operations') && request()->route('campaign')?->id === $maltaCampaign->id])>
+                        Malta Vigor <small>Usuarios, ranking y facturas</small>
+                    </a>
+                @endif
                 <a href="{{ route('admin.invoices') }}" @class(['active' => request()->routeIs('admin.invoices')])>
                     Facturas
                 </a>

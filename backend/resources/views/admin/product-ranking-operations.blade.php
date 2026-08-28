@@ -101,7 +101,7 @@
         <div class="page-section table-shell"><table class="wide"><thead><tr><th>Pos.</th><th>Participante</th><th>Cédula</th><th>Correo</th><th>Unidades</th><th>Alcanzó</th><th>Elegibilidad</th></tr></thead><tbody>
             @forelse($ranking as $index=>$participant)
                 @php($eligible = $participant->email && !$participant->is_employee && !$participant->disqualified_at && $participant->birthdate?->age >= $minimumAge)
-                <tr><td>{{ $index+1 }}</td><td><strong>{{ $participant->full_name ?? $participant->name }}</strong></td><td>{{ $participant->cedula }}</td><td>{{ $participant->email }}</td><td><strong>{{ number_format($participant->total_units) }}</strong></td><td>{{ $participant->first_reached_at ? \Illuminate\Support\Carbon::parse($participant->first_reached_at)->format('d/m/Y H:i') : '—' }}</td><td><span class="badge badge-{{ $eligible ? 'green':'red' }}">{{ $eligible ? 'Elegible':'Revisar' }}</span></td></tr>
+                <tr><td>{{ $index+1 }}</td><td><strong>{{ $participant->full_name ?? $participant->name }}</strong><br><a class="mini" href="{{ route('admin.customers.history', $participant) }}">Revisar usuario</a></td><td>{{ $participant->cedula }}</td><td>{{ $participant->email }}</td><td><strong>{{ number_format($participant->total_units) }}</strong></td><td>{{ $participant->first_reached_at ? \Illuminate\Support\Carbon::parse($participant->first_reached_at)->format('d/m/Y H:i') : '—' }}</td><td><span class="badge badge-{{ $eligible ? 'green':'red' }}">{{ $eligible ? 'Elegible':'Revisar' }}</span></td></tr>
             @empty<tr><td colspan="7">Aún no hay unidades aprobadas.</td></tr>@endforelse
         </tbody></table></div>
     </div>

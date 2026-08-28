@@ -84,7 +84,7 @@ return new class extends Migration
                 'rules' => json_encode([
                     'ranking_metric' => 'eligible_units',
                     'winner_slots' => 5,
-                    'participant_identifier' => 'email',
+                    'participant_identifier' => 'cedula',
                     'minimum_age' => 18,
                     'tie_break' => 'first_reached',
                     'exclude_employees' => true,

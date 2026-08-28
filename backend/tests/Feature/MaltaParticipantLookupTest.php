@@ -8,6 +8,7 @@ use App\Models\RegisteredInvoice;
 use App\Models\User;
 use App\Support\ContestInvoiceRegistrationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -73,6 +74,66 @@ class MaltaParticipantLookupTest extends TestCase
             'cedula' => '8-864-1164',
             'email' => 'otro@example.com',
         ])->assertUnprocessable();
+    }
+
+    public function test_generic_campaign_progress_does_not_disclose_malta_totals_by_cedula_only(): void
+    {
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
+        $user = User::factory()->create([
+            'cedula' => '8-864-1164',
+            'email' => 'jeremy@example.com',
+            'role' => 'client',
+        ]);
+        RegisteredInvoice::query()->create([
+            'user_id' => $user->id,
+            'campaign_id' => $campaign->id,
+            'cufe' => 'TEST-GENERIC-PROGRESS',
+            'qr_raw_text' => 'TEST-GENERIC-PROGRESS',
+            'purchase_amount' => 100,
+            'status' => 'accepted',
+            'validation_status' => 'approved',
+            'eligible_units' => 10,
+            'product_validation_status' => 'matched',
+        ]);
+
+        $this->getJson('/api/campaigns/malta-vigor/progress?document_number=8-864-1164')
+            ->assertForbidden();
+    }
+
+    public function test_generic_progress_remains_blocked_for_a_legacy_malta_slug_during_migration(): void
+    {
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
+        $campaign->forceFill(['slug' => 'malta-vigor-honor'])->save();
+
+        $this->getJson('/api/campaigns/malta-vigor-honor/progress?document_number=8-864-1164')
+            ->assertForbidden();
+    }
+
+    public function test_authenticated_generic_progress_keeps_the_legitimate_self_lookup(): void
+    {
+        $campaign = Campaign::query()->where('slug', 'malta-vigor')->firstOrFail();
+        $user = User::factory()->create([
+            'cedula' => '8-864-1164',
+            'email' => 'jeremy@example.com',
+            'role' => 'client',
+        ]);
+        RegisteredInvoice::query()->create([
+            'user_id' => $user->id,
+            'campaign_id' => $campaign->id,
+            'cufe' => 'TEST-AUTH-PROGRESS',
+            'qr_raw_text' => 'TEST-AUTH-PROGRESS',
+            'purchase_amount' => 100,
+            'status' => 'accepted',
+            'validation_status' => 'approved',
+            'eligible_units' => 10,
+            'product_validation_status' => 'matched',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/campaigns/malta-vigor/progress?document_number=8-000-0000')
+            ->assertOk()
+            ->assertJsonPath('data.campaign_units_total', 10);
     }
 
     public function test_participant_can_consult_their_accumulated_bottles_with_cedula_and_email(): void
