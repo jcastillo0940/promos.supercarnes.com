@@ -10412,6 +10412,34 @@ a {
 .promo-shell-malta .promo-primary:hover { background: linear-gradient(135deg, #ffff70, var(--malta-yellow)); }
 .promo-shell-malta .promo-manual input, .promo-shell-malta .promo-form input, .promo-shell-malta .promo-textarea, .promo-shell-malta .promo-select { border-color: rgba(186,255,53,.3); background-color: rgba(0,12,8,.7); }
 .promo-shell-malta .promo-scanner { border-color: rgba(186,255,53,.7); background: rgba(0,12,8,.75); }
+
+/* Keep the mobile camera feed inside its real 4:3 frame; object-fit: cover was cropping it and exposing the green backdrop. */
+.promo-shell-malta .promo-scanner {
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.promo-shell-malta .promo-scanner video {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+  background: #000;
+}
+
+.promo-shell-malta .promo-scanner canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain;
+  pointer-events: none;
+}
 @keyframes malta-float { 0% { margin-top: -12px; filter: blur(5px) saturate(1.25); } 100% { margin-top: 22px; filter: blur(8px) saturate(1.5); } }
 @media (max-width:1280px) { .promo-shell-malta .promo-layout { grid-template-columns: 1fr; grid-template-rows: auto auto; } .promo-shell-malta .promo-hero { min-height: 620px; } .promo-shell-malta .promo-panel { width: min(100%,680px); margin: 0 auto; } .promo-shell-malta .promo-art { right: 0; width: min(80vw,720px); } }
 @media (max-width:760px) { .promo-shell-malta .promo-layout { padding: 22px 16px 34px; } .promo-shell-malta .promo-hero { min-height: 590px; } .promo-shell-malta .promo-kicker { margin-top: 34px; } .promo-shell-malta .promo-hero h1 { font-size: clamp(58px,17vw,92px); } .promo-shell-malta .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) { font-size: 17px; } .promo-shell-malta .promo-art { position: relative; right: auto; bottom: auto; width: 100%; height: 230px; margin-top: 18px; } .promo-shell-malta .promo-dad { right: 0; width: 88%; height: 220px; } .promo-shell-malta .promo-panel { border-radius: 22px; padding: 24px 20px; } .promo-floating-gallery img { opacity: .14; filter: blur(7px) saturate(1.3); } }
