@@ -41,37 +41,34 @@ class FanlycController extends Controller
 
         $outcome = $this->registrationService->registerInvoice($validated);
 
+        $this->rememberLookup($outcome['participant']->cedula, $outcome['participant']->phone);
+
         return redirect()
-            ->route('fanlyc.thanks', [
-                'cedula' => $outcome['participant']->cedula,
-                'phone' => $outcome['participant']->phone,
-            ])
+            ->route('fanlyc.thanks')
             ->with('status', $outcome['message']);
     }
 
-    public function thanks(Request $request): View
+    public function thanks(): View
     {
-        $cedula = trim((string) $request->query('cedula', ''));
-        $phone = trim((string) $request->query('phone', ''));
-        $normalizedCedula = strtoupper(preg_replace('/[^0-9-]/', '', $cedula) ?? '');
+        [$cedula, $phone] = $this->recalledLookup();
 
         $participant = null;
         $invoice = null;
         $coupon = null;
 
-        if ($normalizedCedula !== '' && $phone !== '') {
+        if ($cedula !== '' && $phone !== '') {
             $participant = User::query()
-                ->where('cedula', $normalizedCedula)
+                ->where('cedula', $cedula)
                 ->where('phone', $phone)
                 ->first();
 
             if ($participant) {
-                $invoice = $participant->invoices()
+                $invoice = $participant->fanlycInvoices()
                     ->with('fanlycZone', 'coupon.fanlycZone')
                     ->latest()
                     ->first();
 
-                $coupon = $participant->coupons()
+                $coupon = $participant->fanlycCoupons()
                     ->with('fanlycZone', 'fanlycInvoice')
                     ->latest()
                     ->first();
@@ -82,23 +79,33 @@ class FanlycController extends Controller
             'participant' => $participant,
             'invoice' => $invoice,
             'coupon' => $coupon,
-            'cedula' => $normalizedCedula,
+            'cedula' => $cedula,
             'phone' => $phone,
         ]);
     }
 
-    public function status(Request $request): View
+    public function searchStatus(Request $request): RedirectResponse
     {
-        $cedula = trim((string) $request->query('cedula', ''));
-        $phone = trim((string) $request->query('phone', ''));
-        $normalizedCedula = strtoupper(preg_replace('/[^0-9-]/', '', $cedula) ?? '');
+        $validated = $request->validate([
+            'cedula' => ['required', 'string', 'max:40'],
+            'phone' => ['required', 'string', 'max:30'],
+        ]);
+
+        $this->rememberLookup($validated['cedula'], $validated['phone']);
+
+        return redirect()->route('fanlyc.status');
+    }
+
+    public function status(): View
+    {
+        [$cedula, $phone] = $this->recalledLookup();
 
         $participant = null;
         $coupons = collect();
 
-        if ($normalizedCedula !== '' && $phone !== '') {
+        if ($cedula !== '' && $phone !== '') {
             $participant = User::query()
-                ->where('cedula', $normalizedCedula)
+                ->where('cedula', $cedula)
                 ->where('phone', $phone)
                 ->first();
 
@@ -114,10 +121,33 @@ class FanlycController extends Controller
         return view('fanlyc.status', [
             'participant' => $participant,
             'coupons' => $coupons,
-            'searched' => $normalizedCedula !== '' && $phone !== '',
-            'cedula' => $normalizedCedula,
+            'searched' => $cedula !== '' && $phone !== '',
+            'cedula' => $cedula,
             'phone' => $phone,
         ]);
+    }
+
+    private function rememberLookup(string $cedula, string $phone): void
+    {
+        $normalizedCedula = strtoupper(preg_replace('/[^0-9-]/', '', trim($cedula)) ?? '');
+
+        session(['fanlyc_lookup' => [
+            'cedula' => $normalizedCedula,
+            'phone' => trim($phone),
+        ]]);
+    }
+
+    /**
+     * @return array{0: string, 1: string} [cedula, phone]
+     */
+    private function recalledLookup(): array
+    {
+        $lookup = (array) session('fanlyc_lookup', []);
+
+        return [
+            trim((string) ($lookup['cedula'] ?? '')),
+            trim((string) ($lookup['phone'] ?? '')),
+        ];
     }
 
     public function couponQr(string $code)

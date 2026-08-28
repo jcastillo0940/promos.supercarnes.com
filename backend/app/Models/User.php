@@ -110,6 +110,16 @@ class User extends Authenticatable
         return $this->hasMany(Coupon::class);
     }
 
+    public function fanlycInvoices(): HasMany
+    {
+        return $this->hasMany(FanlycInvoice::class);
+    }
+
+    public function fanlycCoupons(): HasMany
+    {
+        return $this->hasMany(FanlycCoupon::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

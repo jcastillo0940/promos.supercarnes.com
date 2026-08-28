@@ -156,7 +156,7 @@
         <div class="page-section" style="border-top:1px solid #e5e7eb;">
             <h2 style="margin:0 0 .5rem;font-size:1rem;">Ingresar factura manualmente</h2>
             <p style="margin:0 0 .75rem;color:#64748b;font-size:.85rem;">
-                Usa esto cuando el cliente no pueda registrar su factura desde la app (por ejemplo, si DGI no responde). Pega el código QR completo o los últimos 60 números del CUFE.
+                Usa esto cuando el cliente no pueda registrar su factura desde la app (por ejemplo, si DGI no responde). Pega el código QR completo o los últimos 40 números del CUFE.
             </p>
             <form method="POST" action="{{ route('admin.entrepreneurs.invoices.store', $entrepreneur) }}" class="stack">
                 @csrf

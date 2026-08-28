@@ -805,10 +805,10 @@
                     </div>
 
                     <div id="manual-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
-                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Escribe los últimos 60 dígitos del CUFE
-                            <input id="cufe_manual" placeholder="Solo los últimos 60 números" autocomplete="off" inputmode="numeric" pattern="[0-9]{60}" minlength="60">
+                        <label style="display:grid;gap:6px;color:#fff;font-size:13px;font-weight:800;">Escribe los últimos 40 dígitos del CUFE
+                            <input id="cufe_manual" placeholder="Solo los últimos 40 números" autocomplete="off" inputmode="numeric" pattern="[0-9]{40}" minlength="40">
                         </label>
-                        <div class="scan-helper"><strong>60</strong><span>Usa solamente los últimos 60 números que aparecen en tu factura.</span></div>
+                        <div class="scan-helper"><strong>40</strong><span>Usa solamente los últimos 40 números que aparecen en tu factura.</span></div>
                     </div>
 
                     <div id="whatsapp-panel" class="tab-panel" hidden style="padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">
@@ -961,7 +961,7 @@
     };
 
     const normalizeManualCufe = () => {
-        const digits = manualInput.value.replace(/\D/g, '').slice(-60);
+        const digits = manualInput.value.replace(/\D/g, '').slice(-40);
         manualInput.value = digits;
         return digits;
     };
@@ -1042,14 +1042,14 @@
         if (!value) {
             event.preventDefault();
             showFieldError(activeTab === 'manual'
-                ? 'Escribe los últimos 60 números del CUFE de tu factura.'
+                ? 'Escribe los últimos 40 números del CUFE de tu factura.'
                 : 'Escanea o pega el código QR de tu factura.');
             return;
         }
 
-        if (activeTab === 'manual' && value.length !== 60) {
+        if (activeTab === 'manual' && value.length !== 40) {
             event.preventDefault();
-            showFieldError('El CUFE debe contener exactamente los últimos 60 números de tu factura.');
+            showFieldError('El CUFE debe contener exactamente los últimos 40 números de tu factura.');
             return;
         }
 

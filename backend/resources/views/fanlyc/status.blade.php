@@ -121,7 +121,8 @@
         @endif
 
         <div class="card">
-            <form method="GET" action="{{ route('fanlyc.status') }}" class="form-row">
+            <form method="POST" action="{{ route('fanlyc.status.search') }}" class="form-row">
+                @csrf
                 <label>Cédula
                     <input name="cedula" value="{{ $cedula }}" placeholder="8-123-4567" required>
                 </label>

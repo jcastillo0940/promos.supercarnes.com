@@ -389,7 +389,7 @@
                         </div>
                     </div>
                     <div class="actions">
-                        <a class="btn btn-primary" href="{{ route('fanlyc.status', ['cedula' => $cedula, 'phone' => $phone]) }}">Ver mi estado</a>
+                        <a class="btn btn-primary" href="{{ route('fanlyc.status') }}">Ver mi estado</a>
                         <a class="btn btn-secondary" href="{{ route('fanlyc.landing') }}">Registrar otra factura</a>
                     </div>
                 </div>

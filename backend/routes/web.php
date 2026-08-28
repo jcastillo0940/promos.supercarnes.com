@@ -71,6 +71,7 @@ Route::get('/fanlyc', [FanlycController::class, 'landing'])->name('fanlyc.landin
 Route::post('/fanlyc/registro', [FanlycController::class, 'store'])->name('fanlyc.store');
 Route::get('/fanlyc/gracias', [FanlycController::class, 'thanks'])->name('fanlyc.thanks');
 Route::get('/fanlyc/estado', [FanlycController::class, 'status'])->name('fanlyc.status');
+Route::post('/fanlyc/estado', [FanlycController::class, 'searchStatus'])->name('fanlyc.status.search');
 Route::get('/fanlyc/cupon/{code}/qr', [FanlycController::class, 'couponQr'])->name('fanlyc.coupon.qr');
 
 Route::middleware(['auth', 'role:admin'])->group(function () {

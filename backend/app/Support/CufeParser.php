@@ -15,7 +15,7 @@ class CufeParser
         $decoded = urldecode($rawText);
         $bare = strtoupper(trim($decoded));
 
-        if (preg_match('/^\d{60}$/', $bare)) {
+        if (preg_match('/^\d{40}$/', $bare)) {
             return self::CUFE_SHORT_PREFIX.$bare;
         }
 
