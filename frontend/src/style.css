@@ -10851,14 +10851,14 @@ a {
 @media (max-width: 640px) {
   .promo-shell-malta .promo-layout { padding: 18px 15px 42px; gap: 28px; }
   .promo-shell-malta .promo-hero { min-height: auto; padding-top: 72px; }
-  .promo-shell-malta .promo-back { top: 8px; left: 0; z-index: 4; }
+  .promo-shell-malta .promo-back { top: -12px; left: 0; z-index: 4; }
   .malta-campaign-copy { padding-top: 0; }
-  .malta-brand-lockup { height: 94px; gap: 14px; margin-top: 34px; }
+  .malta-brand-lockup { height: 94px; gap: 14px; margin-top: 44px; }
   .malta-brand-lockup img:first-child { width: 150px; max-height: 90px; }
   .malta-brand-lockup img:last-child { width: 116px; max-height: 70px; }
   .malta-brand-lockup i { height: 70px; }
   .malta-promo-chip { font-size: 12px !important; }
-  .promo-shell-malta .malta-headline { font-size: clamp(48px, 14vw, 64px); }
+  .promo-shell-malta .malta-headline { font-size: clamp(36px, 10.5vw, 54px); line-height: .86; }
   .promo-shell-malta .malta-headline strong { white-space: nowrap; }
   .promo-shell-malta .malta-subheadline { margin: 10px 0 18px !important; font-size: 16px !important; white-space: nowrap; }
   .malta-promo-summary { grid-template-columns: 62px 1fr; gap: 15px; }
