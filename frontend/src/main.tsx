@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { App } from './App'
 import './style.css'
 
+void document.fonts.ready.then(() => {
+  document.documentElement.classList.add('fonts-ready')
+})
+
 ReactDOM.createRoot(document.getElementById('app')!).render(
   <React.StrictMode>
     <BrowserRouter>

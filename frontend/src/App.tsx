@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from 'html5-qrcode'
+import type { Html5Qrcode, Html5QrcodeCameraScanConfig, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { api, type ApiDebugEntry, setApiToken } from './api'
 import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
@@ -131,12 +131,7 @@ const PANAMA_PROVINCES = [
   'Panama Oeste',
   'Veraguas',
 ]
-const INVOICE_SCANNER_FORMATS = [
-  Html5QrcodeSupportedFormats.QR_CODE,
-  Html5QrcodeSupportedFormats.DATA_MATRIX,
-  Html5QrcodeSupportedFormats.PDF_417,
-  Html5QrcodeSupportedFormats.AZTEC,
-]
+const INVOICE_SCANNER_FORMATS: Html5QrcodeSupportedFormats[] = [0, 6, 11, 1]
 const INVOICE_SCANNER_START_CONFIG: Html5QrcodeCameraScanConfig = {
   fps: 12,
   disableFlip: true,
@@ -205,8 +200,16 @@ function formFromUser(user: User): InvoiceFormState {
   }
 }
 
-function createInvoiceScanner() {
-  return new Html5Qrcode(QR_READER_ELEMENT_ID, {
+type Html5QrcodeModule = typeof import('html5-qrcode')
+let html5QrcodeModulePromise: Promise<Html5QrcodeModule> | null = null
+
+function loadHtml5Qrcode() {
+  html5QrcodeModulePromise ??= import('html5-qrcode')
+  return html5QrcodeModulePromise
+}
+
+function createInvoiceScanner(html5QrcodeModule: Html5QrcodeModule) {
+  return new html5QrcodeModule.Html5Qrcode(QR_READER_ELEMENT_ID, {
     verbose: false,
     formatsToSupport: INVOICE_SCANNER_FORMATS,
   })
@@ -648,7 +651,8 @@ function PromoLanding({
 
     async function start() {
       try {
-        scanner = createInvoiceScanner()
+        const html5QrcodeModule = await loadHtml5Qrcode()
+        scanner = createInvoiceScanner(html5QrcodeModule)
         if (stopped) {
           await stopScanner()
           return
@@ -1393,7 +1397,8 @@ function ThresholdPromoLanding({
 
     async function start() {
       try {
-        scanner = createInvoiceScanner()
+        const html5QrcodeModule = await loadHtml5Qrcode()
+        scanner = createInvoiceScanner(html5QrcodeModule)
         if (stopped) {
           await stopScanner()
           return
@@ -1774,7 +1779,8 @@ export function LegacyThresholdPromoLanding({
 
     async function start() {
       try {
-        scanner = createInvoiceScanner()
+        const html5QrcodeModule = await loadHtml5Qrcode()
+        scanner = createInvoiceScanner(html5QrcodeModule)
         if (stopped) {
           await stopScanner()
           return
