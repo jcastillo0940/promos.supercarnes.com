@@ -10868,6 +10868,8 @@ a {
   .promo-shell-malta .promo-panel-highlight { margin-bottom: 20px; }
   .promo-shell-malta .promo-panel-highlight h2 { margin-top: 0; }
   .promo-shell-malta .promo-panel-highlight h2 { font-size: 30px; }
+  .promo-shell-malta .promo-panel-highlight > p:last-child { font-size: 16px; }
+  .promo-shell-malta .promo-panel-highlight > p:last-child::after { content: none; }
   .promo-shell-malta .promo-mode-switch button { min-height: 58px; gap: 5px; padding: 0 5px; font-size: 12px; }
   .promo-shell-malta .promo-mode-switch button .material-symbols-outlined { font-size: 19px; }
   .promo-shell-malta .promo-primary { min-height: 66px; font-size: 17px; }
