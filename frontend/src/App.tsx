@@ -852,7 +852,7 @@ function PromoLanding({
           <span className="malta-light-beam malta-light-beam-two" />
           <img className="malta-bottle malta-bottle-top" src="/malta-vigor/reference/bottle-blur.webp" alt="" loading="lazy" decoding="async" />
           <img className="malta-bottle malta-bottle-far" src="/malta-vigor/reference/bottle-soft.webp" alt="" loading="lazy" decoding="async" />
-          <img className="malta-bottle malta-bottle-right" src="/malta-vigor/reference/bottle-hero.webp" alt="" width="1024" height="1536" fetchPriority="high" decoding="async" />
+          <img className="malta-bottle malta-bottle-right" src="/malta-vigor/reference/bottle-hero.webp" srcSet="/malta-vigor/reference/bottle-hero-640.webp 640w, /malta-vigor/reference/bottle-hero.webp 1024w" sizes="(max-width: 640px) 240px, (max-width: 1040px) 360px, 420px" alt="" width="1024" height="1536" loading="lazy" decoding="async" />
           <img className="malta-bottle malta-bottle-bottom" src="/malta-vigor/reference/bottle-angle.webp" alt="" loading="lazy" decoding="async" />
           <img className="malta-bottle malta-bottle-bottom-blur" src="/malta-vigor/reference/bottle-blur.webp" alt="" loading="lazy" decoding="async" />
         </div>
@@ -866,9 +866,9 @@ function PromoLanding({
             {isMaltaCampaign ? (
               <div className="malta-campaign-copy">
                 <div className="malta-brand-lockup">
-                  <img src="/malta-vigor/reference/malta-logo.webp" alt="Malta Vigor" width="1254" height="1254" decoding="async" />
+                  <img src="/malta-vigor/reference/malta-logo.webp" srcSet="/malta-vigor/reference/malta-logo-320.webp 320w, /malta-vigor/reference/malta-logo.webp 1254w" sizes="(max-width: 640px) 150px, (max-width: 1350px) 220px, 260px" alt="Malta Vigor" width="1254" height="1254" decoding="async" />
                   <i />
-                  <img src="/malta-vigor/reference/super-carnes-logo.webp" alt="Super Carnes" width="1448" height="1086" decoding="async" />
+                  <img src="/malta-vigor/reference/super-carnes-logo.webp" srcSet="/malta-vigor/reference/super-carnes-logo-360.webp 360w, /malta-vigor/reference/super-carnes-logo.webp 1448w" sizes="(max-width: 640px) 116px, (max-width: 1350px) 168px, 200px" alt="Super Carnes" width="1448" height="1086" decoding="async" />
                 </div>
                 <p className="malta-promo-chip">Malta Vigor + Super Carnes</p>
                 <h1 className="malta-headline">
