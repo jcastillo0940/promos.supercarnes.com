@@ -599,9 +599,9 @@ class ContestInvoiceRegistrationService
     private function assertOfficialIssuer(array $resolvedInvoice): void
     {
         $issuerRuc = strtoupper(trim((string) ($resolvedInvoice['issuer_ruc'] ?? '')));
-        $issuerName = strtoupper(trim((string) ($resolvedInvoice['issuer_name'] ?? '')));
+        $issuerName = $this->normalizeIssuerLabel((string) ($resolvedInvoice['issuer_name'] ?? ''));
         $officialRucs = array_map(fn ($ruc) => strtoupper(trim((string) $ruc)), config('contest.official_issuer_rucs', []));
-        $officialNames = array_map(fn ($name) => strtoupper(trim((string) $name)), config('contest.official_issuer_names', []));
+        $officialNames = array_map(fn ($name) => $this->normalizeIssuerLabel((string) $name), config('contest.official_issuer_names', []));
         $rucMatches = $issuerRuc !== '' && $officialRucs !== [] && in_array($issuerRuc, $officialRucs, true);
         $nameMatches = $issuerName !== '' && collect($officialNames)->contains(fn ($name) => $name !== '' && str_contains($issuerName, $name));
 
@@ -610,6 +610,11 @@ class ContestInvoiceRegistrationService
                 'issuer_ruc' => 'La factura no corresponde a Importadora Virzi / Super Carnes.',
             ]);
         }
+    }
+
+    private function normalizeIssuerLabel(string $value): string
+    {
+        return preg_replace('/[^A-Z0-9]/', '', strtoupper(trim($value))) ?? '';
     }
 
     private function normalizeCedula(string $cedula): string
