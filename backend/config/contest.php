@@ -12,6 +12,7 @@ return [
     'dgi_verifier_token' => env('DGI_VERIFIER_TOKEN'),
     'employee_identity_denylist' => env('CONTEST_EMPLOYEE_IDENTITY_DENYLIST', ''),
     'official_issuer_rucs' => array_filter(array_map('trim', explode(',', (string) env('CONTEST_OFFICIAL_ISSUER_RUCS', '')))),
+    'official_issuer_names' => array_filter(array_map('trim', explode(',', (string) env('CONTEST_OFFICIAL_ISSUER_NAMES', 'IMPORTADORA VIRZI')))),
     'recaptcha_secret' => env('RECAPTCHA_SECRET_KEY'),
     'recaptcha_site_key' => env('VITE_RECAPTCHA_SITE_KEY'),
     'block_non_panama_ip' => filter_var(env('CONTEST_BLOCK_NON_PANAMA_IP', false), FILTER_VALIDATE_BOOL),

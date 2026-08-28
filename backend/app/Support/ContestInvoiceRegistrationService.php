@@ -121,14 +121,7 @@ class ContestInvoiceRegistrationService
             : ($settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount());
         $purchaseAmount = round((float) $resolvedInvoice['purchase_amount'], 2);
         $now = now('America/Panama');
-        $officialIssuerRucs = config('contest.official_issuer_rucs', []);
-        $issuerRuc = strtoupper(trim((string) ($resolvedInvoice['issuer_ruc'] ?? '')));
-
-        if ($officialIssuerRucs && ! in_array($issuerRuc, array_map(fn ($ruc) => strtoupper(trim((string) $ruc)), $officialIssuerRucs), true)) {
-            throw ValidationException::withMessages([
-                'issuer_ruc' => 'La factura no corresponde a un emisor autorizado de Super Carnes.',
-            ]);
-        }
+        $this->assertOfficialIssuer($resolvedInvoice);
 
         if ($purchaseAmount <= $minimumAmount) {
             throw ValidationException::withMessages([
@@ -187,9 +180,9 @@ class ContestInvoiceRegistrationService
         $canonicalCufe = strtoupper((string) ($verification['canonical_cufe'] ?? $canonicalCufe));
         $invoicePeriod = $this->phaseResolver->periodForDate($issuedAt);
 
-        if (RegisteredInvoice::query()->where('campaign_id', $campaign->id)->where('cufe', $canonicalCufe)->exists()) {
+        if (RegisteredInvoice::query()->where('cufe', $canonicalCufe)->exists()) {
             throw ValidationException::withMessages([
-                'qr_raw_text' => 'Este CUFE ya fue registrado en esta promocion y no puede participar dos veces en el mismo evento.',
+                'qr_raw_text' => 'Este CUFE ya fue registrado y no puede utilizarse nuevamente.',
             ]);
         }
 
@@ -207,6 +200,12 @@ class ContestInvoiceRegistrationService
 
         $branchId = $this->resolveBranchId($resolvedInvoice['issuer_branch_number'] ?? null)
             ?? ($data['branch_id'] ?? null);
+
+        if ($campaign->participation_mode === 'product_ranking' && ! $this->resolveBranchId($resolvedInvoice['issuer_branch_number'] ?? null)) {
+            throw ValidationException::withMessages([
+                'issuer_branch_number' => 'No fue posible identificar una sucursal de Super Carnes en la factura.',
+            ]);
+        }
 
         $thresholdAmount = $this->campaignThresholdAmount($campaign);
         $dreamCampaign = $this->campaignManager->dreamCampaignOrFail();
@@ -407,6 +406,22 @@ class ContestInvoiceRegistrationService
             ? $this->productRanking->evaluate($campaign, $resolved)
             : null;
 
+        $branchId = null;
+        if ($campaign?->participation_mode === 'product_ranking') {
+            $this->assertOfficialIssuer($resolved);
+            $branchId = $this->resolveBranchId($resolved['issuer_branch_number'] ?? null);
+            if (! $branchId) {
+                throw ValidationException::withMessages([
+                    'qr_raw_text' => 'No fue posible identificar una sucursal de Super Carnes en la factura.',
+                ]);
+            }
+            if (RegisteredInvoice::query()->where('cufe', strtoupper((string) $resolved['cufe']))->exists()) {
+                throw ValidationException::withMessages([
+                    'qr_raw_text' => 'Este CUFE ya fue registrado y no puede utilizarse nuevamente.',
+                ]);
+            }
+        }
+
         if ($campaign?->participation_mode === 'product_ranking') {
             Log::info('invoice.product-ranking.evaluation', [
                 'campaign_slug' => $campaign->slug,
@@ -417,6 +432,10 @@ class ContestInvoiceRegistrationService
                 'eligible_units' => $productEvaluation['eligible_units'] ?? 0,
                 'matched_products' => collect($productEvaluation['matched_products'] ?? [])->map(fn ($item) => collect($item)->except('source_payload')->all())->values()->all(),
                 'configured_rules' => $campaign->productRules()->where('is_active', true)->pluck('barcode')->values()->all(),
+                'issuer_name' => $resolved['issuer_name'] ?? null,
+                'issuer_ruc' => $resolved['issuer_ruc'] ?? null,
+                'issuer_branch_number' => $resolved['issuer_branch_number'] ?? null,
+                'branch_id' => $branchId,
             ]);
         }
 
@@ -427,6 +446,8 @@ class ContestInvoiceRegistrationService
             'issued_at' => $resolved['issued_at']->toDateString(),
             'issuer_name' => $resolved['issuer_name'],
             'issuer_ruc' => $resolved['issuer_ruc'] ?? null,
+            'issuer_branch_number' => $resolved['issuer_branch_number'] ?? null,
+            'branch_id' => $branchId,
             'is_valid' => (float) $resolved['purchase_amount'] >= $minimumAmount,
             'minimum_amount' => $minimumAmount,
             'eligible_units' => $productEvaluation['eligible_units'] ?? 0,
@@ -573,6 +594,22 @@ class ContestInvoiceRegistrationService
         }
 
         return Branch::query()->where('store_number', $storeNumber)->value('id');
+    }
+
+    private function assertOfficialIssuer(array $resolvedInvoice): void
+    {
+        $issuerRuc = strtoupper(trim((string) ($resolvedInvoice['issuer_ruc'] ?? '')));
+        $issuerName = strtoupper(trim((string) ($resolvedInvoice['issuer_name'] ?? '')));
+        $officialRucs = array_map(fn ($ruc) => strtoupper(trim((string) $ruc)), config('contest.official_issuer_rucs', []));
+        $officialNames = array_map(fn ($name) => strtoupper(trim((string) $name)), config('contest.official_issuer_names', []));
+        $rucMatches = $issuerRuc !== '' && $officialRucs !== [] && in_array($issuerRuc, $officialRucs, true);
+        $nameMatches = $issuerName !== '' && collect($officialNames)->contains(fn ($name) => $name !== '' && str_contains($issuerName, $name));
+
+        if (! $rucMatches && ! $nameMatches) {
+            throw ValidationException::withMessages([
+                'issuer_ruc' => 'La factura no corresponde a Importadora Virzi / Super Carnes.',
+            ]);
+        }
     }
 
     private function normalizeCedula(string $cedula): string

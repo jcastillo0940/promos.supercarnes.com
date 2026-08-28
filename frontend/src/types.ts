@@ -78,6 +78,9 @@ export interface RegisteredInvoice {
   eligible_units?: number
   product_validation_status?: string
   matched_products?: Array<Record<string, unknown>>
+  issuer_ruc?: string | null
+  issuer_branch_number?: number | null
+  branch_id?: number | null
 }
 
 export interface ResolvedInvoiceData {
