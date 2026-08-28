@@ -159,6 +159,7 @@ return new class extends Migration
         }
 
         Schema::create('campaigns', function (Blueprint $table): void {
+            $table->engine = 'InnoDB';
             $table->id();
             $table->string('name', 150);
             $table->text('description')->nullable();

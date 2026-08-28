@@ -38,8 +38,6 @@ return new class extends Migration
                 'hero_image_url' => '/auth-slogan.webp',
                 'card_image_url' => '/auth-slogan.webp',
                 'sort_order' => 50,
-                'entry_threshold_amount' => 300,
-                'entry_requires_approval' => true,
                 'invoice_scan_enabled' => true,
                 'starts_at' => now(),
                 'ends_at' => now()->addMonths(3),

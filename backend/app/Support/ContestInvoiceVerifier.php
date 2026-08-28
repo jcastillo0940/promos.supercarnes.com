@@ -53,7 +53,7 @@ class ContestInvoiceVerifier
 
         if (! $response->successful() || $apiError) {
             throw ValidationException::withMessages([
-                'cufe' => $apiError ? 'La factura no pudo ser validada por DGI.' : 'No fue posible consultar la factura en este momento.',
+                'cufe' => $apiError ? 'La factura no pudo ser validada.' : 'No fue posible consultar la factura en este momento.',
             ]);
         }
 

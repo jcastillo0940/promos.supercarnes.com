@@ -33,6 +33,9 @@ class RegisteredInvoice extends Model
         'dgi_checked_at',
         'last_reverified_at',
         'dgi_response_payload',
+        'eligible_units',
+        'product_validation_status',
+        'matched_products',
     ];
 
     protected function casts(): array
@@ -45,6 +48,8 @@ class RegisteredInvoice extends Model
             'dgi_checked_at' => 'datetime',
             'last_reverified_at' => 'datetime',
             'dgi_response_payload' => 'array',
+            'matched_products' => 'array',
+            'eligible_units' => 'integer',
         ];
     }
 
@@ -66,5 +71,10 @@ class RegisteredInvoice extends Model
     public function fraudFlags(): HasMany
     {
         return $this->hasMany(FraudFlag::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(RegisteredInvoiceItem::class);
     }
 }

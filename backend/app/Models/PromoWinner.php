@@ -11,6 +11,7 @@ class PromoWinner extends Model
 
     protected $fillable = [
         'phase_id',
+        'campaign_id',
         'user_id',
         'leaderboard_position',
         'total_points',
@@ -35,6 +36,9 @@ class PromoWinner extends Model
         'delivery_notes',
         'delivered_by',
         'prize_delivered_at',
+        'total_units',
+        'first_reached_at',
+        'alternate_position',
     ];
 
     protected function casts(): array
@@ -49,11 +53,19 @@ class PromoWinner extends Model
             'disqualified_at' => 'datetime',
             'delivery_qr_scanned_at' => 'datetime',
             'prize_delivered_at' => 'datetime',
+            'first_reached_at' => 'datetime',
+            'total_units' => 'integer',
+            'alternate_position' => 'integer',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
     }
 }

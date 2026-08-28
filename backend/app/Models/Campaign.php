@@ -31,6 +31,14 @@ class Campaign extends Model
         'major_prizes_enabled',
         'invoice_scan_enabled',
         'redemption_enabled',
+        'rules',
+        'terms_text',
+        'terms_version',
+        'terms_approved_at',
+        'delivery_location',
+        'delivery_deadline',
+        'delivery_requirements',
+        'ranking_frozen_at',
     ];
 
     protected function casts(): array
@@ -43,6 +51,10 @@ class Campaign extends Model
             'major_prizes_enabled' => 'boolean',
             'invoice_scan_enabled' => 'boolean',
             'redemption_enabled' => 'boolean',
+            'rules' => 'array',
+            'terms_approved_at' => 'datetime',
+            'delivery_deadline' => 'datetime',
+            'ranking_frozen_at' => 'datetime',
             'invoice_min_amount_for_shot' => 'decimal:2',
             'amount_per_point' => 'decimal:2',
             'entry_threshold_amount' => 'decimal:2',
@@ -64,5 +76,15 @@ class Campaign extends Model
     public function fondaRegistrations(): HasMany
     {
         return $this->hasMany(FondaRegistration::class);
+    }
+
+    public function productRules(): HasMany
+    {
+        return $this->hasMany(CampaignProductRule::class);
+    }
+
+    public function consents(): HasMany
+    {
+        return $this->hasMany(CampaignParticipantConsent::class);
     }
 }

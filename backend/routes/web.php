@@ -78,9 +78,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/adminrepus1car', [InvoiceBackofficeController::class, 'index'])->name('admin.invoice-backoffice');
     Route::post('/adminrepus1car', [InvoiceBackofficeController::class, 'update'])->name('admin.invoice-backoffice.update');
     Route::post('/adminrepus1car/promociones', [InvoiceBackofficeController::class, 'storeCampaign'])->name('admin.invoice-backoffice.campaigns.store');
+    Route::get('/adminrepus1car/promociones/{campaign}/editar', [InvoiceBackofficeController::class, 'editCampaign'])->name('admin.invoice-backoffice.campaigns.edit');
     Route::post('/adminrepus1car/promociones/{campaign}/estado', [InvoiceBackofficeController::class, 'toggleCampaignStatus'])->name('admin.invoice-backoffice.campaigns.toggle-status');
     Route::get('/adminrepus1car/facturas', [InvoiceBackofficeController::class, 'invoices'])->name('admin.invoices');
     Route::get('/adminrepus1car/ganadores', [InvoiceBackofficeController::class, 'winners'])->name('admin.winners');
+    Route::get('/adminrepus1car/promociones/{campaign}/ranking', [InvoiceBackofficeController::class, 'productRanking'])->name('admin.campaigns.product-ranking');
+    Route::post('/adminrepus1car/promociones/{campaign}/ranking/freeze', [InvoiceBackofficeController::class, 'freezeProductRanking'])->name('admin.campaigns.product-ranking.freeze');
+    Route::get('/adminrepus1car/promociones/{campaign}/operacion', [InvoiceBackofficeController::class, 'productRankingOperations'])->name('admin.campaigns.product-ranking.operations');
+    Route::post('/adminrepus1car/promociones/{campaign}/facturas-manuales', [InvoiceBackofficeController::class, 'storeManualProductInvoice'])->name('admin.campaigns.product-ranking.manual-invoice');
+    Route::post('/adminrepus1car/promociones/{campaign}/ganadores/{winner}/reemplazar', [InvoiceBackofficeController::class, 'replaceProductRankingWinner'])->name('admin.campaigns.product-ranking.replace-winner');
+    Route::post('/adminrepus1car/promociones/{campaign}/fraude/{flag}/resolver', [InvoiceBackofficeController::class, 'resolveProductRankingFraudFlag'])->name('admin.campaigns.product-ranking.resolve-fraud');
     Route::get('/adminrepus1car/auditoria', [InvoiceBackofficeController::class, 'audit'])->name('admin.audit');
     Route::get('/adminrepus1car/media/{path}', [InvoiceBackofficeController::class, 'media'])->where('path', '.*')->name('admin.media');
     Route::post('/adminrepus1car/ganadores/{invoice}', [InvoiceBackofficeController::class, 'selectWinner'])->name('admin.winners.select');

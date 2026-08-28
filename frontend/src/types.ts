@@ -75,6 +75,9 @@ export interface RegisteredInvoice {
   daily_points_capped?: boolean
   daily_invoice_limit_hit?: boolean
   created_at?: string
+  eligible_units?: number
+  product_validation_status?: string
+  matched_products?: Array<Record<string, unknown>>
 }
 
 export interface ResolvedInvoiceData {
@@ -83,6 +86,9 @@ export interface ResolvedInvoiceData {
   purchase_amount: string
   issued_at: string
   issuer_name?: string
+  eligible_units?: number
+  product_validation_status?: string
+  matched_products?: Array<Record<string, unknown>>
 }
 
 export interface ClientBootstrap {

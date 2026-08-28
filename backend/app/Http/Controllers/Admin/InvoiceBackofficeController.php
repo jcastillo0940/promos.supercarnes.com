@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Campaign;
+use App\Models\FraudFlag;
 use App\Models\InvoiceGoalSetting;
 use App\Models\AuditLog;
 use App\Models\PromoWinner;
@@ -14,11 +15,16 @@ use App\Models\SiteSetting;
 use App\Support\Audit;
 use App\Support\BlacklistService;
 use App\Support\ContestInvoiceRegistrationService;
+use App\Support\FraudDetectionService;
+use App\Support\ProductRankingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Support\CampaignLaunchGuard;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -33,10 +39,20 @@ class InvoiceBackofficeController extends Controller
 
     public function index(Request $request): View
     {
+        return view('admin.invoice-backoffice-list', [
+            'settings' => $this->settings(),
+            'campaigns' => Campaign::query()->with('productRules')->orderByDesc('status')->orderBy('sort_order')->orderByDesc('starts_at')->get(),
+            'backofficeKey' => (string) config('contest.backoffice_key', ''),
+        ]);
+    }
+
+    public function editCampaign(Request $request, Campaign $campaign): View
+    {
         return view('admin.invoice-backoffice', [
             'settings' => $this->settings(),
-            'campaigns' => Campaign::query()->orderByDesc('status')->orderBy('sort_order')->orderByDesc('starts_at')->get(),
+            'campaigns' => Campaign::query()->with('productRules')->whereKey($campaign->id)->get(),
             'backofficeKey' => (string) config('contest.backoffice_key', ''),
+            'editingCampaign' => true,
         ]);
     }
 
@@ -88,7 +104,7 @@ class InvoiceBackofficeController extends Controller
             'campaigns.*.slug' => ['required', 'string', 'max:120'],
             'campaigns.*.description' => ['nullable', 'string'],
             'campaigns.*.status' => ['required', 'in:draft,active,paused,archived'],
-            'campaigns.*.participation_mode' => ['required', 'in:points,threshold_form'],
+            'campaigns.*.participation_mode' => ['required', 'in:points,threshold_form,product_ranking'],
             'campaigns.*.is_listed' => ['nullable', 'boolean'],
             'campaigns.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'campaigns.*.hero_image_url' => ['nullable', 'string', 'max:255'],
@@ -107,12 +123,28 @@ class InvoiceBackofficeController extends Controller
             'campaigns.*.redemption_enabled' => ['nullable', 'boolean'],
             'campaigns.*.entry_threshold_amount' => ['nullable', 'numeric', 'min:0'],
             'campaigns.*.entry_requires_approval' => ['nullable', 'boolean'],
+            'campaigns.*.terms_text' => ['nullable', 'string'],
+            'campaigns.*.terms_version' => ['nullable', 'string', 'max:80'],
+            'campaigns.*.terms_approved_at' => ['nullable', 'date'],
+            'campaigns.*.delivery_location' => ['nullable', 'string', 'max:255'],
+            'campaigns.*.delivery_deadline' => ['nullable', 'date'],
+            'campaigns.*.delivery_requirements' => ['nullable', 'string', 'max:500'],
+            'campaigns.*.product_rules_text' => ['nullable', 'string'],
         ]);
 
         foreach ($payload['campaigns'] as $campaignData) {
             $campaign = Campaign::query()->findOrFail($campaignData['id']);
             $mode = $campaignData['participation_mode'] ?? $campaign->participation_mode ?? 'points';
             $thresholdAmount = $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount;
+
+            if ($mode === 'product_ranking' && (($campaignData['status'] ?? $campaign->status) === 'active' || (bool) ($campaignData['is_listed'] ?? false))) {
+                $hasRules = trim((string) ($campaignData['product_rules_text'] ?? '')) !== '' || $campaign->productRules()->where('is_active', true)->exists();
+                $hasTerms = ($campaignData['terms_text'] ?? $campaign->terms_text) && ($campaignData['terms_version'] ?? $campaign->terms_version) && ($campaignData['terms_approved_at'] ?? $campaign->terms_approved_at);
+                $hasDelivery = ($campaignData['delivery_location'] ?? $campaign->delivery_location) && ($campaignData['delivery_deadline'] ?? $campaign->delivery_deadline);
+                if (! $hasRules || ! $hasTerms || ! $hasDelivery) {
+                    throw ValidationException::withMessages(['campaign' => 'Completa códigos oficiales, términos aprobados y datos de entrega antes de publicar esta promoción.']);
+                }
+            }
 
             if ($mode === 'threshold_form' && ($thresholdAmount === null || $thresholdAmount === '')) {
                 $thresholdAmount = 100;
@@ -144,7 +176,21 @@ class InvoiceBackofficeController extends Controller
                 'entry_requires_approval' => $mode === 'threshold_form'
                     ? (bool) ($campaignData['entry_requires_approval'] ?? false)
                     : (bool) ($campaignData['entry_requires_approval'] ?? false),
+                'terms_text' => $campaignData['terms_text'] ?? null,
+                'terms_version' => $campaignData['terms_version'] ?? null,
+                'terms_approved_at' => $campaignData['terms_approved_at'] ?? null,
+                'delivery_location' => $campaignData['delivery_location'] ?? null,
+                'delivery_deadline' => $campaignData['delivery_deadline'] ?? null,
+                'delivery_requirements' => $campaignData['delivery_requirements'] ?? null,
             ])->save();
+
+            if ($mode === 'product_ranking') {
+                $this->syncProductRules($campaign, (string) ($campaignData['product_rules_text'] ?? ''));
+            }
+
+            if ($campaign->status === 'active' || $campaign->is_listed) {
+                app(CampaignLaunchGuard::class)->assertCanPublish($campaign);
+            }
         }
 
         return redirect()
@@ -154,15 +200,20 @@ class InvoiceBackofficeController extends Controller
 
     public function toggleCampaignStatus(Request $request, Campaign $campaign): RedirectResponse
     {
-        $this->authorizeAccess($request);
-
         $validated = $request->validate([
             'status' => ['required', 'in:active,paused'],
         ]);
 
+        if ($validated['status'] === 'active') {
+            app(CampaignLaunchGuard::class)->assertCanPublish($campaign);
+        }
+
         $campaign->forceFill([
             'status' => $validated['status'],
             'is_listed' => $validated['status'] === 'active',
+            'invoice_scan_enabled' => $validated['status'] === 'active' && $campaign->participation_mode === 'product_ranking'
+                ? true
+                : $campaign->invoice_scan_enabled,
         ])->save();
 
         return redirect()
@@ -179,7 +230,7 @@ class InvoiceBackofficeController extends Controller
             'slug' => ['nullable', 'string', 'max:120', 'alpha_dash', Rule::unique('campaigns', 'slug')],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,active,paused,archived'],
-            'participation_mode' => ['required', 'in:points,threshold_form'],
+            'participation_mode' => ['required', 'in:points,threshold_form,product_ranking'],
             'is_listed' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'starts_at' => ['nullable', 'date'],
@@ -214,7 +265,11 @@ class InvoiceBackofficeController extends Controller
                 ->withInput();
         }
 
-        Campaign::query()->create([
+        if ($mode === 'product_ranking' && ($validated['status'] === 'active' || $request->boolean('is_listed'))) {
+            throw ValidationException::withMessages(['campaign' => 'Crea la promoción como borrador y completa primero los códigos, términos y datos de entrega.']);
+        }
+
+        $newCampaign = Campaign::query()->create([
             'name' => $validated['name'],
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
@@ -240,9 +295,408 @@ class InvoiceBackofficeController extends Controller
             'entry_requires_approval' => $request->boolean('entry_requires_approval'),
         ]);
 
+        if ($newCampaign->status === 'active' || $newCampaign->is_listed) {
+            app(CampaignLaunchGuard::class)->assertCanPublish($newCampaign);
+        }
+
         return redirect()
             ->route('admin.invoice-backoffice')
             ->with('status', 'Promocion creada correctamente.');
+    }
+
+    private function syncProductRules(Campaign $campaign, string $raw): void
+    {
+        $rows = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+            [$barcode, $presentation, $name] = array_pad(array_map('trim', explode('|', $line, 3)), 3, null);
+            if ($barcode === '') {
+                continue;
+            }
+            $rows[strtoupper($barcode)] = [
+                'barcode' => strtoupper($barcode),
+                'presentation' => $presentation ?: null,
+                'product_name' => $name ?: 'Malta Vigor',
+                'is_active' => true,
+            ];
+        }
+
+        $campaign->productRules()->delete();
+        if ($rows !== []) {
+            $campaign->productRules()->createMany(array_values($rows));
+        }
+    }
+
+    public function productRanking(Request $request, Campaign $campaign): \Illuminate\Http\JsonResponse
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking', 404);
+
+        $rows = app(\App\Support\ProductRankingService::class)->leaderboard($campaign);
+        $limit = (int) data_get($campaign->rules, 'winner_slots', 5);
+
+        return response()->json([
+            'campaign' => $campaign->only(['id', 'name', 'slug', 'status', 'starts_at', 'ends_at']),
+            'winner_slots' => $limit,
+            'data' => $rows->values()->map(fn ($user, $index) => [
+                'position' => $index + 1,
+                'user_id' => $user->id,
+                'name' => $user->full_name ?: $user->name,
+                'email' => $user->email,
+                'birthdate' => optional($user->birthdate)->toDateString(),
+                'total_units' => (int) $user->total_units,
+                'first_reached_at' => $user->first_reached_at,
+                'eligible' => $user->birthdate !== null && $user->birthdate->age >= (int) data_get($campaign->rules, 'minimum_age', 18) && ! $user->is_employee,
+            ]),
+        ]);
+    }
+
+    public function freezeProductRanking(Request $request, Campaign $campaign): \Illuminate\Http\JsonResponse|RedirectResponse
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking', 404);
+
+        abort_if($campaign->ranking_frozen_at, 422, 'El ranking de esta campaña ya fue congelado.');
+
+        $ranking = app(ProductRankingService::class)->leaderboard($campaign);
+        $minimumAge = (int) data_get($campaign->rules, 'minimum_age', 18);
+        $eligible = $ranking->filter(fn ($user) => $user->email && ! $user->is_employee && $user->birthdate?->age >= $minimumAge)->values();
+        $slots = (int) data_get($campaign->rules, 'winner_slots', 5);
+
+        DB::transaction(function () use ($campaign, $eligible, $slots): void {
+            $campaign->forceFill(['ranking_frozen_at' => now()])->save();
+            foreach ($eligible->take($slots) as $index => $user) {
+                PromoWinner::query()->updateOrCreate(
+                    ['campaign_id' => $campaign->id, 'user_id' => $user->id],
+                    [
+                        'phase_id' => null,
+                        'leaderboard_position' => $index + 1,
+                        'total_units' => (int) $user->total_units,
+                        'total_points' => 0,
+                        'invoice_count' => $user->invoices()->where('campaign_id', $campaign->id)->count(),
+                        'invoice_total_amount' => (float) $user->invoices()->where('campaign_id', $campaign->id)->sum('purchase_amount'),
+                        'first_reached_at' => $user->first_reached_at,
+                        'ranking_timestamp' => now(),
+                        'selection_reason' => 'product_ranking',
+                        'status' => 'selected',
+                        'selected_at' => now(),
+                        'created_by' => auth()->id(),
+                    ],
+                );
+            }
+            foreach ($eligible->slice($slots, 10)->values() as $index => $user) {
+                PromoWinner::query()->updateOrCreate(
+                    ['campaign_id' => $campaign->id, 'user_id' => $user->id],
+                    [
+                        'phase_id' => null,
+                        'leaderboard_position' => $slots + $index + 1,
+                        'alternate_position' => $index + 1,
+                        'total_units' => (int) $user->total_units,
+                        'total_points' => 0,
+                        'selection_reason' => 'product_ranking_alternate',
+                        'status' => 'alternate',
+                        'ranking_timestamp' => now(),
+                        'created_by' => auth()->id(),
+                    ],
+                );
+            }
+        });
+
+        Audit::log('campaign.product_ranking.frozen', 'campaign', $campaign->id, $request->user(), $request, [
+            'campaign_id' => $campaign->id,
+            'winner_slots' => $slots,
+            'eligible_participants' => $eligible->count(),
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Ranking congelado y ganadores seleccionados.', 'winner_slots' => $slots]);
+        }
+
+        return back()->with('status', 'Ranking congelado: se seleccionaron los ganadores y suplentes en orden.');
+    }
+
+    public function productRankingOperations(Request $request, Campaign $campaign, ProductRankingService $rankingService): View
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking', 404);
+
+        $ranking = $rankingService->leaderboard($campaign);
+        $winnerSlots = (int) data_get($campaign->rules, 'winner_slots', 5);
+        $minimumAge = (int) data_get($campaign->rules, 'minimum_age', 18);
+        $winners = PromoWinner::query()
+            ->with('user')
+            ->where('campaign_id', $campaign->id)
+            ->whereIn('status', ['selected', 'alternate', 'disqualified'])
+            ->orderByRaw("CASE status WHEN 'selected' THEN 1 WHEN 'alternate' THEN 2 ELSE 3 END")
+            ->orderBy('leaderboard_position')
+            ->get();
+
+        $invoices = RegisteredInvoice::query()
+            ->with(['user', 'items', 'fraudFlags'])
+            ->where('campaign_id', $campaign->id)
+            ->latest()
+            ->limit(40)
+            ->get();
+
+        $fraudFlags = FraudFlag::query()
+            ->with(['user', 'invoice', 'reviewer'])
+            ->whereHas('invoice', fn ($query) => $query->where('campaign_id', $campaign->id))
+            ->orderByRaw("CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END")
+            ->latest()
+            ->limit(40)
+            ->get();
+
+        $invoiceIds = $invoices->pluck('id');
+        $auditEntries = AuditLog::query()
+            ->with('user')
+            ->where(function ($query) use ($campaign, $invoiceIds): void {
+                $query->where(fn ($inner) => $inner->where('entity_type', 'campaign')->where('entity_id', $campaign->id));
+                if ($invoiceIds->isNotEmpty()) {
+                    $query->orWhere(fn ($inner) => $inner->where('entity_type', 'registered_invoice')->whereIn('entity_id', $invoiceIds));
+                }
+            })
+            ->latest('id')
+            ->limit(40)
+            ->get();
+
+        return view('admin.product-ranking-operations', [
+            'campaign' => $campaign->load('productRules'),
+            'ranking' => $ranking,
+            'winnerSlots' => $winnerSlots,
+            'minimumAge' => $minimumAge,
+            'winners' => $winners,
+            'invoices' => $invoices,
+            'fraudFlags' => $fraudFlags,
+            'auditEntries' => $auditEntries,
+        ]);
+    }
+
+    public function storeManualProductInvoice(
+        Request $request,
+        Campaign $campaign,
+        BlacklistService $blacklist,
+        FraudDetectionService $fraudDetection,
+    ): RedirectResponse {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking', 404);
+
+        if ($campaign->ranking_frozen_at) {
+            throw ValidationException::withMessages(['invoice_number' => 'No se pueden añadir facturas después de congelar el ranking.']);
+        }
+
+        $products = collect($request->input('products', []))
+            ->map(fn ($row) => [
+                'barcode' => strtoupper(trim((string) data_get($row, 'barcode'))),
+                'quantity' => data_get($row, 'quantity'),
+            ])
+            ->filter(fn ($row) => $row['barcode'] !== '' || $row['quantity'] !== null && $row['quantity'] !== '')
+            ->values()
+            ->all();
+        $request->merge(['products' => $products]);
+
+        $validated = $request->validate([
+            'cedula' => ['required', 'string', 'max:40'],
+            'email' => ['required', 'email', 'max:255'],
+            'full_name' => ['nullable', 'string', 'max:150'],
+            'invoice_number' => ['required', 'string', 'max:80'],
+            'issued_at' => ['required', 'date'],
+            'reason' => ['required', 'string', 'min:8', 'max:500'],
+            'products' => ['required', 'array', 'min:1', 'max:10'],
+            'products.*.barcode' => [
+                'required',
+                'string',
+                Rule::exists('campaign_product_rules', 'barcode')->where(fn ($query) => $query
+                    ->where('campaign_id', $campaign->id)
+                    ->where('is_active', true)),
+            ],
+            'products.*.quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+        ]);
+
+        $issuedAt = Carbon::parse($validated['issued_at'], 'America/Panama');
+        if (($campaign->starts_at && $issuedAt->lt($campaign->starts_at)) || ($campaign->ends_at && $issuedAt->gt($campaign->ends_at))) {
+            throw ValidationException::withMessages(['issued_at' => 'La fecha de compra debe estar dentro de la vigencia de la promoción.']);
+        }
+
+        $email = Str::lower(trim($validated['email']));
+        $cedula = trim($validated['cedula']);
+        $byCedula = User::query()->where('cedula', $cedula)->first();
+        $byEmail = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if ($byCedula && $byEmail && $byCedula->id !== $byEmail->id) {
+            throw ValidationException::withMessages(['email' => 'La cédula y el correo pertenecen a cuentas diferentes. Requiere revisión antifraude.']);
+        }
+
+        $participant = $byCedula ?: $byEmail;
+        if ($participant) {
+            if ($participant->role !== 'client') {
+                throw ValidationException::withMessages(['cedula' => 'La identidad corresponde a una cuenta interna y no puede participar.']);
+            }
+            if ($participant->cedula && $participant->cedula !== $cedula) {
+                throw ValidationException::withMessages(['cedula' => 'El correo ya está asociado a otra cédula.']);
+            }
+            if ($participant->email && Str::lower($participant->email) !== $email) {
+                throw ValidationException::withMessages(['email' => 'La cédula ya está asociada a otro correo.']);
+            }
+            $participant->forceFill([
+                'cedula' => $participant->cedula ?: $cedula,
+                'email' => $participant->email ?: $email,
+                'full_name' => $participant->full_name ?: ($validated['full_name'] ?? null),
+                'name' => $participant->name ?: ($validated['full_name'] ?? null),
+            ])->save();
+        } else {
+            if (blank($validated['full_name'] ?? null)) {
+                throw ValidationException::withMessages(['full_name' => 'Escribe el nombre completo porque este participante aún no existe.']);
+            }
+            $participant = User::query()->create([
+                'name' => $validated['full_name'],
+                'full_name' => $validated['full_name'],
+                'role' => 'client',
+                'document_type' => 'cedula',
+                'cedula' => $cedula,
+                'email' => $email,
+                'is_active' => true,
+            ]);
+        }
+
+        if ($participant->is_employee || $participant->disqualified_at || $blacklist->activeEntryForUser($participant)) {
+            throw ValidationException::withMessages(['cedula' => 'El participante está excluido o bloqueado. No se registró la factura.']);
+        }
+
+        $invoiceNumber = trim($validated['invoice_number']);
+        if (RegisteredInvoice::query()->where('campaign_id', $campaign->id)->where('invoice_number', $invoiceNumber)->exists()) {
+            throw ValidationException::withMessages(['invoice_number' => 'Ese número de factura ya existe en esta promoción.']);
+        }
+
+        $rules = $campaign->productRules()->where('is_active', true)->get()->keyBy(fn ($rule) => strtoupper($rule->barcode));
+        $matchedProducts = collect($validated['products'])->map(function (array $row) use ($rules): array {
+            $rule = $rules->get(strtoupper($row['barcode']));
+            return [
+                'barcode' => $rule->barcode,
+                'description' => $rule->product_name,
+                'presentation' => $rule->presentation,
+                'quantity' => (int) $row['quantity'],
+                'is_eligible' => true,
+            ];
+        })->values();
+        $eligibleUnits = (int) $matchedProducts->sum('quantity');
+        $manualCufe = 'MANUAL-'.$campaign->id.'-'.strtoupper(hash('sha256', $invoiceNumber));
+
+        $invoice = DB::transaction(function () use ($request, $campaign, $participant, $validated, $issuedAt, $invoiceNumber, $manualCufe, $matchedProducts, $eligibleUnits): RegisteredInvoice {
+            $invoice = RegisteredInvoice::query()->create([
+                'user_id' => $participant->id,
+                'campaign_id' => $campaign->id,
+                'cufe' => $manualCufe,
+                'qr_raw_text' => $manualCufe,
+                'invoice_number' => $invoiceNumber,
+                'issuer_name' => 'Super Carnes (entrada manual)',
+                'issued_at' => $issuedAt,
+                'purchase_amount' => 0,
+                'points_awarded' => 0,
+                'shots_awarded' => 0,
+                'status' => 'approved',
+                'validation_status' => 'approved',
+                'validation_notes' => 'Factura cargada manualmente por backoffice. Motivo: '.$validated['reason'],
+                'dgi_response_payload' => [
+                    'source' => 'admin_manual_entry',
+                    'entered_by_user_id' => $request->user()->id,
+                    'reason' => $validated['reason'],
+                ],
+                'eligible_units' => $eligibleUnits,
+                'product_validation_status' => 'matched',
+                'matched_products' => $matchedProducts->all(),
+            ]);
+
+            foreach ($matchedProducts as $product) {
+                $invoice->items()->create([
+                    'barcode' => $product['barcode'],
+                    'description' => $product['description'].' '.($product['presentation'] ?? ''),
+                    'quantity' => $product['quantity'],
+                    'is_eligible' => true,
+                    'source_payload' => ['source' => 'admin_manual_entry', 'entered_by_user_id' => $request->user()->id],
+                ]);
+            }
+
+            Audit::log('invoice.manual_product_entry', 'registered_invoice', $invoice->id, $request->user(), $request, [
+                'campaign_id' => $campaign->id,
+                'participant_user_id' => $participant->id,
+                'invoice_number' => $invoiceNumber,
+                'eligible_units' => $eligibleUnits,
+                'products' => $matchedProducts->all(),
+                'reason' => $validated['reason'],
+            ]);
+
+            return $invoice;
+        });
+
+        $fraudDetection->inspectApprovedInvoice($participant, $invoice, $request);
+
+        return back()->with('status', "Factura manual registrada: {$eligibleUnits} unidades Malta Vigor acreditadas.");
+    }
+
+    public function replaceProductRankingWinner(Request $request, Campaign $campaign, PromoWinner $winner): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking' && $winner->campaign_id === $campaign->id, 404);
+        abort_unless($winner->status === 'selected', 422, 'Solo se puede reemplazar un ganador principal.');
+        $validated = $request->validate(['reason' => ['required', 'string', 'min:8', 'max:500']]);
+        DB::transaction(function () use ($request, $campaign, $winner, $validated): void {
+            $alternate = PromoWinner::query()
+                ->where('campaign_id', $campaign->id)
+                ->where('status', 'alternate')
+                ->orderBy('alternate_position')
+                ->lockForUpdate()
+                ->first();
+            if (! $alternate) {
+                throw ValidationException::withMessages(['reason' => 'No hay suplentes disponibles para efectuar el reemplazo.']);
+            }
+            $winner->forceFill([
+                'status' => 'disqualified',
+                'disqualified_at' => now(),
+                'notes' => trim(($winner->notes ? $winner->notes."\n" : '').'Reemplazado: '.$validated['reason']),
+            ])->save();
+            $alternate->forceFill([
+                'status' => 'selected',
+                'alternate_position' => null,
+                'replacement_for_winner_id' => $winner->id,
+                'selected_at' => now(),
+                'selection_reason' => 'ordered_alternate_replacement',
+            ])->save();
+            Audit::log('campaign.product_ranking.winner_replaced', 'campaign', $campaign->id, $request->user(), $request, [
+                'campaign_id' => $campaign->id,
+                'replaced_winner_id' => $winner->id,
+                'replacement_winner_id' => $alternate->id,
+                'reason' => $validated['reason'],
+            ]);
+        });
+
+        return back()->with('status', 'Ganador reemplazado por el siguiente suplente elegible.');
+    }
+
+    public function resolveProductRankingFraudFlag(Request $request, Campaign $campaign, FraudFlag $flag): RedirectResponse
+    {
+        $this->authorizeAccess($request);
+        abort_unless($campaign->participation_mode === 'product_ranking' && $flag->invoice?->campaign_id === $campaign->id, 404);
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['resolved', 'dismissed'])],
+            'resolution_notes' => ['required', 'string', 'min:8', 'max:1000'],
+        ]);
+        $flag->forceFill([
+            'status' => $validated['status'],
+            'resolution_notes' => $validated['resolution_notes'],
+            'reviewed_by_user_id' => $request->user()->id,
+            'reviewed_at' => now(),
+        ])->save();
+        Audit::log('fraud.flag.reviewed', 'registered_invoice', $flag->registered_invoice_id, $request->user(), $request, [
+            'campaign_id' => $campaign->id,
+            'fraud_flag_id' => $flag->id,
+            'status' => $validated['status'],
+            'resolution_notes' => $validated['resolution_notes'],
+        ]);
+
+        return back()->with('status', 'Alerta antifraude revisada y registrada en auditoría.');
     }
 
     public function invoices(Request $request): View
@@ -1136,6 +1590,10 @@ class InvoiceBackofficeController extends Controller
 
     private function authorizeAccess(Request $request): void
     {
+        if ($request->user()?->isAdmin()) {
+            return;
+        }
+
         $expectedKey = (string) config('contest.backoffice_key', '');
         $providedKey = (string) $request->query('key', $request->input('key', ''));
 

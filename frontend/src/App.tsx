@@ -6,8 +6,9 @@ import type { RegisteredInvoice, ResolvedInvoiceData, User } from './types'
 
 type EntryMode = 'scan' | 'manual' | 'whatsapp'
 type PromoStep = 1 | 2 | 3
+type MaltaParticipantStage = 'identify' | 'register'
 type CampaignStatus = 'draft' | 'active' | 'paused' | 'archived'
-type ParticipationMode = 'points' | 'threshold_form'
+type ParticipationMode = 'points' | 'threshold_form' | 'product_ranking'
 
 interface Campaign {
   id: number
@@ -20,6 +21,9 @@ interface Campaign {
   is_listed?: boolean
   hero_image_url?: string | null
   card_image_url?: string | null
+  terms_text?: string | null
+  terms_version?: string | null
+  ranking_frozen_at?: string | null
 }
 
 interface BranchOption {
@@ -37,6 +41,7 @@ interface InvoiceFormState {
   cufe_tail: string
   document_type: 'cedula' | 'passport' | 'residente'
   document_number: string
+  full_name: string
   first_name: string
   last_name: string
   phone: string
@@ -47,9 +52,13 @@ interface InvoiceFormState {
   entrepreneur_type: string
   entrepreneur_story: string
   entrepreneur_reason: string
+  birthdate: string
+  accepted_terms: boolean
+  eligible_units: number
+  product_validation_status: string
 }
 
-const QR_READER_ELEMENT_ID = 'dgi-qr-reader'
+const QR_READER_ELEMENT_ID = 'invoice-qr-reader'
 const CUFE_SHORT_PREFIX = 'FE01200000032812-2-249262-'
 const CUFE_SHORT_PREFIX_ABBR = 'FE...-249262-'
 const CUFE_TAIL_EXAMPLE = '630003202607091500223344556677889900112233445566778899001122'.slice(0, 60)
@@ -96,6 +105,7 @@ function emptyForm(): InvoiceFormState {
     cufe_tail: '',
     document_type: 'cedula',
     document_number: '',
+    full_name: '',
     first_name: '',
     last_name: '',
     phone: '',
@@ -106,6 +116,10 @@ function emptyForm(): InvoiceFormState {
     entrepreneur_type: '',
     entrepreneur_story: '',
     entrepreneur_reason: '',
+    birthdate: '',
+    accepted_terms: false,
+    eligible_units: 0,
+    product_validation_status: 'not_applicable',
   }
 }
 
@@ -123,10 +137,12 @@ function formFromUser(user: User): InvoiceFormState {
     ...emptyForm(),
     document_type: user.document_type,
     document_number: user.cedula,
+    full_name: user.full_name,
     first_name: firstNameFromUser(user),
     last_name: lastNameFromUser(user),
     phone: user.phone ?? '',
     email: user.email,
+    birthdate: user.birthdate ?? '',
     entrepreneur_name: user.entrepreneur_name ?? '',
     entrepreneur_province: user.entrepreneur_province ?? '',
     entrepreneur_reason: user.entrepreneur_reason ?? '',
@@ -138,6 +154,22 @@ function createInvoiceScanner() {
     verbose: false,
     formatsToSupport: INVOICE_SCANNER_FORMATS,
   })
+}
+
+async function safelyStopInvoiceScanner(scanner: Html5Qrcode | null) {
+  if (!scanner) return
+
+  try {
+    await scanner.stop()
+  } catch {
+    // The scanner may already be stopped when React cleanup races with a QR callback.
+  }
+
+  try {
+    await scanner.clear()
+  } catch {
+    // clear() is also safe to ignore when start() never completed.
+  }
 }
 
 export function App() {
@@ -247,6 +279,11 @@ export function App() {
     }
 
     return <ThresholdPromoLanding campaign={selectedCampaign} user={authUser} onUserChange={setAuthUser} onBack={() => goHome(setPath)} />
+  }
+
+  if (selectedCampaign?.participation_mode === 'product_ranking') {
+    if (authLoading) return <AuthLoadingScreen />
+    return <PromoLanding campaign={selectedCampaign} user={authUser} onBack={() => goHome(setPath)} />
   }
 
   return <PromoLanding campaign={selectedCampaign} onBack={() => goHome(setPath)} />
@@ -463,23 +500,34 @@ function PromoCatalog({
 
 function PromoLanding({
   campaign,
+  user,
   onBack,
 }: {
   campaign: Campaign | null
+  user?: User | null
   onBack: () => void
 }) {
   const [entryMode, setEntryMode] = useState<EntryMode>('scan')
   const [promoStep, setPromoStep] = useState<PromoStep>(1)
-  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(emptyForm())
+  const [invoiceForm, setInvoiceForm] = useState<InvoiceFormState>(() => user ? formFromUser(user) : emptyForm())
   const [scannerOn, setScannerOn] = useState(false)
   const [scannerError, setScannerError] = useState<string | null>(null)
   const [resolvingInvoice, setResolvingInvoice] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submissionMessage, setSubmissionMessage] = useState<string | null>(null)
+  const [participantStage, setParticipantStage] = useState<MaltaParticipantStage>('identify')
+  const [participantLookupLoading, setParticipantLookupLoading] = useState(false)
+  const [showProgressLookup, setShowProgressLookup] = useState(false)
+  const [progressLookup, setProgressLookup] = useState({ cedula: '', email: '' })
+  const [progressResult, setProgressResult] = useState<{ display_name: string; campaign_units_total: number; invoice_count: number } | null>(null)
+  const [progressError, setProgressError] = useState<string | null>(null)
+  const [progressLoading, setProgressLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [invoiceValidated, setInvoiceValidated] = useState(false)
   const [manualTouched, setManualTouched] = useState(false)
   const [campaignTotal, setCampaignTotal] = useState(0)
   const [campaignThreshold] = useState(Number(campaign?.entry_threshold_amount ?? 0))
+  const isMaltaCampaign = campaign?.participation_mode === 'product_ranking'
 
   const steps = useMemo(
     () => [
@@ -495,16 +543,31 @@ function PromoLanding({
 
     let scanner: Html5Qrcode | null = null
     let stopped = false
+    let stopping = false
+    let decoding = false
+
+    const stopScanner = async () => {
+      if (stopping) return
+      stopping = true
+      await safelyStopInvoiceScanner(scanner)
+    }
 
     async function start() {
       try {
         scanner = createInvoiceScanner()
+        if (stopped) {
+          await stopScanner()
+          return
+        }
         await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
-          if (stopped) return
-          await resolveInvoice(decodedText)
-          await scanner?.stop().catch(() => undefined)
-          await scanner?.clear()
-          setScannerOn(false)
+          if (stopped || decoding) return
+          decoding = true
+          try {
+            await resolveInvoice(decodedText)
+          } finally {
+            await stopScanner()
+            setScannerOn(false)
+          }
         }, () => undefined)
       } catch (error) {
         setScannerError(normalizeError(error))
@@ -515,10 +578,7 @@ function PromoLanding({
 
     return () => {
       stopped = true
-      if (!scanner) return
-      void scanner.stop().catch(() => undefined).finally(() => {
-        void scanner?.clear()
-      })
+      void stopScanner()
     }
   }, [entryMode, scannerOn])
 
@@ -527,6 +587,7 @@ function PromoLanding({
       setResolvingInvoice(true)
       const response = await api.post<{ data: ResolvedInvoiceData & { is_valid?: boolean; minimum_amount?: number } }>('/invoices/resolve', {
         qr_raw_text: rawText,
+        campaign_slug: campaign?.slug ?? null,
       })
 
       setScannerError(null)
@@ -539,8 +600,24 @@ function PromoLanding({
         return
       }
 
+      if (isMaltaCampaign && response.data.data.product_validation_status === 'undetermined') {
+        setInvoiceValidated(false)
+        setPromoStep(1)
+        setScannerError('No pudimos identificar los productos de esta factura. Envíala por WhatsApp para revisión manual.')
+        return
+      }
+
+      if (isMaltaCampaign && Number(response.data.data.eligible_units ?? 0) < 1) {
+        setInvoiceValidated(false)
+        setPromoStep(1)
+        setScannerError('Esta factura no contiene productos Malta Vigor participantes.')
+        return
+      }
+
       setInvoiceValidated(true)
       setPromoStep(2)
+      setParticipantStage('identify')
+      setShowProgressLookup(false)
       setInvoiceForm((current) => ({
         ...current,
         rawInput: rawText,
@@ -549,6 +626,8 @@ function PromoLanding({
         purchase_amount: response.data.data.purchase_amount ?? current.purchase_amount,
         issued_at: response.data.data.issued_at ?? current.issued_at,
         issuer_name: response.data.data.issuer_name ?? current.issuer_name,
+        eligible_units: response.data.data.eligible_units ?? current.eligible_units,
+        product_validation_status: response.data.data.product_validation_status ?? current.product_validation_status,
       }))
     } catch (error) {
       setScannerError(normalizeError(error))
@@ -563,28 +642,36 @@ function PromoLanding({
     await resolveInvoice(`${CUFE_SHORT_PREFIX}${rawTail}`)
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function submitInvoice(options?: { documentNumber?: string; greetingName?: string; reuseProfile?: boolean }) {
     setSubmitting(true)
     setSubmitError(null)
 
     try {
       const rawText = invoiceForm.rawInput || `${CUFE_SHORT_PREFIX}${invoiceForm.cufe_tail}`
-      const fullName = `${invoiceForm.first_name.trim()} ${invoiceForm.last_name.trim()}`.trim()
-      const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_threshold?: number }>('/invoices/scan', {
+      const documentNumber = options?.documentNumber ?? invoiceForm.document_number
+      const fullName = (isMaltaCampaign
+        ? invoiceForm.full_name
+        : `${invoiceForm.first_name.trim()} ${invoiceForm.last_name.trim()}`).trim()
+      const nameParts = fullName.split(/\s+/).filter(Boolean)
+      const firstName = isMaltaCampaign ? (nameParts.shift() ?? '') : invoiceForm.first_name
+      const lastName = isMaltaCampaign ? (nameParts.join(' ') || '.') : invoiceForm.last_name
+      const response = await api.post<{ invoice: RegisteredInvoice; message?: string; campaign_total?: number; campaign_units_total?: number; campaign_threshold?: number; eligible_units?: number; product_validation_status?: string }>('/invoices/scan', {
         qr_raw_text: rawText,
         campaign_slug: campaign?.slug ?? null,
         purchase_amount: Number(invoiceForm.purchase_amount || 0),
         invoice_number: invoiceForm.invoice_number || null,
         issued_at: invoiceForm.issued_at || null,
-        document_type: invoiceForm.document_type,
-        document_number: invoiceForm.document_number,
-        first_name: invoiceForm.first_name,
-        last_name: invoiceForm.last_name,
-        full_name: fullName,
-        cedula: invoiceForm.document_number,
-        phone: invoiceForm.phone || null,
-        email: invoiceForm.email || null,
+        document_type: isMaltaCampaign ? 'cedula' : invoiceForm.document_type,
+        document_number: documentNumber,
+        first_name: options?.reuseProfile ? null : firstName,
+        last_name: options?.reuseProfile ? null : lastName,
+        full_name: options?.reuseProfile ? null : fullName,
+        cedula: documentNumber,
+        phone: options?.reuseProfile ? null : (invoiceForm.phone || null),
+        email: options?.reuseProfile ? null : (invoiceForm.email || null),
+        birthdate: options?.reuseProfile ? null : (invoiceForm.birthdate || null),
+        accepted_terms: options?.reuseProfile ? false : invoiceForm.accepted_terms,
+        terms_version: campaign?.terms_version ?? null,
         nearest_branch_id: invoiceForm.nearest_branch_id ? Number(invoiceForm.nearest_branch_id) : null,
         entrepreneur_name: invoiceForm.entrepreneur_name || null,
         entrepreneur_province: invoiceForm.entrepreneur_province || null,
@@ -596,7 +683,15 @@ function PromoLanding({
       if (typeof response.data.campaign_total === 'number') {
         setCampaignTotal(response.data.campaign_total)
       }
+      if (isMaltaCampaign && typeof response.data.campaign_units_total === 'number') {
+        setCampaignTotal(response.data.campaign_units_total)
+      }
       setInvoiceValidated(true)
+      if (campaign?.participation_mode === 'product_ranking' && response.data.eligible_units !== undefined) {
+        setInvoiceForm((current) => ({ ...current, eligible_units: response.data.eligible_units ?? 0, product_validation_status: response.data.product_validation_status ?? current.product_validation_status }))
+      }
+      const confirmation = response.data.message ?? 'Tu factura fue registrada correctamente.'
+      setSubmissionMessage(options?.greetingName ? `${options.greetingName}, listo. ${confirmation}` : confirmation)
       setPromoStep(3)
     } catch (error) {
       setSubmitError(normalizeError(error))
@@ -605,22 +700,98 @@ function PromoLanding({
     }
   }
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await submitInvoice()
+  }
+
+  async function handleParticipantLookup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const cedula = sanitizeDocumentNumber('cedula', invoiceForm.document_number)
+    if (!cedula) return
+
+    setParticipantLookupLoading(true)
+    setSubmitError(null)
+    try {
+      const response = await api.post<{ data: { registered: boolean; display_name?: string | null } }>('/public/malta/participant', { cedula })
+      setInvoiceForm((current) => ({ ...current, document_type: 'cedula', document_number: cedula }))
+      if (response.data.data.registered) {
+        const displayName = response.data.data.display_name || 'Participante'
+        await submitInvoice({ documentNumber: cedula, greetingName: displayName, reuseProfile: true })
+        return
+      }
+      setParticipantStage('register')
+    } catch (error) {
+      setSubmitError(normalizeError(error))
+    } finally {
+      setParticipantLookupLoading(false)
+    }
+  }
+
+  async function handleProgressLookup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setProgressLoading(true)
+    setProgressError(null)
+    setProgressResult(null)
+    try {
+      const response = await api.post<{ data: { display_name: string; campaign_units_total: number; invoice_count: number } }>('/public/malta/progress', progressLookup)
+      setProgressResult(response.data.data)
+    } catch (error) {
+      setProgressError(normalizeError(error))
+    } finally {
+      setProgressLoading(false)
+    }
+  }
+
   return (
-    <div className="promo-shell">
+    <div className={`promo-shell ${isMaltaCampaign ? 'promo-shell-malta' : ''}`}>
       <div className="promo-ambient" />
+      {isMaltaCampaign ? (
+        <div className="malta-product-atmosphere" aria-hidden="true">
+          <span className="malta-light-beam malta-light-beam-one" />
+          <span className="malta-light-beam malta-light-beam-two" />
+          <img className="malta-bottle malta-bottle-top" src="/malta-vigor/reference/bottle-blur.png" alt="" />
+          <img className="malta-bottle malta-bottle-far" src="/malta-vigor/reference/bottle-soft.png" alt="" />
+          <img className="malta-bottle malta-bottle-right" src="/malta-vigor/reference/bottle-hero.png" alt="" />
+          <img className="malta-bottle malta-bottle-bottom" src="/malta-vigor/reference/bottle-angle.png" alt="" />
+          <img className="malta-bottle malta-bottle-bottom-blur" src="/malta-vigor/reference/bottle-blur.png" alt="" />
+        </div>
+      ) : null}
       <main className="promo-layout">
         <section className="promo-hero">
           <div className="promo-hero-copy">
             <button className="promo-back" type="button" onClick={onBack}>
-              Volver a promociones
+              {isMaltaCampaign ? 'ϟ  Volver a promociones' : 'Volver a promociones'}
             </button>
-            <p className="promo-kicker">/{campaign?.slug ?? 'promo'}</p>
-            {invoiceValidated ? <p className="promo-valid-badge">Factura valida</p> : null}
-            <h1>
-              {campaign?.name ?? 'Promocion'}
-              <span>Super Carnes</span>
-            </h1>
-            <p>{campaign?.description ?? 'Ingresa a la promoción y registra tu factura.'}</p>
+            {isMaltaCampaign ? (
+              <div className="malta-campaign-copy">
+                <div className="malta-brand-lockup">
+                  <img src="/malta-vigor/reference/malta-logo.png" alt="Malta Vigor" />
+                  <i />
+                  <img src="/malta-vigor/reference/super-carnes-logo.png" alt="Super Carnes" />
+                </div>
+                <p className="malta-promo-chip">Malta Vigor + Super Carnes</p>
+                <h1 className="malta-headline">
+                  <span>Malta Vigor</span>
+                  <strong>te premia</strong>
+                </h1>
+                <p className="malta-subheadline">Gana un celular <em>HONOR Magic7 Lite</em></p>
+                <div className="malta-promo-summary">
+                  <span className="material-symbols-outlined" aria-hidden="true">smartphone</span>
+                  <p>Compra Malta Vigor en Super Carnes, registra tu factura y acumula oportunidades para ganar uno de 5 celulares <strong>HONOR Magic7 Lite.</strong></p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="promo-kicker">/{campaign?.slug ?? 'promo'}</p>
+                {invoiceValidated ? <p className="promo-valid-badge">Factura valida</p> : null}
+                <h1>
+                  {campaign?.name ?? 'Promocion'}
+                  <span>Super Carnes</span>
+                </h1>
+                <p>{campaign?.description ?? 'Ingresa a la promoción y registra tu factura.'}</p>
+              </>
+            )}
             {campaign?.slug === 'del-sueno-al-puesto' ? (
               <div className="promo-tracker">
                 <div className="promo-tracker-head">
@@ -633,17 +804,17 @@ function PromoLanding({
                 <p>{campaignTotal >= (campaignThreshold || 100) ? 'Ya puedes participar en la selección principal.' : `Te faltan $${Math.max((campaignThreshold || 100) - campaignTotal, 0).toFixed(2)} para llegar al límite.`}</p>
               </div>
             ) : null}
-            <div className="promo-stepper">
+            {!isMaltaCampaign ? <div className="promo-stepper">
               {steps.map((step) => (
                 <div key={step.id} className={`promo-step ${promoStep >= step.id ? 'is-active' : ''}`}>
                   <span>{step.id}</span>
                   <strong>{step.title}</strong>
                 </div>
               ))}
-            </div>
+            </div> : null}
           </div>
 
-          <div className="promo-art">
+          {!isMaltaCampaign ? <div className="promo-art">
             <div className="promo-paper">
               <span>Promo activa</span>
               <div className="promo-paper-lines">
@@ -659,23 +830,66 @@ function PromoLanding({
             <div className="promo-ball" aria-hidden="true">
               <img src="/trionda-ball.svg" alt="" />
             </div>
-          </div>
+          </div> : null}
         </section>
 
         <aside className="promo-panel">
           <div className="promo-panel-card promo-panel-highlight">
-            <p className="promo-panel-label">Promoción activa</p>
-            <h2>{campaign?.status === 'active' ? 'Lista para participar' : 'Promoción disponible'}</h2>
-            <p>{invoiceValidated ? 'La factura pasó y el formulario ya está disponible.' : 'Escanea tu factura DGI para comenzar.'}</p>
+            <p className="promo-panel-label">{showProgressLookup ? 'Tu progreso' : 'Acumula y gana'}</p>
+            <h2>{showProgressLookup ? 'Consulta tus botellas' : campaign?.status === 'active' ? 'Registra tu factura' : 'Promoción disponible'}</h2>
+            <p>{showProgressLookup ? 'Ingresa tu cédula y correo para ver tu acumulado.' : invoiceValidated ? 'Factura con Malta Vigor detectada. Identifícate para registrarla.' : 'Escanea tu factura de Super Carnes para comenzar.'}</p>
           </div>
 
-          {!invoiceValidated ? (
+          {showProgressLookup ? (
+            <form className="promo-panel-card promo-form promo-progress-lookup" onSubmit={handleProgressLookup}>
+              <div className="promo-form-head">
+                <p>Mi acumulado</p>
+                <h3>¿Cuántas botellas llevo?</h3>
+              </div>
+              <label>
+                Número de cédula
+                <input
+                  value={progressLookup.cedula}
+                  onChange={(event) => setProgressLookup((current) => ({ ...current, cedula: sanitizeDocumentNumber('cedula', event.target.value) }))}
+                  placeholder="8-123-4567"
+                  required
+                />
+              </label>
+              <label>
+                Correo registrado
+                <input
+                  value={progressLookup.email}
+                  onChange={(event) => setProgressLookup((current) => ({ ...current, email: event.target.value.trim() }))}
+                  type="email"
+                  placeholder="correo@dominio.com"
+                  required
+                />
+              </label>
+              {progressError ? <div className="promo-alert">{progressError}</div> : null}
+              {progressResult ? (
+                <div className="malta-progress-result" role="status">
+                  <span className="material-symbols-outlined" aria-hidden="true">local_drink</span>
+                  <p>{progressResult.display_name}, llevas</p>
+                  <strong>{progressResult.campaign_units_total} botellas</strong>
+                  <small>en {progressResult.invoice_count} {progressResult.invoice_count === 1 ? 'factura registrada' : 'facturas registradas'}</small>
+                </div>
+              ) : null}
+              <button className="promo-primary" type="submit" disabled={progressLoading}>
+                {progressLoading ? 'Consultando...' : 'Consultar mis botellas'}
+              </button>
+              <button className="malta-text-button" type="button" onClick={() => { setShowProgressLookup(false); setProgressError(null); setProgressResult(null) }}>
+                Volver a registrar una factura
+              </button>
+            </form>
+          ) : !invoiceValidated ? (
             <div className="promo-panel-card">
               <div className="promo-mode-switch">
                 <button className={entryMode === 'scan' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('scan')}>
+                  {isMaltaCampaign ? <span className="material-symbols-outlined" aria-hidden="true">qr_code_2</span> : null}
                   Escanear QR
                 </button>
                 <button className={entryMode === 'manual' ? 'is-active' : ''} type="button" onClick={() => setEntryMode('manual')}>
+                  {isMaltaCampaign ? <span className="material-symbols-outlined" aria-hidden="true">edit_square</span> : null}
                   Manual
                 </button>
                 <button className={`promo-mode-whatsapp ${entryMode === 'whatsapp' ? 'is-active' : ''}`} type="button" onClick={() => setEntryMode('whatsapp')}>
@@ -688,6 +902,7 @@ function PromoLanding({
                 <div className="promo-scan">
                   {!scannerOn ? (
                     <button className="promo-primary" type="button" onClick={() => setScannerOn(true)}>
+                      {isMaltaCampaign ? <span className="material-symbols-outlined" aria-hidden="true">center_focus_weak</span> : null}
                       Activar escaneo de QR
                     </button>
                   ) : (
@@ -728,13 +943,21 @@ function PromoLanding({
                 </div>
               ) : (
                 <div className="promo-whatsapp-tab">
-                  <p className="promo-whatsapp-tab-intro">Envía los siguientes datos por WhatsApp para participar:</p>
+                  <p className="promo-whatsapp-tab-intro">
+                    {isMaltaCampaign
+                      ? 'Envía tu factura y estos datos para validar la compra y acumular tus unidades de Malta Vigor:'
+                      : 'Envía los siguientes datos por WhatsApp para participar:'}
+                  </p>
                   <ul className="promo-whatsapp-steps">
                     <li>
                       <span className="material-symbols-outlined" aria-hidden="true">photo_camera</span>
                       <div>
-                        <strong>Fotografía de tu factura</strong>
-                        <span>Foto legible de tu compra en Super Carnes</span>
+                        <strong>{isMaltaCampaign ? 'Factura completa y legible' : 'Fotografía de tu factura'}</strong>
+                        <span>
+                          {isMaltaCampaign
+                            ? 'Debe mostrar el CUFE y los productos Malta Vigor comprados'
+                            : 'Foto legible de tu compra en Super Carnes'}
+                        </span>
                       </div>
                     </li>
                     <li>
@@ -752,58 +975,143 @@ function PromoLanding({
                       </div>
                     </li>
                     <li>
-                      <span className="material-symbols-outlined" aria-hidden="true">favorite</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        {isMaltaCampaign ? 'alternate_email' : 'favorite'}
+                      </span>
                       <div>
-                        <strong>¿Por qué tu papá merece ganar?</strong>
-                        <span>Cuéntanos en tus propias palabras</span>
+                        <strong>{isMaltaCampaign ? 'Correo de tu cuenta' : '¿Por qué tu papá merece ganar?'}</strong>
+                        <span>
+                          {isMaltaCampaign
+                            ? 'Lo usaremos para sumar las unidades a tu acumulado'
+                            : 'Cuéntanos en tus propias palabras'}
+                        </span>
                       </div>
                     </li>
                   </ul>
                   <a
                     className="promo-whatsapp-btn"
-                    href="https://wa.me/50768982167?text=Deseo%20participar%20en%20el%20Give%20Away%20del%20dia%20del%20Padre."
+                    href={
+                      isMaltaCampaign
+                        ? 'https://wa.me/50768982167?text=Hola%20Super%20Carnes%2C%20quiero%20registrar%20una%20factura%20de%20Malta%20Vigor%20y%20acumular%20mis%20unidades%20en%20la%20promoci%C3%B3n%20Malta%20Vigor%20%2B%20Super%20Carnes.'
+                        : 'https://wa.me/50768982167?text=Deseo%20participar%20en%20el%20Give%20Away%20del%20dia%20del%20Padre.'
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <span className="material-symbols-outlined" aria-hidden="true">chat</span>
-                    Registrar vía WhatsApp
+                    {isMaltaCampaign ? 'Registrar factura por WhatsApp' : 'Registrar vía WhatsApp'}
                   </a>
                 </div>
               )}
+              {isMaltaCampaign ? (
+                <button
+                  className="malta-progress-link"
+                  type="button"
+                  onClick={() => {
+                    setShowProgressLookup(true)
+                    setScannerError(null)
+                    setScannerOn(false)
+                  }}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">monitoring</span>
+                  Consultar cuántas botellas llevo
+                </button>
+              ) : null}
             </div>
+          ) : promoStep === 3 ? (
+            <div className="promo-panel-card promo-success-card" role="status" aria-live="polite">
+              <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+              <p>Factura registrada</p>
+              <h3>{submissionMessage ?? 'Tus unidades Malta Vigor fueron acumuladas.'}</h3>
+              {isMaltaCampaign ? <strong>Acumulado: {campaignTotal} unidades Malta Vigor</strong> : null}
+              <button
+                className="promo-primary"
+                type="button"
+                onClick={() => {
+                  setInvoiceValidated(false)
+                  setPromoStep(1)
+                  setSubmissionMessage(null)
+                  setInvoiceForm((current) => ({
+                    ...emptyForm(),
+                    full_name: current.full_name,
+                    document_type: current.document_type,
+                    document_number: current.document_number,
+                    phone: current.phone,
+                    email: current.email,
+                    birthdate: current.birthdate,
+                    accepted_terms: current.accepted_terms,
+                  }))
+                }}
+              >
+                Registrar otra factura
+              </button>
+            </div>
+          ) : isMaltaCampaign && participantStage === 'identify' ? (
+            <form className="promo-panel-card promo-form promo-participant-lookup" onSubmit={handleParticipantLookup}>
+              <div className="promo-form-head">
+                <p>Factura válida · {invoiceForm.eligible_units} {invoiceForm.eligible_units === 1 ? 'botella detectada' : 'botellas detectadas'}</p>
+                <h3>Escribe tu cédula</h3>
+              </div>
+              <p className="promo-help">Si ya participaste antes, registraremos esta factura inmediatamente. Si eres nuevo, te pediremos tus datos una sola vez.</p>
+              <label>
+                Número de cédula
+                <input
+                  value={invoiceForm.document_number}
+                  onChange={(event) => setInvoiceForm((current) => ({ ...current, document_type: 'cedula', document_number: sanitizeDocumentNumber('cedula', event.target.value) }))}
+                  placeholder="8-123-4567"
+                  autoComplete="off"
+                  required
+                />
+              </label>
+              {submitError ? <div className="promo-alert">{submitError}</div> : null}
+              <button className="promo-primary" type="submit" disabled={participantLookupLoading || submitting}>
+                {participantLookupLoading || submitting ? 'Verificando...' : 'Continuar'}
+              </button>
+            </form>
           ) : (
             <form className="promo-panel-card promo-form promo-form-compact" onSubmit={handleSubmit}>
               <div className="promo-form-head">
-                <p>Factura validada</p>
-                <h3>Completa tu registro</h3>
+                <p>Primera participación</p>
+                <h3>Completa tus datos una sola vez</h3>
               </div>
 
               <div className="promo-form-grid">
+                {!isMaltaCampaign ? (
+                  <label>
+                    Tipo de documento
+                    <select
+                      className="promo-select"
+                      value={invoiceForm.document_type}
+                      onChange={(e) => setInvoiceForm((current) => ({ ...current, document_type: e.target.value as InvoiceFormState['document_type'], document_number: '' }))}
+                      required
+                    >
+                      <option value="cedula">Cédula</option>
+                      <option value="passport">Pasaporte</option>
+                      <option value="residente">Carnet de residente</option>
+                    </select>
+                  </label>
+                ) : null}
                 <label>
-                  Tipo de documento
-                  <select
-                    className="promo-select"
-                    value={invoiceForm.document_type}
-                    onChange={(e) => setInvoiceForm((current) => ({ ...current, document_type: e.target.value as InvoiceFormState['document_type'], document_number: '' }))}
-                    required
-                  >
-                    <option value="cedula">Cédula</option>
-                    <option value="passport">Pasaporte</option>
-                    <option value="residente">Carnet de residente</option>
-                  </select>
+                  {isMaltaCampaign ? 'Número de cédula' : 'N° documento'}
+                  <input value={invoiceForm.document_number} onChange={(e) => setInvoiceForm((current) => ({ ...current, document_number: sanitizeDocumentNumber(current.document_type, e.target.value) }))} placeholder={documentPlaceholder(invoiceForm.document_type)} readOnly={isMaltaCampaign} required />
                 </label>
-                <label>
-                  N° documento
-                  <input value={invoiceForm.document_number} onChange={(e) => setInvoiceForm((current) => ({ ...current, document_number: sanitizeDocumentNumber(current.document_type, e.target.value) }))} placeholder={documentPlaceholder(invoiceForm.document_type)} required />
-                </label>
-                <label>
-                  Nombre
-                  <input value={invoiceForm.first_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, first_name: sanitizeName(e.target.value) }))} placeholder="Nombre(s)" required />
-                </label>
-                <label>
-                  Apellidos
-                  <input value={invoiceForm.last_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, last_name: sanitizeName(e.target.value) }))} placeholder="Apellido(s)" required />
-                </label>
+                {isMaltaCampaign ? (
+                  <label className="promo-form-wide">
+                    Nombre completo
+                    <input value={invoiceForm.full_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, full_name: sanitizeName(e.target.value) }))} placeholder="Nombre y apellido" minLength={3} required />
+                  </label>
+                ) : (
+                  <>
+                    <label>
+                      Nombre
+                      <input value={invoiceForm.first_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, first_name: sanitizeName(e.target.value) }))} placeholder="Nombre(s)" required />
+                    </label>
+                    <label>
+                      Apellidos
+                      <input value={invoiceForm.last_name} onChange={(e) => setInvoiceForm((current) => ({ ...current, last_name: sanitizeName(e.target.value) }))} placeholder="Apellido(s)" required />
+                    </label>
+                  </>
+                )}
                 <label>
                   Telefono
                   <input value={invoiceForm.phone} onChange={(e) => setInvoiceForm((current) => ({ ...current, phone: sanitizePanamaPhone(e.target.value) }))} placeholder="6XXX-XXXX" inputMode="tel" required />
@@ -812,6 +1120,19 @@ function PromoLanding({
                   Correo
                   <input value={invoiceForm.email} onChange={(e) => setInvoiceForm((current) => ({ ...current, email: e.target.value.trim() }))} type="email" placeholder="correo@dominio.com" required />
                 </label>
+                {campaign?.participation_mode === 'product_ranking' ? (
+                  <>
+                    <label>
+                      Fecha de nacimiento
+                      <input value={invoiceForm.birthdate} onChange={(e) => setInvoiceForm((current) => ({ ...current, birthdate: e.target.value }))} type="date" required />
+                    </label>
+                    <label className="promo-form-wide promo-checkbox-row">
+                      <input checked={invoiceForm.accepted_terms} onChange={(e) => setInvoiceForm((current) => ({ ...current, accepted_terms: e.target.checked }))} type="checkbox" required />
+                      <span>Acepto los términos y condiciones de la promoción{campaign.terms_version ? ` (versión ${campaign.terms_version})` : ''}.</span>
+                    </label>
+                    {campaign.terms_text ? <details className="promo-form-wide"><summary>Leer términos y condiciones</summary><p className="promo-help">{campaign.terms_text}</p></details> : null}
+                  </>
+                ) : null}
                 {campaign?.slug === 'del-sueno-al-puesto' ? (
                   <>
                     <label>
@@ -840,10 +1161,14 @@ function PromoLanding({
                     </label>
                   </>
                 ) : null}
-                <label className="promo-form-wide">
-                  Ultimos 60 numeros del CUFE
-                  <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />
-                </label>
+                {isMaltaCampaign ? (
+                  <input type="hidden" value={invoiceForm.cufe_tail} readOnly />
+                ) : (
+                  <label className="promo-form-wide">
+                    Ultimos 60 numeros del CUFE
+                    <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />
+                  </label>
+                )}
               </div>
 
               {submitError ? <div className="promo-alert">{submitError}</div> : null}
@@ -942,16 +1267,31 @@ function ThresholdPromoLanding({
 
     let scanner: Html5Qrcode | null = null
     let stopped = false
+    let stopping = false
+    let decoding = false
+
+    const stopScanner = async () => {
+      if (stopping) return
+      stopping = true
+      await safelyStopInvoiceScanner(scanner)
+    }
 
     async function start() {
       try {
         scanner = createInvoiceScanner()
+        if (stopped) {
+          await stopScanner()
+          return
+        }
         await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
-          if (stopped) return
-          await resolveInvoice(decodedText)
-          await scanner?.stop().catch(() => undefined)
-          await scanner?.clear()
-          setScannerOn(false)
+          if (stopped || decoding) return
+          decoding = true
+          try {
+            await resolveInvoice(decodedText)
+          } finally {
+            await stopScanner()
+            setScannerOn(false)
+          }
         }, () => undefined)
       } catch (error) {
         setScannerError(normalizeError(error))
@@ -962,10 +1302,7 @@ function ThresholdPromoLanding({
 
     return () => {
       stopped = true
-      if (!scanner) return
-      void scanner.stop().catch(() => undefined).finally(() => {
-        void scanner?.clear()
-      })
+      void stopScanner()
     }
   }, [entryMode, scannerOn])
 
@@ -1255,6 +1592,7 @@ function ThresholdPromoLanding({
               <div className="dream-ticket">
                 <strong>Factura lista</strong>
                 <span>{invoiceForm.invoice_number || 'Sin numero'} · ${Number(invoiceForm.purchase_amount || 0).toFixed(2)}</span>
+                {campaign?.participation_mode === 'product_ranking' ? <span>{invoiceForm.product_validation_status === 'undetermined' ? 'Productos pendientes de revisión' : `${invoiceForm.eligible_units} unidades Malta Vigor detectadas`}</span> : null}
               </div>
             ) : null}
             {submitError ? <div className="promo-alert">{submitError}</div> : null}
@@ -1310,16 +1648,31 @@ export function LegacyThresholdPromoLanding({
 
     let scanner: Html5Qrcode | null = null
     let stopped = false
+    let stopping = false
+    let decoding = false
+
+    const stopScanner = async () => {
+      if (stopping) return
+      stopping = true
+      await safelyStopInvoiceScanner(scanner)
+    }
 
     async function start() {
       try {
         scanner = createInvoiceScanner()
+        if (stopped) {
+          await stopScanner()
+          return
+        }
         await scanner.start({ facingMode: 'environment' }, INVOICE_SCANNER_START_CONFIG, async (decodedText) => {
-          if (stopped) return
-          await resolveInvoice(decodedText)
-          await scanner?.stop().catch(() => undefined)
-          await scanner?.clear()
-          setScannerOn(false)
+          if (stopped || decoding) return
+          decoding = true
+          try {
+            await resolveInvoice(decodedText)
+          } finally {
+            await stopScanner()
+            setScannerOn(false)
+          }
         }, () => undefined)
       } catch (error) {
         setScannerError(normalizeError(error))
@@ -1330,10 +1683,7 @@ export function LegacyThresholdPromoLanding({
 
     return () => {
       stopped = true
-      if (!scanner) return
-      void scanner.stop().catch(() => undefined).finally(() => {
-        void scanner?.clear()
-      })
+      void stopScanner()
     }
   }, [entryMode, scannerOn])
 

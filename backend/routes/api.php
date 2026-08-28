@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\PublicSettingsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\MaltaPublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('invoices/resolve', [InvoiceController::class, 'resolve'])->middleware('throttle:invoice-scan');
@@ -23,3 +24,5 @@ Route::get('campaigns/{slug}/progress', [CampaignController::class, 'progress'])
 
 Route::get('public/settings', [PublicSettingsController::class, 'index']);
 Route::get('public/branches', [PublicSettingsController::class, 'branches']);
+Route::post('public/malta/participant', [MaltaPublicController::class, 'participant'])->middleware('throttle:invoice-scan');
+Route::post('public/malta/progress', [MaltaPublicController::class, 'progress'])->middleware('throttle:invoice-scan');

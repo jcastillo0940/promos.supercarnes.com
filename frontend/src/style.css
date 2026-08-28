@@ -10299,3 +10299,483 @@ a {
     padding: 0 6px;
   }
 }
+
+/* Malta Vigor campaign identity */
+.promo-shell-malta {
+  --malta-green: #08b957;
+  --malta-lime: #baff35;
+  --malta-yellow: #ffe52f;
+  --malta-black: #031b12;
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(circle at 74% 42%, rgba(0,255,112,.18), transparent 22%), radial-gradient(circle at 12% 80%, rgba(186,255,53,.14), transparent 28%), linear-gradient(125deg, #010e0a 0%, #032719 47%, #06150f 100%);
+}
+.promo-shell-malta .promo-ambient { z-index: -2; background: linear-gradient(115deg, transparent 0 48%, rgba(186,255,53,.08) 48.2% 48.5%, transparent 48.7%), linear-gradient(35deg, transparent 0 68%, rgba(8,185,87,.12) 68.2% 68.5%, transparent 68.7%); background-size: 100% 100%; opacity: 1; }
+.promo-floating-gallery { position: fixed; z-index: -1; inset: -12vh -8vw; overflow: hidden; pointer-events: none; filter: saturate(1.12); }
+.promo-floating-gallery::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(1,14,10,.82), rgba(1,14,10,.18) 48%, rgba(1,14,10,.78)); }
+.promo-floating-gallery img { position: absolute; width: clamp(170px,18vw,360px); height: clamp(220px,27vw,520px); object-fit: cover; border: 1px solid rgba(186,255,53,.22); border-radius: 26px; opacity: .22; filter: blur(5px) saturate(1.35); box-shadow: 0 25px 80px rgba(0,0,0,.35); animation: malta-float 18s ease-in-out infinite alternate; }
+.promo-floating-gallery img:nth-child(1) { left: 4%; top: 10%; transform: rotate(-12deg); animation-delay: -3s; }
+.promo-floating-gallery img:nth-child(2) { left: 26%; top: 64%; transform: rotate(9deg); animation-delay: -10s; }
+.promo-floating-gallery img:nth-child(3) { left: 49%; top: 7%; transform: rotate(8deg); animation-delay: -7s; }
+.promo-floating-gallery img:nth-child(4) { right: 3%; top: 15%; transform: rotate(-10deg); animation-delay: -13s; }
+.promo-floating-gallery img:nth-child(5) { right: 24%; bottom: -6%; transform: rotate(11deg); animation-delay: -5s; }
+.promo-floating-gallery img:nth-child(6) { left: 8%; bottom: -8%; transform: rotate(8deg); animation-delay: -15s; }
+.promo-floating-gallery img:nth-child(7) { right: 42%; bottom: 18%; transform: rotate(-8deg); animation-delay: -9s; }
+.promo-floating-gallery img:nth-child(8) { right: 8%; bottom: 34%; transform: rotate(6deg); animation-delay: -1s; }
+.promo-shell-malta .promo-layout { min-height: 100vh; height: auto; width: min(100%,1540px); grid-template-columns: minmax(0,1.08fr) minmax(430px,.92fr); grid-template-rows: minmax(680px,1fr); align-items: center; padding: clamp(32px,6vh,72px) clamp(22px,5vw,86px); }
+.promo-shell-malta .promo-hero { display: block; min-height: 680px; padding: 0; }
+.promo-shell-malta .promo-hero-copy { max-width: 700px; padding-top: 2vh; }
+.promo-shell-malta .promo-back { border-color: rgba(186,255,53,.45); background: rgba(1,14,10,.35); color: rgba(255,255,255,.82); }
+.promo-shell-malta .promo-kicker, .promo-shell-malta .promo-panel-label { color: var(--malta-lime); }
+.promo-shell-malta .promo-kicker { margin-top: 48px; }
+.promo-shell-malta .promo-hero h1 { max-width: 720px; color: #fff; font-size: clamp(68px,8vw,138px); line-height: .78; letter-spacing: -.035em; text-shadow: 7px 8px 0 rgba(0,0,0,.22); }
+.promo-shell-malta .promo-hero h1 span { display: block; color: var(--malta-yellow); font-size: .55em; line-height: .95; letter-spacing: .025em; margin-top: 18px; }
+.promo-shell-malta .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) { max-width: 560px; margin-top: 28px; color: rgba(255,255,255,.86); font-size: clamp(18px,1.45vw,23px); line-height: 1.35; }
+.promo-shell-malta .promo-stepper { margin-top: 46px; }
+.promo-shell-malta .promo-step span { border-color: rgba(186,255,53,.8); background: rgba(3,27,18,.8); }
+.promo-shell-malta .promo-step.is-active span, .promo-shell-malta .promo-step:first-child span { border-color: var(--malta-yellow); background: var(--malta-yellow); color: var(--malta-black); }
+.promo-shell-malta .promo-step::before { background: radial-gradient(circle, var(--malta-yellow) 2px, transparent 2.5px) 0 0 / 10px 3px repeat-x; }
+.promo-shell-malta .promo-art { right: -6%; bottom: 0; width: min(58vw,780px); height: 480px; }
+.promo-shell-malta .promo-paper { display: none; }
+.promo-shell-malta .promo-dad { right: 2%; bottom: 2%; width: min(50vw,650px); height: 390px; overflow: hidden; border: 1px solid rgba(186,255,53,.45); border-radius: 28px; transform: rotate(-3deg); background: #032719; box-shadow: 20px 28px 0 rgba(186,255,53,.12), 0 28px 80px rgba(0,0,0,.55); }
+.promo-shell-malta .promo-dad::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(1,14,10,.05), transparent 55%, rgba(186,255,53,.15)); }
+.promo-shell-malta .promo-dad img { object-fit: cover; filter: saturate(1.12) contrast(1.05); }
+.promo-shell-malta .promo-panel { padding: clamp(28px,3vw,46px); border: 1px solid rgba(186,255,53,.42); border-radius: 30px; background: linear-gradient(145deg, rgba(2,31,20,.94), rgba(1,13,10,.92)); box-shadow: 0 28px 80px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.04); backdrop-filter: blur(14px); }
+.promo-shell-malta .promo-panel-highlight h2 { font-size: clamp(28px,3vw,42px); }
+.promo-shell-malta .promo-panel-highlight > p:last-child { color: rgba(255,255,255,.72); font-size: 18px; }
+.promo-shell-malta .promo-mode-switch { border-color: rgba(186,255,53,.28); }
+.promo-shell-malta .promo-mode-switch button.is-active { background: var(--malta-yellow); color: var(--malta-black); border-bottom-color: var(--malta-yellow); }
+.promo-shell-malta .promo-primary { background: linear-gradient(135deg, var(--malta-yellow), #ffb91e); color: var(--malta-black); }
+.promo-shell-malta .promo-primary:hover { background: linear-gradient(135deg, #ffff70, var(--malta-yellow)); }
+.promo-shell-malta .promo-manual input, .promo-shell-malta .promo-form input, .promo-shell-malta .promo-textarea, .promo-shell-malta .promo-select { border-color: rgba(186,255,53,.3); background-color: rgba(0,12,8,.7); }
+.promo-shell-malta .promo-scanner { border-color: rgba(186,255,53,.7); background: rgba(0,12,8,.75); }
+@keyframes malta-float { 0% { margin-top: -12px; filter: blur(5px) saturate(1.25); } 100% { margin-top: 22px; filter: blur(8px) saturate(1.5); } }
+@media (max-width:1280px) { .promo-shell-malta .promo-layout { grid-template-columns: 1fr; grid-template-rows: auto auto; } .promo-shell-malta .promo-hero { min-height: 620px; } .promo-shell-malta .promo-panel { width: min(100%,680px); margin: 0 auto; } .promo-shell-malta .promo-art { right: 0; width: min(80vw,720px); } }
+@media (max-width:760px) { .promo-shell-malta .promo-layout { padding: 22px 16px 34px; } .promo-shell-malta .promo-hero { min-height: 590px; } .promo-shell-malta .promo-kicker { margin-top: 34px; } .promo-shell-malta .promo-hero h1 { font-size: clamp(58px,17vw,92px); } .promo-shell-malta .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) { font-size: 17px; } .promo-shell-malta .promo-art { position: relative; right: auto; bottom: auto; width: 100%; height: 230px; margin-top: 18px; } .promo-shell-malta .promo-dad { right: 0; width: 88%; height: 220px; } .promo-shell-malta .promo-panel { border-radius: 22px; padding: 24px 20px; } .promo-floating-gallery img { opacity: .14; filter: blur(7px) saturate(1.3); } }
+
+/* Malta Vigor composition refinement: keep the headline and product art in separate visual lanes. */
+.promo-shell-malta .promo-hero { min-height: 0; height: min(700px, calc(100vh - 96px)); }
+.promo-shell-malta .promo-hero-copy { width: 58%; max-width: 610px; padding-top: 0; }
+.promo-shell-malta .promo-hero h1 { max-width: 100%; font-size: clamp(54px, 5.25vw, 96px); line-height: .82; }
+.promo-shell-malta .promo-hero h1 span { margin-top: 14px; }
+.promo-shell-malta .promo-hero > .promo-hero-copy > p:not(.promo-kicker):not(.promo-valid-badge) { max-width: 480px; margin-top: 24px; font-size: clamp(16px, 1.2vw, 20px); }
+.promo-shell-malta .promo-stepper { width: min(100%, 460px); margin-top: 30px; }
+.promo-shell-malta .promo-art { z-index: 1; right: -2%; bottom: 3%; width: 43%; height: 300px; }
+.promo-shell-malta .promo-dad { right: 0; width: 100%; height: 100%; }
+.promo-shell-malta .promo-dad img { object-fit: cover; }
+
+@media (max-width: 1280px) {
+  .promo-shell-malta .promo-hero { height: 620px; }
+  .promo-shell-malta .promo-hero-copy { width: 62%; }
+  .promo-shell-malta .promo-art { width: 48%; }
+}
+
+@media (max-width: 760px) {
+  .promo-shell-malta .promo-hero { height: auto; min-height: 0; }
+  .promo-shell-malta .promo-hero-copy { width: 100%; }
+  .promo-shell-malta .promo-hero h1 { font-size: clamp(54px, 15vw, 82px); }
+  .promo-shell-malta .promo-art { width: 100%; height: 230px; }
+}
+
+/* Malta Vigor reference build */
+.promo-shell-malta {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 52%, rgba(30, 255, 77, .22), transparent 26%),
+    radial-gradient(circle at 22% 14%, rgba(0, 143, 69, .2), transparent 32%),
+    linear-gradient(115deg, #010b08 0%, #002d19 55%, #006e2f 100%);
+}
+
+.promo-shell-malta::before {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(174,255,66,.8) 0 1px, transparent 1.5px);
+  background-size: 83px 97px;
+  opacity: .16;
+}
+
+.promo-shell-malta .promo-ambient {
+  z-index: 0;
+  background:
+    linear-gradient(126deg, transparent 0 56%, rgba(53,255,73,.22) 56.4% 57%, transparent 57.4%),
+    linear-gradient(126deg, transparent 0 67%, rgba(132,255,40,.13) 67.3% 67.8%, transparent 68.1%),
+    radial-gradient(ellipse at 72% 42%, rgba(15,255,91,.18), transparent 40%);
+  opacity: 1;
+}
+
+.malta-product-atmosphere {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.malta-light-beam {
+  position: absolute;
+  width: 46vw;
+  height: 140vh;
+  top: -30vh;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(67,255,68,.18), transparent);
+  filter: blur(16px);
+  transform: rotate(36deg);
+}
+
+.malta-light-beam-one { left: 43%; }
+.malta-light-beam-two { left: 61%; opacity: .48; transform: rotate(25deg); }
+
+.malta-bottle {
+  position: absolute;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 35px rgba(0,0,0,.45));
+  transform-origin: 50% 48%;
+  will-change: transform;
+  animation: malta-zero-gravity var(--float-duration, 18s) cubic-bezier(.45, 0, .55, 1) infinite;
+}
+
+.malta-bottle-top {
+  --float-duration: 24s;
+  --r0: -10deg; --r1: -5deg; --r2: -13deg; --r3: -16deg;
+  --x1: 34px; --y1: 26px; --x2: 15px; --y2: 60px; --x3: -24px; --y3: 34px;
+  width: 180px; left: 35%; top: -70px; opacity: .55;
+  filter: blur(3px) drop-shadow(0 20px 26px #000);
+  animation-delay: -9s;
+}
+.malta-bottle-far {
+  --float-duration: 29s;
+  --r0: 26deg; --r1: 32deg; --r2: 23deg; --r3: 19deg;
+  --x1: -42px; --y1: 30px; --x2: -18px; --y2: 74px; --x3: 38px; --y3: 42px;
+  width: 220px; left: 54%; top: -45px; opacity: .62;
+  filter: blur(2px) drop-shadow(0 20px 30px #000);
+  animation-delay: -18s;
+}
+.malta-bottle-right {
+  --float-duration: 22s;
+  --r0: -7deg; --r1: -4deg; --r2: -9deg; --r3: -11deg;
+  --x1: -10px; --y1: 14px; --x2: -22px; --y2: 34px; --x3: 6px; --y3: 24px;
+  z-index: 3; width: clamp(300px, 24vw, 455px); right: -86px; top: 22px;
+  animation-delay: -13s;
+}
+.malta-bottle-bottom {
+  --float-duration: 25s;
+  --r0: 12deg; --r1: 16deg; --r2: 10deg; --r3: 7deg;
+  --x1: 22px; --y1: -20px; --x2: 38px; --y2: -52px; --x3: -12px; --y3: -34px;
+  z-index: 3; width: clamp(270px, 21vw, 390px); left: 32%; bottom: -270px;
+  animation-delay: -4s;
+}
+.malta-bottle-bottom-blur {
+  --float-duration: 31s;
+  --r0: 15deg; --r1: 9deg; --r2: 18deg; --r3: 22deg;
+  --x1: -38px; --y1: -24px; --x2: -18px; --y2: -68px; --x3: 46px; --y3: -36px;
+  width: 250px; right: 16%; bottom: -170px; opacity: .42;
+  filter: blur(4px) drop-shadow(0 20px 30px #000);
+  animation-delay: -23s;
+}
+
+.promo-shell-malta .promo-layout {
+  z-index: 4;
+  width: min(100%, 1680px);
+  min-height: 100vh;
+  height: auto;
+  margin: 0 auto;
+  padding: 32px 32px 38px;
+  grid-template-columns: minmax(610px, .92fr) minmax(580px, 1.08fr);
+  grid-template-rows: 1fr;
+  gap: clamp(24px, 4vw, 76px);
+  align-items: center;
+}
+
+.promo-shell-malta .promo-hero {
+  height: auto;
+  min-height: 820px;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+}
+
+.promo-shell-malta .promo-hero-copy {
+  width: 100%;
+  max-width: 720px;
+  padding: 0;
+}
+
+.promo-shell-malta .promo-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid #9be928;
+  border-radius: 999px;
+  background: rgba(0, 10, 7, .66);
+  color: #fff;
+  font: 900 15px/1 'Archivo Narrow', sans-serif;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.malta-campaign-copy { padding-top: 56px; }
+
+.malta-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  height: 154px;
+  margin-bottom: 14px;
+}
+
+.malta-brand-lockup img:first-child { width: 260px; max-height: 150px; object-fit: contain; }
+.malta-brand-lockup img:last-child { width: 200px; max-height: 114px; object-fit: contain; }
+.malta-brand-lockup i { width: 1px; height: 116px; background: rgba(255,255,255,.76); }
+
+.malta-promo-chip {
+  display: inline-flex;
+  margin: 0 0 18px !important;
+  padding: 5px 14px;
+  border: 1px solid #a8e52a;
+  border-radius: 4px;
+  color: #baf239 !important;
+  font: 900 17px/1 'Hanken Grotesk', sans-serif !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.promo-shell-malta .malta-headline {
+  max-width: 680px;
+  margin: 0;
+  color: #fff;
+  font: 400 clamp(72px, 6vw, 108px)/.78 'Gero', 'Archivo Narrow', sans-serif;
+  letter-spacing: .015em;
+  text-transform: uppercase;
+  text-shadow: 0 8px 20px rgba(0,0,0,.35);
+}
+
+.promo-shell-malta .malta-headline span,
+.promo-shell-malta .malta-headline strong {
+  display: block;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.promo-shell-malta .malta-headline strong {
+  color: #c7eb30;
+  letter-spacing: .055em;
+}
+
+.promo-shell-malta .malta-subheadline {
+  margin: 16px 0 30px !important;
+  color: #fff !important;
+  font: 900 clamp(22px, 2vw, 32px)/1 'Archivo Narrow', sans-serif !important;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.malta-subheadline em { color: #ffd72e; font-style: normal; }
+
+.malta-promo-summary {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: center;
+  gap: 22px;
+  max-width: 540px;
+}
+
+.malta-promo-summary > span {
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 86px;
+  border: 1px solid #a8e52a;
+  border-radius: 50%;
+  color: #baf239;
+  font-size: 38px;
+}
+
+.promo-shell-malta .promo-hero .malta-promo-summary p {
+  margin: 0;
+  color: rgba(255,255,255,.9);
+  font: 500 19px/1.48 'Hanken Grotesk', sans-serif;
+}
+
+.malta-promo-summary strong { color: #baf239; }
+
+.promo-shell-malta .promo-panel {
+  position: relative;
+  z-index: 6;
+  width: min(100%, 640px);
+  justify-self: start;
+  align-self: center;
+  padding: 46px 48px 48px;
+  border: 1.5px solid #a8e52a;
+  border-radius: 30px;
+  background: linear-gradient(145deg, rgba(0,27,17,.96), rgba(0,15,11,.93));
+  box-shadow: 0 30px 90px rgba(0,0,0,.48), inset 0 0 45px rgba(37,255,95,.045);
+}
+
+.promo-shell-malta .promo-panel-highlight { margin-bottom: 28px; }
+.promo-shell-malta .promo-panel-label { color: #a8e52a; font-size: 17px; }
+.promo-shell-malta .promo-panel-highlight h2 { margin-top: 12px; font: 900 clamp(30px, 3vw, 43px)/1 'Archivo Narrow', sans-serif; letter-spacing: .02em; }
+.promo-shell-malta .promo-panel-highlight > p:last-child { margin-top: 18px; color: rgba(255,255,255,.76); font-size: 18px; }
+.promo-shell-malta .promo-mode-switch { border: 1px solid rgba(168,229,42,.42); border-radius: 10px 10px 0 0; }
+.promo-shell-malta .promo-mode-switch button { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 70px; border-bottom-width: 3px; color: rgba(255,255,255,.76); font: 900 15px/1 'Archivo Narrow', sans-serif; text-transform: uppercase; }
+.promo-shell-malta .promo-mode-switch button + button { border-left: 1px solid rgba(168,229,42,.2); }
+.promo-shell-malta .promo-mode-switch button .material-symbols-outlined { font-size: 25px; }
+.promo-shell-malta .promo-mode-switch button.is-active { background: linear-gradient(135deg, #baf239, #91dd2b); color: #072013; border-bottom-color: #dfff51; box-shadow: inset 0 -4px 0 rgba(255,255,255,.22), 0 0 20px rgba(162,242,57,.22); }
+.promo-shell-malta .promo-primary { min-height: 90px; border-radius: 10px; background: linear-gradient(135deg, #ffdb2c, #ffc421); color: #071d13; font: 900 22px/1 'Archivo Narrow', sans-serif; }
+.promo-shell-malta .promo-primary .material-symbols-outlined { font-size: 38px; }
+
+.promo-shell-malta .promo-success-card {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 48px;
+  text-align: center;
+}
+
+.promo-shell-malta .promo-success-card > .material-symbols-outlined {
+  color: #baf239;
+  font-size: 74px;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+  filter: drop-shadow(0 0 22px rgba(186, 242, 57, .34));
+}
+
+.promo-shell-malta .promo-success-card > p {
+  margin: 0;
+  color: #baf239;
+  font: 900 16px/1 'Hanken Grotesk', sans-serif;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.promo-shell-malta .promo-success-card > h3 {
+  margin: 0;
+  color: #fff;
+  font: 900 30px/1.08 'Archivo Narrow', sans-serif;
+}
+
+.promo-shell-malta .promo-success-card > strong {
+  color: #ffd72e;
+  font: 800 21px/1.2 'Hanken Grotesk', sans-serif;
+}
+
+.promo-shell-malta .promo-success-card .promo-primary {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.promo-shell-malta .promo-progress-lookup,
+.promo-shell-malta .promo-participant-lookup {
+  display: grid;
+  gap: 18px;
+}
+
+.promo-shell-malta .promo-participant-lookup .promo-help {
+  margin: -4px 0 2px;
+  color: rgba(255, 255, 255, .68);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.malta-progress-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: 1px solid rgba(186, 242, 57, .48);
+  border-radius: 10px;
+  background: rgba(0, 39, 24, .7);
+  color: #c8f43e;
+  font: 900 15px/1 'Archivo Narrow', sans-serif;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+
+.malta-progress-link:hover { background: rgba(31, 96, 45, .58); }
+
+.malta-progress-result {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 22px;
+  border: 1px solid rgba(186, 242, 57, .44);
+  border-radius: 15px;
+  background: rgba(5, 66, 37, .42);
+  text-align: center;
+}
+
+.malta-progress-result > .material-symbols-outlined { color: #c8f43e; font-size: 38px; }
+.malta-progress-result p { margin: 0; color: rgba(255, 255, 255, .8); }
+.malta-progress-result strong { color: #ffd72e; font: 900 36px/1 'Archivo Narrow', sans-serif; text-transform: uppercase; }
+.malta-progress-result small { color: rgba(255, 255, 255, .6); }
+
+.malta-text-button {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, .72);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@keyframes malta-zero-gravity {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--r0)); }
+  25% { transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--r1)); }
+  50% { transform: translate3d(var(--x2), var(--y2), 0) rotate(var(--r2)); }
+  75% { transform: translate3d(var(--x3), var(--y3), 0) rotate(var(--r3)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .malta-bottle { animation: none; transform: rotate(var(--r0)); }
+}
+
+@media (max-width: 1350px) {
+  .promo-shell-malta { overflow-y: auto; }
+  .promo-shell-malta .promo-layout { grid-template-columns: minmax(480px, .95fr) minmax(500px, 1.05fr); padding-inline: 24px; }
+  .promo-shell-malta .promo-hero { min-height: 760px; }
+  .malta-brand-lockup img:first-child { width: 220px; }
+  .malta-brand-lockup img:last-child { width: 168px; }
+  .promo-shell-malta .malta-headline { font-size: clamp(64px, 6vw, 88px); }
+  .promo-shell-malta .promo-panel { width: 100%; padding: 38px; }
+  .malta-bottle-right { right: -150px; opacity: .82; }
+}
+
+@media (max-width: 1040px) {
+  .promo-shell-malta .promo-layout { grid-template-columns: 1fr; grid-template-rows: auto auto; max-width: 760px; padding: 24px 20px 56px; }
+  .promo-shell-malta .promo-hero { min-height: 720px; }
+  .promo-shell-malta .promo-panel { justify-self: stretch; }
+  .malta-bottle-right { right: -170px; top: 16%; opacity: .5; }
+  .malta-bottle-bottom { left: 55%; }
+}
+
+@media (max-width: 640px) {
+  .promo-shell-malta .promo-layout { padding: 18px 15px 42px; gap: 28px; }
+  .promo-shell-malta .promo-hero { min-height: auto; padding-top: 72px; }
+  .promo-shell-malta .promo-back { left: 0; }
+  .malta-campaign-copy { padding-top: 0; }
+  .malta-brand-lockup { height: 94px; gap: 14px; }
+  .malta-brand-lockup img:first-child { width: 150px; max-height: 90px; }
+  .malta-brand-lockup img:last-child { width: 116px; max-height: 70px; }
+  .malta-brand-lockup i { height: 70px; }
+  .malta-promo-chip { font-size: 12px !important; }
+  .promo-shell-malta .malta-headline { font-size: clamp(54px, 17vw, 76px); }
+  .promo-shell-malta .malta-subheadline { font-size: 20px !important; }
+  .malta-promo-summary { grid-template-columns: 62px 1fr; gap: 15px; }
+  .malta-promo-summary > span { width: 62px; height: 62px; font-size: 28px; }
+  .promo-shell-malta .promo-hero .malta-promo-summary p { font-size: 15px; }
+  .promo-shell-malta .promo-panel { padding: 26px 20px; border-radius: 22px; }
+  .promo-shell-malta .promo-panel-highlight h2 { font-size: 30px; }
+  .promo-shell-malta .promo-mode-switch button { min-height: 58px; gap: 5px; padding: 0 5px; font-size: 12px; }
+  .promo-shell-malta .promo-mode-switch button .material-symbols-outlined { font-size: 19px; }
+  .promo-shell-malta .promo-primary { min-height: 66px; font-size: 17px; }
+  .malta-bottle-right { width: 240px; right: -130px; top: 18%; opacity: .35; }
+  .malta-bottle-top, .malta-bottle-far, .malta-bottle-bottom, .malta-bottle-bottom-blur { display: none; }
+}

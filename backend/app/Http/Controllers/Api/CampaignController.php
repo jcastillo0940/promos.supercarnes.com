@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\RegisteredInvoice;
 use App\Models\User;
 use App\Support\CampaignManager;
+use App\Support\ProductRankingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,6 +15,7 @@ class CampaignController extends Controller
 {
     public function __construct(
         private readonly CampaignManager $campaignManager,
+        private readonly ProductRankingService $productRanking,
     ) {
     }
 
@@ -49,6 +51,9 @@ class CampaignController extends Controller
                 ->where('campaign_id', $campaign->id)
                 ->sum('purchase_amount')
             : 0.0;
+        $units = $user && $campaign->participation_mode === 'product_ranking'
+            ? $this->productRanking->totalFor($user, $campaign)
+            : 0;
         $threshold = (float) ($campaign->entry_threshold_amount ?? 0);
         $threshold = $threshold > 0 ? $threshold : 100.0;
 
@@ -59,6 +64,7 @@ class CampaignController extends Controller
                 'campaign_threshold' => $threshold,
                 'campaign_qualified' => $campaign->participation_mode === 'threshold_form' ? $total >= $threshold : true,
                 'participant_found' => (bool) $user,
+                'campaign_units_total' => $units,
             ],
         ]);
     }

@@ -1,7 +1,11 @@
 @extends('admin.layout')
 
-@section('title', 'Configuración')
-@section('subtitle', 'Reglas de la promoción')
+@php
+    $editingCampaign = $editingCampaign ?? false;
+@endphp
+
+@section('title', $editingCampaign ? 'Editar promoción' : 'Configuración')
+@section('subtitle', $editingCampaign ? 'Configuración de la campaña' : 'Reglas de la promoción')
 
 @section('topbar-actions')
     <a class="topbar-action hide-mobile" href="{{ route('admin.dashboard') }}">Dashboard</a>
@@ -64,6 +68,21 @@
         }
         .campaign-card[open] .campaign-chevron { transform: rotate(180deg); }
         .campaign-body { padding: 1.1rem; border-top: 1px solid #e5e7eb; }
+        .campaign-quickbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            padding: .85rem 1rem; margin-bottom: 1.1rem; border-radius: 12px;
+            background: linear-gradient(135deg, #f8fafc, #fefce8); border: 1px solid #e5e7eb;
+        }
+        .campaign-quickbar-copy { display: grid; gap: .2rem; }
+        .campaign-quickbar-copy strong { color: #0f172a; font-size: .92rem; }
+        .campaign-quickbar-copy span { color: #64748b; font-size: .78rem; }
+        .campaign-quickbar .btn { min-width: 142px; text-align: center; }
+        .campaign-readiness { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin-top: .35rem; color: #64748b; font-size: .76rem; }
+        .campaign-readiness span::before { content: '•'; color: #16a34a; margin-right: .25rem; }
+        @media (max-width: 640px) {
+            .campaign-quickbar { align-items: stretch; flex-direction: column; }
+            .campaign-quickbar .btn { width: 100%; }
+        }
         .field-group { margin-bottom: 1.25rem; }
         .field-group:last-of-type { margin-bottom: 0; }
         .field-group-title {
@@ -125,7 +144,11 @@
                 if (!card) return;
                 var mode = select.value;
                 card.querySelectorAll('[data-mode-group]').forEach(function (group) {
-                    group.style.display = group.getAttribute('data-mode-group') === mode ? '' : 'none';
+                    var isVisible = group.getAttribute('data-mode-group') === mode;
+                    group.style.display = isVisible ? '' : 'none';
+                    group.querySelectorAll('input, select, textarea, button').forEach(function (control) {
+                        control.disabled = !isVisible;
+                    });
                 });
             }
             document.querySelectorAll('[data-participation-mode]').forEach(function (select) {
@@ -144,6 +167,7 @@
         <div class="error">{{ $errors->first() }}</div>
     @endif
 
+    @if (! $editingCampaign)
     <div class="page-card">
         <div class="page-title">
             <div>
@@ -200,17 +224,25 @@
             </form>
         </div>
     </div>
+    @endif
 
     <div class="page-card" style="margin-top:18px;">
         <div class="page-section">
             <div class="config-section-head">
                 <div>
-                    <h2>Promociones</h2>
-                    <p>Cada promoción se edita y guarda por separado. Haz clic en una tarjeta para ver o cambiar sus reglas.</p>
+                    @if($editingCampaign)
+                        <a class="btn btn-gray" href="{{ route('admin.invoice-backoffice') }}">← Volver a promociones</a>
+                        <h2 style="margin-top:.9rem;">Editar {{ $campaigns->first()?->name }}</h2>
+                        <p>Modifica la configuración de esta campaña y guarda los cambios.</p>
+                    @else
+                        <h2>Promociones</h2>
+                        <p>Cada promoción se edita y guarda por separado.</p>
+                    @endif
                 </div>
             </div>
         </div>
 
+        @if (! $editingCampaign)
         <div class="page-section" style="border-top:1px solid #e5e7eb;">
             <details class="new-campaign-toggle">
                 <summary>＋ Crear nueva promoción</summary>
@@ -358,6 +390,7 @@
                 </form>
             </details>
         </div>
+        @endif
 
         <div class="page-section campaign-list" style="border-top:1px solid #e5e7eb;">
             @foreach ($campaigns as $campaign)
@@ -370,7 +403,8 @@
                     @csrf
                     <input type="hidden" name="key" value="{{ $backofficeKey }}">
                     <input type="hidden" name="campaigns[{{ $campaign->id }}][id]" value="{{ $campaign->id }}">
-                    <details class="campaign-card" data-campaign-scope @if($campaign->status === 'active') open @endif>
+                    <div class="campaign-card" data-campaign-scope>
+                        @if (! $editingCampaign)
                         <summary>
                             <div class="campaign-summary-main">
                                 <span class="campaign-chevron">⌄</span>
@@ -379,10 +413,36 @@
                             </div>
                             <div class="campaign-summary-right">
                                 <span class="badge badge-{{ $statusColor }}">{{ $statusLabel }}</span>
-                                <span class="badge badge-{{ $mode === 'threshold_form' ? 'yellow' : 'gray' }}">{{ $mode === 'threshold_form' ? 'Umbral $' . number_format((float) ($campaign->entry_threshold_amount ?: 100), 0) : 'Puntos y ranking' }}</span>
+                                <span class="badge badge-{{ $mode === 'threshold_form' ? 'yellow' : ($mode === 'product_ranking' ? 'green' : 'gray') }}">{{ $mode === 'threshold_form' ? 'Umbral $' . number_format((float) ($campaign->entry_threshold_amount ?: 100), 0) : ($mode === 'product_ranking' ? 'Ranking por unidades' : 'Puntos y ranking') }}</span>
                             </div>
                         </summary>
+                        @endif
                         <div class="campaign-body">
+                            @if (! $editingCampaign)
+                            <div class="campaign-quickbar">
+                                <div class="campaign-quickbar-copy">
+                                    <strong>{{ $campaign->status === 'active' ? 'Promoción visible para clientes' : 'Promoción fuera del catálogo' }}</strong>
+                                    <span>{{ optional($campaign->starts_at)->format('d/m/Y H:i') }} — {{ optional($campaign->ends_at)->format('d/m/Y H:i') }}</span>
+                                    @if($mode === 'product_ranking')
+                                        <div class="campaign-readiness">
+                                            <span>{{ $campaign->productRules->where('is_active', true)->count() }} códigos activos</span>
+                                            <span>{{ $campaign->terms_approved_at ? 'Términos aprobados' : 'Términos pendientes' }}</span>
+                                            <span>{{ $campaign->delivery_location && $campaign->delivery_deadline ? 'Entrega configurada' : 'Entrega pendiente' }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                                <button
+                                    type="submit"
+                                    class="btn {{ $campaign->status === 'active' ? 'btn-gray' : 'btn-green' }}"
+                                    formaction="{{ route('admin.invoice-backoffice.campaigns.toggle-status', $campaign) }}"
+                                    formmethod="POST"
+                                    name="status"
+                                    value="{{ $campaign->status === 'active' ? 'paused' : 'active' }}"
+                                >
+                                    {{ $campaign->status === 'active' ? 'Pausar promoción' : 'Activar promoción' }}
+                                </button>
+                            </div>
+                            @endif
                             <div class="field-group">
                                 <p class="field-group-title">Información general</p>
                                 <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
@@ -436,6 +496,7 @@
                                     <select name="campaigns[{{ $campaign->id }}][participation_mode]" data-participation-mode>
                                         <option value="points" @selected($mode === 'points')>Puntos y ranking</option>
                                         <option value="threshold_form" @selected($mode === 'threshold_form')>Umbral de facturación (formulario)</option>
+                                        <option value="product_ranking" @selected($mode === 'product_ranking')>Ranking por unidades de producto</option>
                                     </select>
                                     <span class="field-hint">"Puntos y ranking" da tiros/puntos por factura. "Umbral" acumula un monto en dólares para calificar (ej. Del sueño al puesto).</span>
                                 </div>
@@ -490,6 +551,27 @@
                                 </div>
                             </div>
 
+                            @if($mode === 'product_ranking')
+                                <div class="field-group">
+                                    <p class="field-group-title">Promo Malta Vigor</p>
+                                    <div class="field">
+                                        <label>Códigos oficiales (uno por línea: código | presentación | nombre)</label>
+                                        <textarea name="campaigns[{{ $campaign->id }}][product_rules_text]" rows="6" placeholder="Pendiente de archivo oficial">@foreach($campaign->productRules as $rule){{ $rule->barcode }} | {{ $rule->presentation }} | {{ $rule->product_name }}{{ "\n" }}@endforeach</textarea>
+                                        <span class="field-hint">No publiques la campaña hasta cargar los códigos confirmados.</span>
+                                    </div>
+                                    <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top:.9rem;">
+                                        <div class="field"><label>Versión de términos</label><input name="campaigns[{{ $campaign->id }}][terms_version]" value="{{ $campaign->terms_version }}" placeholder="Pendiente de aprobación"></div>
+                                        <div class="field"><label>Aprobados en</label><input type="datetime-local" name="campaigns[{{ $campaign->id }}][terms_approved_at]" value="{{ optional($campaign->terms_approved_at)->format('Y-m-d\\TH:i') }}"></div>
+                                        <div class="field"><label>Lugar de entrega</label><input name="campaigns[{{ $campaign->id }}][delivery_location]" value="{{ $campaign->delivery_location }}"></div>
+                                        <div class="field"><label>Fecha límite de entrega</label><input type="datetime-local" name="campaigns[{{ $campaign->id }}][delivery_deadline]" value="{{ optional($campaign->delivery_deadline)->format('Y-m-d\\TH:i') }}"></div>
+                                    </div>
+                                    <div class="field" style="margin-top:.9rem;"><label>Documentos/requisitos de entrega</label><input name="campaigns[{{ $campaign->id }}][delivery_requirements]" value="{{ $campaign->delivery_requirements }}" placeholder="Cédula y registro de facturas en la app"></div>
+                                    <div class="field" style="margin-top:.9rem;"><label>Términos y condiciones aprobados</label><textarea name="campaigns[{{ $campaign->id }}][terms_text]" rows="5" placeholder="Pendiente de aprobación legal">{{ $campaign->terms_text }}</textarea></div>
+                                    <a class="btn btn-green" href="{{ route('admin.campaigns.product-ranking.operations', $campaign) }}">Operar promoción</a>
+                                    <a class="btn btn-gray" href="{{ route('admin.campaigns.product-ranking', $campaign) }}" target="_blank" rel="noreferrer">Ver ranking JSON</a>
+                                </div>
+                            @endif
+
                             <div class="field-group">
                                 <p class="field-group-title">Reglas comunes de factura</p>
                                 <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
@@ -515,20 +597,10 @@
                             </div>
 
                             <div class="campaign-actions">
-                                <button
-                                    type="submit"
-                                    class="btn {{ $campaign->status === 'active' ? 'btn-gray' : 'btn-green' }}"
-                                    formaction="{{ route('admin.invoice-backoffice.campaigns.toggle-status', $campaign) }}"
-                                    formmethod="POST"
-                                    name="status"
-                                    value="{{ $campaign->status === 'active' ? 'paused' : 'active' }}"
-                                >
-                                    {{ $campaign->status === 'active' ? 'Pausar promo' : 'Activar promo' }}
-                                </button>
-                                <button type="submit" class="btn btn-red">Guardar cambios</button>
+                                <button type="submit" class="btn btn-red">Guardar configuración</button>
                             </div>
                         </div>
-                    </details>
+                    </div>
                 </form>
             @endforeach
         </div>

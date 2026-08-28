@@ -111,7 +111,7 @@ export function InvoiceRegistrationView({
   const deriveShortCode = (raw: string) => {
     if (!raw) return ''
     if (raw.startsWith(CUFE_PREFIX)) return raw.slice(CUFE_PREFIX.length)
-    // URL DGI: ?chFE=FE01200000032812-2-249262-SHORTCODE&...
+    // URL de factura: ?chFE=FE01200000032812-2-249262-SHORTCODE&...
     const chFeMatch = raw.match(/[?&]chFE=[^&]*-([A-Z0-9]{10,})(?:&|$)/i)
     if (chFeMatch?.[1]) return chFeMatch[1]
     const idx = raw.lastIndexOf('-')
@@ -214,7 +214,7 @@ export function InvoiceRegistrationView({
                 <div className="flex flex-col items-center gap-4 px-6 py-10">
                   <span className="material-symbols-outlined text-5xl text-primary-container">qr_code_scanner</span>
                   <p className="text-sm text-on-surface-variant text-center">
-                    Apunta la cámara al código QR de tu factura DGI para registrarla automáticamente.
+                    Apunta la cámara al código QR de tu factura de Super Carnes para registrarla automáticamente.
                   </p>
                   <button
                     type="button"
@@ -229,10 +229,10 @@ export function InvoiceRegistrationView({
                 <>
                   <div className="px-5 pt-5 pb-3">
                     <p className="text-sm text-on-surface-variant text-center">
-                      Apunta la cámara al código QR de tu factura DGI
+                      Apunta la cámara al código QR de tu factura de Super Carnes
                     </p>
                   </div>
-                  <div id="dgi-qr-reader" className="w-full min-h-[280px] bg-black" />
+                  <div id="invoice-qr-reader" className="w-full min-h-[280px] bg-black" />
               {invoiceScannerError && (
                 <div className="mx-4 mb-4 mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
                   <span className="material-symbols-outlined text-base flex-shrink-0 mt-0.5">error</span>
@@ -417,7 +417,7 @@ export function InvoiceRegistrationView({
               <div>
                 <p className="font-bold text-on-surface text-lg">Verificando Factura…</p>
                 <p className="text-sm text-on-surface-variant mt-1.5">
-                  Estamos consultando tu factura en la DGI.<br />Por favor espera, puede tardar hasta 45 segundos.
+                  Estamos validando tu factura de Super Carnes.<br />Por favor espera, puede tardar hasta 45 segundos.
                 </p>
               </div>
               <div className="flex gap-1.5 mt-1">
@@ -489,7 +489,7 @@ export function InvoiceRegistrationView({
                   <span className="material-symbols-outlined text-4xl text-on-surface-variant/40">receipt_long</span>
                   <div>
                     <p className="text-sm font-medium text-on-surface-variant">Sin facturas aún</p>
-                    <p className="text-xs text-on-surface-variant/60 mt-1">Escanea el QR de tu primera factura DGI para comenzar</p>
+                    <p className="text-xs text-on-surface-variant/60 mt-1">Escanea el QR de tu primera factura de Super Carnes para comenzar</p>
                   </div>
                 </div>
               )}

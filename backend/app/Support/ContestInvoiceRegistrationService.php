@@ -10,6 +10,7 @@ use App\Models\InvoiceGoalSetting;
 use App\Models\RegisteredInvoice;
 use App\Models\TournamentPhase;
 use App\Models\User;
+use App\Models\CampaignParticipantConsent;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
@@ -31,6 +32,7 @@ class ContestInvoiceRegistrationService
         private readonly WalletService $walletService,
         private readonly InvoicePeriodResolver $phaseResolver,
         private readonly BlacklistService $blacklist,
+        private readonly ProductRankingService $productRanking,
     ) {
     }
 
@@ -48,6 +50,37 @@ class ContestInvoiceRegistrationService
         }
 
         $participant = $this->findOrCreateParticipant($data, $campaign);
+
+        if ($campaign->participation_mode === 'product_ranking') {
+            if ($campaign->status !== 'active' || ($campaign->starts_at && now()->lt($campaign->starts_at)) || ($campaign->ends_at && now()->gt($campaign->ends_at))) {
+                throw ValidationException::withMessages(['campaign' => 'La promoción no está activa en este momento.']);
+            }
+            if (! $this->productRanking->isAdult($participant, $campaign)) {
+                throw ValidationException::withMessages(['birthdate' => 'Debes ser mayor de 18 años para participar.']);
+            }
+            if (! $participant->email) {
+                throw ValidationException::withMessages(['email' => 'Necesitamos un correo electrónico válido para participar.']);
+            }
+            $hasCurrentConsent = $campaign->terms_version
+                && CampaignParticipantConsent::query()
+                    ->where('campaign_id', $campaign->id)
+                    ->where('user_id', $participant->id)
+                    ->where('terms_version', $campaign->terms_version)
+                    ->exists();
+            if (! $hasCurrentConsent) {
+                if (! filter_var($data['accepted_terms'] ?? false, FILTER_VALIDATE_BOOL)) {
+                    throw ValidationException::withMessages(['accepted_terms' => 'Debes aceptar los términos y condiciones.']);
+                }
+                $termsVersion = (string) ($data['terms_version'] ?? '');
+                if (! $campaign->terms_version || $termsVersion !== $campaign->terms_version) {
+                    throw ValidationException::withMessages(['terms_version' => 'Debes aceptar la versión vigente de los términos y condiciones.']);
+                }
+                CampaignParticipantConsent::query()->updateOrCreate(
+                    ['campaign_id' => $campaign->id, 'user_id' => $participant->id],
+                    ['terms_version' => $termsVersion, 'accepted_at' => now(), 'ip_address' => $request?->ip(), 'user_agent' => $request?->userAgent()]
+                );
+            }
+        }
 
         if ($this->usesThresholdParticipation($campaign) && (! $participant->entrepreneur_name || ! $participant->entrepreneur_province || ! $participant->entrepreneur_reason)) {
             throw ValidationException::withMessages([
@@ -76,13 +109,15 @@ class ContestInvoiceRegistrationService
             ]);
         } catch (ConnectionException) {
             throw ValidationException::withMessages([
-                'qr_raw_text' => 'No fue posible conectar con el servicio DGI. Intenta de nuevo en unos segundos.',
+                'qr_raw_text' => 'No fue posible validar tu factura en este momento. Intenta de nuevo en unos segundos.',
             ]);
         }
 
         $canonicalCufe = strtoupper((string) $resolvedInvoice['cufe']);
         $issuedAt = $resolvedInvoice['issued_at'];
-        $minimumAmount = $settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount();
+        $minimumAmount = $campaign->participation_mode === 'product_ranking'
+            ? 0.0
+            : ($settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount());
         $purchaseAmount = round((float) $resolvedInvoice['purchase_amount'], 2);
         $now = now('America/Panama');
         $officialIssuerRucs = config('contest.official_issuer_rucs', []);
@@ -134,6 +169,20 @@ class ContestInvoiceRegistrationService
             'purchase_amount' => $purchaseAmount,
             'issued_at' => $issuedAt,
         ], $resolvedInvoice);
+        $productEvaluation = $campaign->participation_mode === 'product_ranking'
+            ? $this->productRanking->evaluate($campaign, $resolvedInvoice)
+            : ['status' => 'not_applicable', 'items' => [], 'eligible_units' => 0, 'matched_products' => []];
+        if ($campaign->participation_mode === 'product_ranking'
+            && $productEvaluation['status'] === 'matched'
+            && $productEvaluation['eligible_units'] < 1) {
+            throw ValidationException::withMessages([
+                'qr_raw_text' => 'Esta factura no contiene productos Malta Vigor participantes.',
+            ]);
+        }
+        if ($campaign->participation_mode === 'product_ranking' && $productEvaluation['status'] === 'undetermined' && $verification['status'] === 'approved') {
+            $verification['status'] = 'pending';
+            $verification['notes'] = 'Factura validada, pero el detalle de productos requiere revisión manual.';
+        }
         $canonicalCufe = strtoupper((string) ($verification['canonical_cufe'] ?? $canonicalCufe));
         $invoicePeriod = $this->phaseResolver->periodForDate($issuedAt);
 
@@ -160,7 +209,7 @@ class ContestInvoiceRegistrationService
 
         $thresholdAmount = $this->campaignThresholdAmount($campaign);
         $dreamCampaign = $this->campaignManager->dreamCampaignOrFail();
-        if (! $this->usesThresholdParticipation($campaign) && $this->campaignBalance($participant, $dreamCampaign) < $this->campaignThresholdAmount($dreamCampaign) && $this->campaignInvoiceExists($participant, $dreamCampaign)) {
+        if ($campaign->participation_mode !== 'product_ranking' && ! $this->usesThresholdParticipation($campaign) && $this->campaignBalance($participant, $dreamCampaign) < $this->campaignThresholdAmount($dreamCampaign) && $this->campaignInvoiceExists($participant, $dreamCampaign)) {
             throw ValidationException::withMessages([
                 'campaign_slug' => 'Este participante debe completar la promo Del sueño al puesto antes de entrar a otras promociones.',
             ]);
@@ -173,7 +222,7 @@ class ContestInvoiceRegistrationService
         }
 
         try {
-            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings, $campaignQualified, $thresholdAmount): RegisteredInvoice {
+            $invoice = DB::transaction(function () use ($participant, $campaign, $data, $branchId, $canonicalCufe, $purchaseAmount, $issuedAt, $verification, $resolvedInvoice, $invoicePeriod, $minimumAmount, $maxInvoiceAgeDays, $invoiceAgePolicy, $settings, $campaignQualified, $thresholdAmount, $productEvaluation): RegisteredInvoice {
                 $status = $verification['status'] === 'approved'
                     ? ($this->usesThresholdParticipation($campaign) && ! $campaignQualified ? 'pending_threshold' : 'accepted')
                     : ($verification['status'] === 'pending' ? 'pending_validation' : 'rejected');
@@ -182,7 +231,7 @@ class ContestInvoiceRegistrationService
                     'pending' => 'pending',
                     default => 'rejected',
                 };
-                $pointsAwarded = $this->usesThresholdParticipation($campaign)
+                $pointsAwarded = $this->usesThresholdParticipation($campaign) || $campaign->participation_mode === 'product_ranking'
                     ? 0
                     : ($verification['status'] === 'approved' && $campaignQualified ? 1 : 0);
 
@@ -207,13 +256,20 @@ class ContestInvoiceRegistrationService
                     'dad_reason' => $data['dad_reason'] ?? null,
                     'dgi_checked_at' => $verification['status'] === 'pending' ? null : now(),
                     'dgi_response_payload' => $verification['payload'],
+                    'eligible_units' => $productEvaluation['eligible_units'],
+                    'product_validation_status' => $productEvaluation['status'],
+                    'matched_products' => $productEvaluation['matched_products'],
                 ]);
+
+                foreach ($productEvaluation['items'] as $item) {
+                    $invoice->items()->create($item);
+                }
 
                 if ($this->usesThresholdParticipation($campaign) && $campaignQualified && $campaign->slug === 'del-sueno-al-puesto') {
                     $participant->forceFill(['dream_promo_qualified_at' => now()])->save();
                 }
 
-                if (! $this->usesThresholdParticipation($campaign) && $verification['status'] === 'approved' && $campaignQualified) {
+                if (! $this->usesThresholdParticipation($campaign) && $campaign->participation_mode !== 'product_ranking' && $verification['status'] === 'approved' && $campaignQualified) {
                     $this->syncDailyInvoiceGoal($participant, $invoice, $invoicePeriod);
                     $this->walletService->creditGoals(
                         user: $participant,
@@ -272,18 +328,31 @@ class ContestInvoiceRegistrationService
             ->where('user_id', $participant->id)
             ->where('campaign_id', $campaign->id)
             ->sum('purchase_amount');
+        $campaignUnitsTotal = $campaign->participation_mode === 'product_ranking'
+            ? $this->productRanking->totalFor($participant, $campaign)
+            : null;
 
         return [
             'invoice' => $invoice,
             'verification_status' => $verification['status'],
-            'message' => $this->usesThresholdParticipation($campaign)
+            'message' => $campaign->participation_mode === 'product_ranking'
+                ? ($productEvaluation['status'] === 'undetermined'
+                    ? 'Factura recibida. El detalle de productos será revisado manualmente.'
+                    : ($productEvaluation['eligible_units'] > 0
+                        ? 'Factura registrada. Se sumaron '.$productEvaluation['eligible_units'].' unidades Malta Vigor.'
+                        : 'Factura registrada, pero no contiene productos Malta Vigor participantes.'))
+                : ($this->usesThresholdParticipation($campaign)
                 ? ($campaignQualified
                     ? 'Participación activa. Puedes seguir registrando facturas.'
                     : 'Factura guardada. Sigue acumulando hasta llegar a $'.number_format($thresholdAmount, 2).' para activar tu participación.')
-                : $this->messageForStatus($verification['status']),
+                : $this->messageForStatus($verification['status'])),
             'campaign_total' => $campaignTotal,
+            'campaign_units_total' => $campaignUnitsTotal,
             'campaign_threshold' => $thresholdAmount,
             'campaign_qualified' => $campaignQualified,
+            'eligible_units' => $productEvaluation['eligible_units'],
+            'matched_products' => $productEvaluation['matched_products'],
+            'product_validation_status' => $productEvaluation['status'],
         ];
     }
 
@@ -300,9 +369,10 @@ class ContestInvoiceRegistrationService
         }
     }
 
-    public function resolveInvoiceData(string $rawText): array
+    public function resolveInvoiceData(string $rawText, ?string $campaignSlug = null): array
     {
         $settings = InvoiceGoalSetting::query()->first();
+        $campaign = $campaignSlug ? $this->campaignManager->bySlugOrFail($campaignSlug) : null;
         $cufe = $this->cufeParser->extract($rawText);
 
         if (! $cufe) {
@@ -325,11 +395,16 @@ class ContestInvoiceRegistrationService
             ]);
         } catch (ConnectionException) {
             throw ValidationException::withMessages([
-                'qr_raw_text' => 'No fue posible conectar con el servicio DGI. Intenta de nuevo en unos segundos.',
+                'qr_raw_text' => 'No fue posible validar tu factura en este momento. Intenta de nuevo en unos segundos.',
             ]);
         }
 
-        $minimumAmount = $settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount();
+        $minimumAmount = $campaign?->participation_mode === 'product_ranking'
+            ? 0.0
+            : ($settings ? (float) $settings->min_purchase_amount : $this->rules->minimumInvoiceAmount());
+        $productEvaluation = $campaign?->participation_mode === 'product_ranking'
+            ? $this->productRanking->evaluate($campaign, $resolved)
+            : null;
 
         return [
             'cufe' => $resolved['cufe'],
@@ -340,6 +415,9 @@ class ContestInvoiceRegistrationService
             'issuer_ruc' => $resolved['issuer_ruc'] ?? null,
             'is_valid' => (float) $resolved['purchase_amount'] >= $minimumAmount,
             'minimum_amount' => $minimumAmount,
+            'eligible_units' => $productEvaluation['eligible_units'] ?? 0,
+            'matched_products' => $productEvaluation['matched_products'] ?? [],
+            'product_validation_status' => $productEvaluation['status'] ?? 'not_applicable',
         ];
     }
 
@@ -370,7 +448,7 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        if (! $this->usesThresholdParticipation($campaign) && RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
+        if ($campaign->participation_mode !== 'product_ranking' && ! $this->usesThresholdParticipation($campaign) && RegisteredInvoice::query()->whereHas('user', fn ($query) => $query->where('cedula', $documentNumber))->exists()) {
             throw ValidationException::withMessages([
                 'document_number' => 'Este documento ya registro una factura y no puede participar dos veces.',
             ]);
@@ -398,6 +476,7 @@ class ContestInvoiceRegistrationService
                 'document_type' => $documentType,
                 'email' => $safeEmail,
                 'phone' => $data['phone'] ?? null,
+                'birthdate' => $data['birthdate'] ?? null,
                 'role' => 'client',
                 'password' => Hash::make(str()->random(40)),
                 'is_active' => true,
@@ -417,6 +496,7 @@ class ContestInvoiceRegistrationService
             'full_name' => $fullName,
             'email' => $safeEmail ?? $user->email,
             'phone' => $data['phone'] ?? $user->phone,
+            'birthdate' => $data['birthdate'] ?? $user->birthdate,
             'cedula' => $documentNumber,
             'document_type' => $documentType,
             'is_active' => true,
