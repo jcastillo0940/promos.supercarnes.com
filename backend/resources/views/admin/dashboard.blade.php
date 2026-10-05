@@ -60,7 +60,7 @@
 
 @section('content')
     @if (session('status'))
-        <div class="alert-success">{{ session('status') }}</div>
+        <div class="success">{{ session('status') }}</div>
     @endif
 
     <div class="page-card">
