@@ -5,10 +5,6 @@
 
 @section('topbar-actions')
     <a class="topbar-action hide-mobile" href="{{ route('admin.fanlyc.zones') }}">Zonas</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('sidebar-actions')

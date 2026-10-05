@@ -286,6 +286,10 @@
             </div>
             <div class="topbar-right">
                 @yield('topbar-actions')
+                <form method="POST" action="{{ route('admin.logout') }}" style="margin:0;">
+                    @csrf
+                    <button type="submit" data-no-loading-text>Cerrar sesión</button>
+                </form>
             </div>
         </header>
 

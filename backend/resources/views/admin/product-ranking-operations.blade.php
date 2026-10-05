@@ -6,7 +6,6 @@
 @section('topbar-actions')
     <a class="topbar-action hide-mobile" href="{{ route('admin.campaigns.product-ranking.export', $campaign) }}">Exportar ranking</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice.campaigns.edit', $campaign) }}">Configurar promo</a>
-    <form method="POST" action="{{ route('admin.logout') }}">@csrf<button type="submit">Cerrar sesión</button></form>
 @endsection
 
 @section('sidebar-actions')

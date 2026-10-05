@@ -8,10 +8,6 @@
         <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-challenge') }}">Fonda Challenge</a>
         <a class="topbar-action hide-mobile" href="{{ route('admin.jurors') }}">Jurados</a>
     @endif
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('content')

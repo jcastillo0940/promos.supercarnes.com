@@ -4,10 +4,6 @@
 @section('subtitle', 'Personas bloqueadas')
 
 @section('topbar-actions')
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('sidebar-actions')

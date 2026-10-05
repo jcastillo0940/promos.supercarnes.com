@@ -19,10 +19,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-jury') }}">Jurado</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.jurors') }}">Jurados</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-challenge.ranking') }}">Ranking</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('content')
