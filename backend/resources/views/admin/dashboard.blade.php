@@ -8,10 +8,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.prize-delivery') }}">Entrega de premio</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @push('styles')
@@ -60,7 +56,7 @@
 
 @section('content')
     @if (session('status'))
-        <div class="alert-success">{{ session('status') }}</div>
+        <div class="success">{{ session('status') }}</div>
     @endif
 
     <div class="page-card">

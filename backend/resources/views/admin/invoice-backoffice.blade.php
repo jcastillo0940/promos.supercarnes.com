@@ -12,10 +12,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.prize-delivery') }}">Entrega de premio</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @push('styles')
@@ -403,8 +399,10 @@
                     @csrf
                     <input type="hidden" name="key" value="{{ $backofficeKey }}">
                     <input type="hidden" name="campaigns[{{ $campaign->id }}][id]" value="{{ $campaign->id }}">
-                    <div class="campaign-card" data-campaign-scope>
-                        @if (! $editingCampaign)
+                    <details class="campaign-card" data-campaign-scope{{ $editingCampaign ? ' open' : '' }}>
+                        @if ($editingCampaign)
+                            <summary style="display:none;" aria-hidden="true"></summary>
+                        @else
                         <summary>
                             <div class="campaign-summary-main">
                                 <span class="campaign-chevron">⌄</span>
@@ -438,6 +436,7 @@
                                     formmethod="POST"
                                     name="status"
                                     value="{{ $campaign->status === 'active' ? 'paused' : 'active' }}"
+                                    @if($campaign->status === 'active') data-confirm="¿Pausar la promoción «{{ $campaign->name }}»? Los clientes no podrán participar mientras esté pausada." @endif
                                 >
                                     {{ $campaign->status === 'active' ? 'Pausar promoción' : 'Activar promoción' }}
                                 </button>
@@ -600,7 +599,7 @@
                                 <button type="submit" class="btn btn-red">Guardar configuración</button>
                             </div>
                         </div>
-                    </div>
+                    </details>
                 </form>
             @endforeach
         </div>

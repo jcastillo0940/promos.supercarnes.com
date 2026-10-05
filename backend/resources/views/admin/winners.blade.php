@@ -6,10 +6,6 @@
 @section('topbar-actions')
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice') }}">Configuración</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('sidebar-actions')
@@ -74,7 +70,7 @@
                                         <td data-label="Monto">${{ number_format((float) $winner->invoice_total_amount, 2) }}</td>
                                         <td data-label="Fecha selección">{{ $winner->selected_at?->format('d/m/Y H:i') ?? '—' }}</td>
                                         <td data-label="Acción">
-                                            <form method="POST" action="{{ route('admin.winners.remove', $winner) }}">
+                                            <form method="POST" action="{{ route('admin.winners.remove', $winner) }}" data-confirm="¿Quitar a este ganador? La factura volverá a estar disponible para seleccionar.">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn btn-gray" type="submit">Quitar</button>

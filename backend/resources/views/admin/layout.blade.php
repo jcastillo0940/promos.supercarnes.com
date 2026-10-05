@@ -220,6 +220,15 @@
         .field input:focus, .field select:focus { outline: 2px solid rgba(220, 38, 38, .18); border-color: #dc2626; }
         .responsive-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
         .responsive-actions form, .responsive-actions a { margin: 0; }
+        .empty {
+            padding: 1.5rem 1rem;
+            color: #94a3b8;
+            font-size: .88rem;
+            text-align: center;
+            border: 1px dashed #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
         .hide-mobile { display: block; }
         .show-mobile { display: none; }
 
@@ -267,7 +276,7 @@
     <div class="app-shell">
         <header class="topbar">
             <div class="topbar-left">
-                <label class="sidebar-button show-mobile" for="sidebar-toggle" aria-label="Abrir menú">
+                <label class="sidebar-button show-mobile" for="sidebar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar-nav" role="button">
                     <span>☰</span>
                 </label>
                 <div class="brand">
@@ -277,6 +286,10 @@
             </div>
             <div class="topbar-right">
                 @yield('topbar-actions')
+                <form method="POST" action="{{ route('admin.logout') }}" style="margin:0;">
+                    @csrf
+                    <button type="submit" data-no-loading-text>Cerrar sesión</button>
+                </form>
             </div>
         </header>
 
@@ -293,5 +306,34 @@
         </div>
     </div>
     @stack('scripts')
+    <script>
+    (function () {
+        var flash = document.querySelector('.success, .error, .notice, .alert-success');
+        if (flash) flash.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        var sidebarToggle = document.getElementById('sidebar-toggle');
+        var sidebarLabel = document.querySelector('[aria-controls="sidebar-nav"]');
+        if (sidebarToggle && sidebarLabel) {
+            sidebarToggle.addEventListener('change', function () {
+                sidebarLabel.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
+                sidebarLabel.setAttribute('aria-label', this.checked ? 'Cerrar menú' : 'Abrir menú');
+            });
+        }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            var msg = (e.submitter && e.submitter.dataset.confirm) || form.dataset.confirm;
+            if (msg && !window.confirm(msg)) { e.preventDefault(); return; }
+            if (form.dataset.noSubmitLock) return;
+            form.querySelectorAll('button[type="submit"], button:not([type])').forEach(function (btn) {
+                btn.disabled = true;
+                if (!btn.dataset.noLoadingText) {
+                    btn.dataset.originalText = btn.innerHTML;
+                    btn.innerHTML = btn.dataset.loadingText || 'Procesando…';
+                }
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

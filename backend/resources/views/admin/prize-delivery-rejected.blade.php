@@ -6,10 +6,6 @@
 @section('topbar-actions')
     <a class="topbar-action hide-mobile" href="{{ route('admin.prize-delivery') }}">Volver a entrega</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
-    <form method="POST" action="{{ route('admin.logout') }}">
-        @csrf
-        <button type="submit">Cerrar sesión</button>
-    </form>
 @endsection
 
 @section('content')

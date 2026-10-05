@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar-nav" aria-label="Menú de navegación">
     <div class="sidebar-section">
         <p class="sidebar-title">Navegación</p>
         <nav class="sidebar-nav">
@@ -9,7 +9,7 @@
                 <a href="{{ route('admin.dashboard') }}" @class(['active' => request()->routeIs('admin.dashboard')])>
                     Dashboard
                 </a>
-                <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice')])>
+                <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice*')])>
                     Configuración
                 </a>
             @endif
@@ -57,7 +57,7 @@
 
             {{-- Module: Fonda --}}
             @if($u?->canAccessModule('fonda'))
-                <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge')])>
+                <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge*')])>
                     Fonda Challenge
                 </a>
                 <a href="{{ route('admin.fonda-jury') }}" @class(['active' => request()->routeIs('admin.fonda-jury')])>
@@ -131,6 +131,18 @@
     @endif
 
     <div class="sidebar-foot">
-        Panel optimizado para escritorio y móvil.
+        @php($me = auth()->user())
+        @if($me)
+            <strong style="display:block;color:#e2e8f0;font-size:.82rem;margin-bottom:.2rem;">{{ $me->full_name ?? $me->name }}</strong>
+            <span style="font-size:.75rem;">{{ [
+                'admin'       => 'Administrador',
+                'operator'    => 'Operador',
+                'supervisor'  => 'Supervisor',
+                'manager'     => 'Supervisor',
+                'cashier'     => 'Cajero',
+                'jurado'      => 'Jurado',
+                'staff_fanlyc'=> 'Staff Fanlyc',
+            ][$me->role] ?? ucfirst($me->role) }}</span>
+        @endif
     </div>
 </aside>
