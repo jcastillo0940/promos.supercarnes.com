@@ -3,10 +3,6 @@
 @section('title', 'Staff Fanlyc')
 @section('subtitle', 'Canje en zona')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.fanlyc') }}">Fanlyc</a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

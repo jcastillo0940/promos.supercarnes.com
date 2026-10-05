@@ -3,13 +3,6 @@
 @section('title', 'Jurado Fonda Challenge')
 @section('subtitle', $isAdmin ? 'Asignación de jurados' : 'Evaluación')
 
-@section('topbar-actions')
-    @if($isAdmin)
-        <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-challenge') }}">Fonda Challenge</a>
-        <a class="topbar-action hide-mobile" href="{{ route('admin.jurors') }}">Jurados</a>
-    @endif
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

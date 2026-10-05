@@ -3,15 +3,6 @@
 @section('title', 'Fanlyc')
 @section('subtitle', 'Revision de facturas')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.fanlyc.zones') }}">Zonas</a>
-@endsection
-
-@section('sidebar-actions')
-    <a href="{{ route('admin.fanlyc.zones') }}">Zonas <small>Asignar sucursales a zonas</small></a>
-    <a href="{{ route('admin.fanlyc-staff') }}">Staff de canje <small>Cuentas del rol staff_fanlyc</small></a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

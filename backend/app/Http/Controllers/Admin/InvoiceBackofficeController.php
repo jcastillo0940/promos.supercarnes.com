@@ -30,6 +30,48 @@ use Illuminate\View\View;
 
 class InvoiceBackofficeController extends Controller
 {
+    public function inicio(): View
+    {
+        $user = auth()->user();
+        $stats = [];
+
+        if ($user->isAdmin()) {
+            $stats = [
+                'campaigns_active'    => Campaign::query()->where('status', 'active')->count(),
+                'saba_pending'        => \App\Models\SabaEntry::query()->where('status', 'pending_review')->count(),
+                'nivea_pending'       => \App\Models\NiveaEntry::query()->where('status', 'pending_review')->count(),
+                'fraud_open'          => \App\Models\FraudFlag::query()->where('status', 'open')->count(),
+                'fonda_pending'       => \App\Models\FondaRegistration::query()->where('status', 'pending_review')->count(),
+                'prize_pending'       => \App\Models\PromoWinner::query()->where('status', 'selected')->whereNull('delivered_at')->count(),
+            ];
+        } elseif ($user->isOperator()) {
+            if ($user->canAccessModule('saba')) {
+                $stats['saba_pending'] = \App\Models\SabaEntry::query()->where('status', 'pending_review')->count();
+            }
+            if ($user->canAccessModule('nivea')) {
+                $stats['nivea_pending'] = \App\Models\NiveaEntry::query()->where('status', 'pending_review')->count();
+            }
+            if ($user->canAccessModule('fonda')) {
+                $stats['fonda_pending'] = \App\Models\FondaRegistration::query()->where('status', 'pending_review')->count();
+            }
+            if ($user->canAccessModule('malta')) {
+                $stats['fraud_open'] = \App\Models\FraudFlag::query()->where('status', 'open')->count();
+            }
+        } elseif ($user->isJury()) {
+            $stats['jury_pending'] = \App\Models\FondaJuryAssignment::query()
+                ->where('juror_id', $user->id)
+                ->where('status', 'pending')
+                ->count();
+        } elseif ($user->isSupervisor()) {
+            $stats['prize_pending'] = \App\Models\PromoWinner::query()
+                ->where('status', 'selected')
+                ->whereNull('delivered_at')
+                ->count();
+        }
+
+        return view('admin.inicio', compact('stats'));
+    }
+
     public function dashboard(): View
     {
         return view('admin.dashboard', [

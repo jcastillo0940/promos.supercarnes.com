@@ -17,12 +17,8 @@
 @endphp
 
 @section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-challenge') }}">Volver al listado</a>
-@endsection
-
-@section('sidebar-actions')
-    <a href="{{ route('admin.fonda-challenge') }}">Volver al listado <small>Fonda Challenge</small></a>
-    <a href="{{ route('fonda-challenge.show', $registration->code) }}" target="_blank" rel="noopener">Ver confirmación pública <small>Nueva pestaña</small></a>
+    <a class="topbar-action hide-mobile" href="{{ route('admin.fonda-challenge') }}">← Participantes</a>
+    <a class="topbar-action hide-mobile" href="{{ route('fonda-challenge.show', $registration->code) }}" target="_blank" rel="noopener">Ver público ↗</a>
 @endsection
 
 @section('content')

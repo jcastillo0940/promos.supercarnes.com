@@ -3,11 +3,6 @@
 @section('title', 'Auditoría')
 @section('subtitle', 'Entregas, rechazos y reaperturas')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.prize-delivery') }}">Entrega de premio</a>
-    <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
-@endsection
-
 @push('styles')
     <style>
         .stat-grid {

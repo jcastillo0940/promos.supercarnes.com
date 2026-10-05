@@ -4,13 +4,9 @@
 @section('subtitle', 'Emprende tu Sueño con Saba')
 
 @section('topbar-actions')
+    <a class="topbar-action hide-mobile" href="{{ route('admin.saba.export', request()->only(['status', 'search', 'branch_id', 'winners'])) }}">Exportar CSV</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.saba.settings') }}">Configuración y SKUs</a>
-@endsection
-
-@section('sidebar-actions')
-    <a href="{{ route('admin.saba.settings') }}">Configuración <small>SKUs, términos, logo y fechas</small></a>
-    <a href="{{ route('admin.saba.export', request()->only(['status', 'search', 'branch_id', 'winners'])) }}">Exportar CSV <small>Con los filtros actuales</small></a>
-    <a href="/saba" target="_blank" rel="noopener">Ver página pública <small>promos.supercarnes.com/saba</small></a>
+    <a class="topbar-action hide-mobile" href="/saba" target="_blank" rel="noopener">Ver página ↗</a>
 @endsection
 
 @section('content')

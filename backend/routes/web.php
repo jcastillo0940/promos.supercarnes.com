@@ -68,6 +68,7 @@ Route::post('/admin/logout', [AdminLoginController::class, 'logout'])->name('adm
 
 // ─── Admin · super-admin only ─────────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/adminrepus1car/inicio', [InvoiceBackofficeController::class, 'inicio'])->name('admin.inicio');
     Route::get('/adminrepus1car/dashboard', [InvoiceBackofficeController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/adminrepus1car', [InvoiceBackofficeController::class, 'index'])->name('admin.invoice-backoffice');
     Route::post('/adminrepus1car', [InvoiceBackofficeController::class, 'update'])->name('admin.invoice-backoffice.update');

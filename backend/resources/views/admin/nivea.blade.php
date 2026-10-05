@@ -4,13 +4,9 @@
 @section('subtitle', 'Empollerando a Mamá')
 
 @section('topbar-actions')
+    <a class="topbar-action hide-mobile" href="{{ route('admin.nivea.export', request()->only(['status', 'search', 'branch_id', 'winners'])) }}">Exportar CSV</a>
     <a class="topbar-action hide-mobile" href="{{ route('admin.nivea.settings') }}">Configuración y SKUs</a>
-@endsection
-
-@section('sidebar-actions')
-    <a href="{{ route('admin.nivea.settings') }}">Configuración <small>SKUs, términos, logo y fechas</small></a>
-    <a href="{{ route('admin.nivea.export', request()->only(['status', 'search', 'branch_id', 'winners'])) }}">Exportar CSV <small>Con los filtros actuales</small></a>
-    <a href="/nivea" target="_blank" rel="noopener">Ver página pública <small>promos.supercarnes.com/nivea</small></a>
+    <a class="topbar-action hide-mobile" href="/nivea" target="_blank" rel="noopener">Ver página ↗</a>
 @endsection
 
 @section('content')
