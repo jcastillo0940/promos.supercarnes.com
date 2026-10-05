@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -123,6 +124,11 @@ class User extends Authenticatable
         return $this->hasMany(FanlycCoupon::class);
     }
 
+    public function promoPermissions(): HasMany
+    {
+        return $this->hasMany(OperatorPromoPermission::class, 'operator_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -169,6 +175,32 @@ class User extends Authenticatable
         }
 
         return false;
+    }
+
+    /**
+     * Check a granular permission for a specific promo.
+     * Falls back to full access when no row exists in operator_promo_permissions
+     * (preserves existing operator access during and after migration).
+     */
+    public function canDoPromo(string $promoKey, string $permission): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        /** @var OperatorPromoPermission|null $record */
+        $record = $this->promoPermissions()
+            ->where('promo_key', $promoKey)
+            ->first();
+
+        if ($record !== null) {
+            return (bool) ($record->permissions[$permission] ?? false);
+        }
+
+        // Fallback: if the operator has module-level access, allow everything.
+        $moduleKey = str_starts_with($promoKey, 'malta-') ? 'malta' : $promoKey;
+
+        return $this->canAccessModule($moduleKey);
     }
 
     public function firstModuleRoute(): string
