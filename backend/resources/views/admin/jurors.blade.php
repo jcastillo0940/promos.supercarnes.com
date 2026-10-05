@@ -39,7 +39,7 @@
                     <input id="password" name="password" type="text" minlength="8" required>
                 </div>
                 <div class="responsive-actions" style="align-self:end;">
-                    <button class="btn btn-red" type="submit">Crear jurado</button>
+                    <button class="btn btn-green" type="submit">Crear jurado</button>
                 </div>
             </form>
         </div>

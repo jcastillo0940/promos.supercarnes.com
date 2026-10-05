@@ -52,7 +52,7 @@
                     </div>
                 </div>
                 <div>
-                    <button class="btn btn-red" type="submit">Crear operador</button>
+                    <button class="btn btn-green" type="submit">Crear operador</button>
                 </div>
             </form>
         </div>

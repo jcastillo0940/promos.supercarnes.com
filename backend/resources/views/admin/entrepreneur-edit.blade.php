@@ -36,7 +36,7 @@
             <div class="page-section" style="border-top:1px solid #e5e7eb;">
                 <div class="error" style="margin-bottom:0;">
                     <strong>Emprendedor en blacklist.</strong> Motivo: {{ $blacklistEntry->reason }}
-                    <form method="POST" action="{{ route('admin.blacklist.remove', $blacklistEntry) }}" style="margin-top:.6rem;" onsubmit="return confirm('¿Quitar a esta persona de la blacklist?');">
+                    <form method="POST" action="{{ route('admin.blacklist.remove', $blacklistEntry) }}" style="margin-top:.6rem;" data-confirm="¿Quitar a esta persona de la blacklist?">
                         @csrf
                         <button class="btn btn-gray" type="submit">Quitar de la blacklist</button>
                     </form>
@@ -46,7 +46,7 @@
             <div class="page-section" style="border-top:1px solid #e5e7eb;">
                 <details>
                     <summary style="cursor:pointer;font-weight:700;color:#b91c1c;">Marcar como fraude / blacklist</summary>
-                    <form method="POST" action="{{ route('admin.blacklist.store') }}" class="form-grid" style="margin-top:.75rem;grid-template-columns: 1fr auto;">
+                    <form method="POST" action="{{ route('admin.blacklist.store') }}" class="form-grid" style="margin-top:.75rem;grid-template-columns: 1fr auto;" data-confirm="¿Bloquear a esta persona de todas las promociones? Esta acción queda registrada en auditoría.">
                         @csrf
                         <input type="hidden" name="user_id" value="{{ $entrepreneur->id }}">
                         <div class="field">
