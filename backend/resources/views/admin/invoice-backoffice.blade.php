@@ -403,8 +403,10 @@
                     @csrf
                     <input type="hidden" name="key" value="{{ $backofficeKey }}">
                     <input type="hidden" name="campaigns[{{ $campaign->id }}][id]" value="{{ $campaign->id }}">
-                    <div class="campaign-card" data-campaign-scope>
-                        @if (! $editingCampaign)
+                    <details class="campaign-card" data-campaign-scope{{ $editingCampaign ? ' open' : '' }}>
+                        @if ($editingCampaign)
+                            <summary style="display:none;" aria-hidden="true"></summary>
+                        @else
                         <summary>
                             <div class="campaign-summary-main">
                                 <span class="campaign-chevron">⌄</span>
@@ -601,7 +603,7 @@
                                 <button type="submit" class="btn btn-red">Guardar configuración</button>
                             </div>
                         </div>
-                    </div>
+                    </details>
                 </form>
             @endforeach
         </div>
