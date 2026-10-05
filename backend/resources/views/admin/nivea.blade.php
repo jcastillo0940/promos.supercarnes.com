@@ -45,7 +45,7 @@
             </div>
             <div class="responsive-actions">
                 @if($campaign->status === 'active')
-                    <form method="POST" action="{{ route('admin.nivea.status') }}">
+                    <form method="POST" action="{{ route('admin.nivea.status') }}" data-confirm="¿Pausar la promoción NIVEA? Las participantes ya no podrán registrarse mientras esté pausada.">
                         @csrf
                         <input type="hidden" name="status" value="paused">
                         <button class="btn btn-gray" type="submit">Pausar promoción</button>

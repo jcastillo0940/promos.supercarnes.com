@@ -306,6 +306,8 @@
     (function () {
         document.addEventListener('submit', function (e) {
             var form = e.target;
+            var msg = (e.submitter && e.submitter.dataset.confirm) || form.dataset.confirm;
+            if (msg && !window.confirm(msg)) { e.preventDefault(); return; }
             if (form.dataset.noSubmitLock) return;
             form.querySelectorAll('button[type="submit"], button:not([type])').forEach(function (btn) {
                 btn.disabled = true;

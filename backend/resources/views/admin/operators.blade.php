@@ -89,7 +89,8 @@
                             @else
                                 <span class="badge badge-gray">Desactivado</span>
                             @endif
-                            <form method="POST" action="{{ route('admin.operators.toggle-status', $op) }}">
+                            <form method="POST" action="{{ route('admin.operators.toggle-status', $op) }}"
+                                data-confirm="{{ $op->is_active ? '¿Desactivar a '.$op->full_name.'? Ya no podrá iniciar sesión.' : '¿Activar a '.$op->full_name.'?' }}">
                                 @csrf
                                 <button class="btn btn-gray" type="submit" style="padding:.4rem .75rem;font-size:.8rem;">
                                     {{ $op->is_active ? 'Desactivar' : 'Activar' }}

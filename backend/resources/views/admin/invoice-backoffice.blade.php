@@ -438,6 +438,7 @@
                                     formmethod="POST"
                                     name="status"
                                     value="{{ $campaign->status === 'active' ? 'paused' : 'active' }}"
+                                    @if($campaign->status === 'active') data-confirm="¿Pausar la promoción «{{ $campaign->name }}»? Los clientes no podrán participar mientras esté pausada." @endif
                                 >
                                     {{ $campaign->status === 'active' ? 'Pausar promoción' : 'Activar promoción' }}
                                 </button>

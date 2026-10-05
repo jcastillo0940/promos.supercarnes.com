@@ -98,7 +98,7 @@
                 </form>
             @endif
             @if($entry->status !== 'rejected')
-                <form method="POST" action="{{ route('admin.nivea.reject', $entry) }}" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;">
+                <form method="POST" action="{{ route('admin.nivea.reject', $entry) }}" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;" data-confirm="¿Rechazar esta participación? Se liberará la cédula para que la persona pueda volver a participar.">
                     @csrf
                     <div class="field" style="min-width:280px;">
                         <label>Motivo del rechazo</label>
@@ -130,7 +130,7 @@
                     <button class="btn btn-green" type="submit">{{ $entry->winner_position ? 'Cambiar puesto' : 'Elegir como ganadora' }}</button>
                 </form>
                 @if($entry->winner_position)
-                    <form method="POST" action="{{ route('admin.nivea.winner.remove', $entry) }}">
+                    <form method="POST" action="{{ route('admin.nivea.winner.remove', $entry) }}" data-confirm="¿Quitar a esta participante como ganadora? El puesto quedará libre.">
                         @csrf
                         <button class="btn btn-gray" type="submit">Quitar selección</button>
                     </form>
