@@ -131,6 +131,10 @@
     @endif
 
     <div class="sidebar-foot">
-        Panel optimizado para escritorio y móvil.
+        @php($me = auth()->user())
+        @if($me)
+            <strong style="display:block;color:#e2e8f0;font-size:.82rem;margin-bottom:.2rem;">{{ $me->full_name ?? $me->name }}</strong>
+            <span style="font-size:.75rem;">{{ ['admin' => 'Administrador', 'operator' => 'Operador'][$me->role] ?? ucfirst($me->role) }}</span>
+        @endif
     </div>
 </aside>
