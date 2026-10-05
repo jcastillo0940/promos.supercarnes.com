@@ -28,6 +28,7 @@
         }
 
         *, *::before, *::after { box-sizing: border-box; }
+        [hidden] { display: none !important; }
         html, body { margin: 0; padding: 0; }
         body {
             font-family: system-ui, -apple-system, sans-serif;
