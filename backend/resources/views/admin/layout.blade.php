@@ -276,7 +276,7 @@
     <div class="app-shell">
         <header class="topbar">
             <div class="topbar-left">
-                <label class="sidebar-button show-mobile" for="sidebar-toggle" aria-label="Abrir menú">
+                <label class="sidebar-button show-mobile" for="sidebar-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar-nav" role="button">
                     <span>☰</span>
                 </label>
                 <div class="brand">
@@ -310,6 +310,15 @@
     (function () {
         var flash = document.querySelector('.success, .error, .notice, .alert-success');
         if (flash) flash.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        var sidebarToggle = document.getElementById('sidebar-toggle');
+        var sidebarLabel = document.querySelector('[aria-controls="sidebar-nav"]');
+        if (sidebarToggle && sidebarLabel) {
+            sidebarToggle.addEventListener('change', function () {
+                sidebarLabel.setAttribute('aria-expanded', this.checked ? 'true' : 'false');
+                sidebarLabel.setAttribute('aria-label', this.checked ? 'Cerrar menú' : 'Abrir menú');
+            });
+        }
 
         document.addEventListener('submit', function (e) {
             var form = e.target;
