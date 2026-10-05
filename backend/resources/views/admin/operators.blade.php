@@ -22,7 +22,7 @@
                 <p>Un operador solo ve los módulos que le asignes. Inicia sesión en /admin/login.</p>
             </div>
         </div>
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <form method="POST" action="{{ route('admin.operators.store') }}" class="form-grid">
                 @csrf
                 <div class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
@@ -73,7 +73,7 @@
             </div>
         @else
             @foreach($operators as $op)
-                <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                <div class="page-section" style="border-top:1px solid var(--bo-border);">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem;margin-bottom:.75rem;">
                         <div>
                             <strong>{{ $op->full_name ?? $op->name }}</strong>

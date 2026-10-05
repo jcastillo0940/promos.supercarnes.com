@@ -11,64 +11,38 @@
             gap: 1rem;
             margin-bottom: 1rem;
         }
-
-        .stat-card {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 1rem 1.1rem;
-            display: grid;
-            gap: .35rem;
-        }
-
-        .stat-card strong {
-            font-size: 1.5rem;
-            color: #0f172a;
-        }
-
-        .stat-card span {
-            color: #64748b;
-            font-size: .9rem;
-        }
-
         .filters-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 1rem;
             align-items: end;
         }
-
         .table-wrap {
             overflow-x: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            background: #fff;
+            border: 1px solid var(--bo-border);
+            border-radius: 12px;
+            background: var(--bo-surface);
         }
-
         .field textarea {
             width: 100%;
             min-height: 110px;
             padding: .65rem .8rem;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--bo-border-dark);
             border-radius: 10px;
             font-size: .95rem;
-            background: #fff;
+            background: var(--bo-surface);
+            color: var(--bo-fg);
             resize: vertical;
         }
-
         .field span {
             display: block;
             font-size: .82rem;
             font-weight: 700;
-            color: #334155;
+            color: var(--bo-fg2);
             margin-bottom: .35rem;
         }
-
         @media (max-width: 900px) {
-            .stat-grid,
-            .filters-grid {
-                grid-template-columns: 1fr;
-            }
+            .stat-grid, .filters-grid { grid-template-columns: 1fr; }
         }
     </style>
 @endpush
@@ -84,16 +58,16 @@
 
         <div class="stat-grid">
             <div class="stat-card">
-                <strong>{{ number_format($summary['delivered']) }}</strong>
-                <span>Entregas</span>
+                <small>Entregas</small>
+                <h2>{{ number_format($summary['delivered']) }}</h2>
             </div>
             <div class="stat-card">
-                <strong>{{ number_format($summary['rejected']) }}</strong>
-                <span>Rechazos</span>
+                <small>Rechazos</small>
+                <h2>{{ number_format($summary['rejected']) }}</h2>
             </div>
             <div class="stat-card">
-                <strong>{{ number_format($summary['overrides']) }}</strong>
-                <span>Reaperturas</span>
+                <small>Reaperturas</small>
+                <h2>{{ number_format($summary['overrides']) }}</h2>
             </div>
         </div>
 
@@ -120,8 +94,8 @@
                     <input type="text" name="branch" value="{{ request('branch') }}" placeholder="Nombre o código">
                 </label>
                 <div class="responsive-actions" style="align-items:flex-end;">
-                    <button class="btn btn-primary" type="submit">Filtrar</button>
-                    <a class="btn btn-outline" href="{{ route('admin.audit') }}">Limpiar</a>
+                    <button class="btn btn-red" type="submit">Filtrar</button>
+                    <a class="btn btn-gray" href="{{ route('admin.audit') }}">Limpiar</a>
                 </div>
             </form>
 

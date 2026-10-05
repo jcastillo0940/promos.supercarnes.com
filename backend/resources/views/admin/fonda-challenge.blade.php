@@ -37,13 +37,13 @@
             </div>
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb; display:flex; gap:.5rem; flex-wrap:wrap;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border); display:flex; gap:.5rem; flex-wrap:wrap;">
             @foreach($statusMeta as $key => [$color, $label])
                 <span class="badge badge-{{ $color }}">{{ $label }}: {{ $counts[$key] ?? 0 }}</span>
             @endforeach
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <form method="GET" action="{{ route('admin.fonda-challenge') }}" class="form-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
                 <div class="field" style="grid-column: span 2;">
                     <label for="search">Buscar</label>

@@ -11,36 +11,19 @@
             gap: 1rem;
             padding: 1rem;
         }
-        .stat-card {
-            border-radius: 14px;
-            padding: 1rem 1.1rem;
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-        }
-        .stat-card strong {
-            display: block;
-            font-size: 1.65rem;
-            line-height: 1.15;
-            margin-bottom: .2rem;
-        }
-        .stat-card span {
-            font-size: .78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: #64748b;
-        }
-        .stat-card.stat-total { background: #eff6ff; border-color: #bfdbfe; }
-        .stat-card.stat-total strong { color: #1d4ed8; }
-        .stat-card.stat-qualified { background: #f0fdf4; border-color: #bbf7d0; }
+        /* stat-card base viene del layout; variantes de color por módulo */
+        .stat-card.stat-total    { background: #eff6ff; border-color: #bfdbfe; }
+        .stat-card.stat-total    strong { color: #1d4ed8; }
+        .stat-card.stat-qualified{ background: #f0fdf4; border-color: #bbf7d0; }
         .stat-card.stat-qualified strong { color: #166534; }
-        .stat-card.stat-pending { background: #fffbeb; border-color: #fde68a; }
-        .stat-card.stat-pending strong { color: #92400e; }
-        .stat-card.stat-goal { background: #fef2f2; border-color: #fecaca; }
-        .stat-card.stat-goal strong { color: #b91c1c; }
-        .stat-card.stat-amount { background: #f5f3ff; border-color: #ddd6fe; }
-        .stat-card.stat-amount strong { color: #6d28d9; }
-        .stat-card small { display: block; margin-top: .3rem; color: #94a3b8; font-size: .74rem; }
+        .stat-card.stat-pending  { background: #fffbeb; border-color: #fde68a; }
+        .stat-card.stat-pending  strong { color: #92400e; }
+        .stat-card.stat-goal     { background: #fef2f2; border-color: #fecaca; }
+        .stat-card.stat-goal     strong { color: #b91c1c; }
+        .stat-card.stat-amount   { background: #f5f3ff; border-color: #ddd6fe; }
+        .stat-card.stat-amount   strong { color: #6d28d9; }
+        .stat-card strong { display: block; font-size: 1.65rem; line-height: 1.15; margin-bottom: .2rem; color: var(--bo-fg); }
+        .stat-card span { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--bo-fg2); }
         .filter-toolbar {
             display: flex;
             justify-content: space-between;
@@ -52,22 +35,18 @@
             width: 100%;
             height: 6px;
             border-radius: 999px;
-            background: #e2e8f0;
+            background: var(--bo-border);
             overflow: hidden;
             margin-top: .3rem;
         }
-        .progress-mini i {
-            display: block;
-            height: 100%;
-            background: #16a34a;
-        }
+        .progress-mini i { display: block; height: 100%; background: #16a34a; }
         th.th-sort { padding: 0; }
         .th-sort-link {
             display: flex;
             align-items: center;
             gap: .3rem;
             padding: .75rem .9rem;
-            color: #334155;
+            color: var(--bo-fg2);
             text-decoration: none;
             font-size: .78rem;
             text-transform: uppercase;
@@ -75,8 +54,8 @@
             font-weight: 700;
             white-space: nowrap;
         }
-        .th-sort-link:hover { color: #b91c1c; }
-        .th-sort-link.is-active { color: #b91c1c; }
+        .th-sort-link:hover { color: var(--bo-accent); }
+        .th-sort-link.is-active { color: var(--bo-accent); }
         .th-sort-arrow { font-size: .7rem; opacity: .55; }
         .th-sort-link.is-active .th-sort-arrow { opacity: 1; }
         .whatsapp-link {

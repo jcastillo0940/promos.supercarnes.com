@@ -9,8 +9,8 @@
 
 @section('content')
     <style>
-        .nivea-admin textarea { width:100%; min-height:110px; border:1px solid #d1d5db; border-radius:10px; padding:.65rem .8rem; font:inherit; font-size:.95rem; line-height:1.5; resize:vertical; background:#fff; }
-        .nivea-admin textarea:focus { outline:2px solid #93c5fd; border-color:#3b82f6; }
+        .nivea-admin textarea { width:100%; min-height:110px; border:1px solid var(--bo-border-dark); border-radius:10px; padding:.65rem .8rem; font:inherit; font-size:.95rem; line-height:1.5; resize:vertical; background:var(--bo-surface);color:var(--bo-fg); }
+        .nivea-admin textarea:focus { outline:none; border-color:var(--bo-accent); box-shadow:0 0 0 2px rgba(192,18,44,.1); }
     </style>
     <div class="nivea-admin">
     @if (session('status'))
