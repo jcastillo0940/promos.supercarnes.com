@@ -8,12 +8,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice.campaigns.edit', $campaign) }}">Configurar promo</a>
 @endsection
 
-@section('sidebar-actions')
-    <a class="active" href="{{ route('admin.campaigns.product-ranking.operations', $campaign) }}">Operación Malta Vigor <small>Ranking y control</small></a>
-    <a href="{{ route('admin.invoice-backoffice.campaigns.edit', $campaign) }}">Configurar promoción <small>Códigos, términos y entrega</small></a>
-    <a href="{{ route('admin.invoices', ['campaign_id' => $campaign->id]) }}">Facturas de la promo <small>Historial completo</small></a>
-@endsection
-
 @push('styles')
 <style>
     .ops-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }

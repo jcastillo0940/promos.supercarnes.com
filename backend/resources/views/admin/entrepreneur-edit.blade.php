@@ -7,11 +7,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.entrepreneurs') }}">Emprendedores</a>
 @endsection
 
-@section('sidebar-actions')
-    <a href="{{ route('admin.entrepreneurs') }}">Volver al listado <small>Del sueño al puesto</small></a>
-    <a href="{{ route('admin.customers.history', $entrepreneur) }}">Historial de facturas <small>Ver todas sus promos</small></a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

@@ -8,11 +8,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
 @endsection
 
-@section('sidebar-actions')
-    <a href="{{ route('admin.invoices') }}">Ver facturas <small>Registro general</small></a>
-    <a href="{{ route('admin.winners') }}">Ver ganadores <small>Administrar selección</small></a>
-@endsection
-
 @push('styles')
     <style>
         .stat-grid {

@@ -6,10 +6,6 @@
 @section('topbar-actions')
 @endsection
 
-@section('sidebar-actions')
-    <a href="{{ route('admin.invoices') }}">Facturas <small>Volver al listado</small></a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

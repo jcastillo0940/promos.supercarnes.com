@@ -177,7 +177,7 @@ class User extends Authenticatable
             if ($module === 'malta') {
                 $campaign = Campaign::query()
                     ->where('participation_mode', 'product_ranking')
-                    ->orderByRaw("FIELD(status,'active','paused','draft','archived')")
+                    ->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'paused' THEN 2 WHEN 'draft' THEN 3 ELSE 4 END")
                     ->first();
                 if ($campaign) {
                     return route('admin.campaigns.product-ranking.operations', $campaign);

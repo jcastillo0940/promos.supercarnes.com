@@ -8,11 +8,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
 @endsection
 
-@section('sidebar-actions')
-    <a href="{{ route('admin.invoices') }}">Buscar facturas <small>Filtrar por cliente o fecha</small></a>
-    <a href="{{ route('admin.invoice-backoffice') }}">Ajustes de promo <small>Reglas y validación</small></a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

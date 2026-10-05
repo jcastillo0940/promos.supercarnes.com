@@ -9,12 +9,6 @@
     <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
 @endsection
 
-@section('sidebar-actions')
-    <a href="{{ route('admin.winners') }}">Ganadores <small>Seleccionar o quitar ganadores</small></a>
-    <a href="{{ route('admin.invoices') }}">Facturas <small>Buscar cliente por nombre o cédula</small></a>
-    <a href="{{ route('admin.invoice-backoffice') }}">Configuración <small>Reglas de validación</small></a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>
