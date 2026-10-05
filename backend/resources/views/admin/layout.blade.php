@@ -302,5 +302,20 @@
         </div>
     </div>
     @stack('scripts')
+    <script>
+    (function () {
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (form.dataset.noSubmitLock) return;
+            form.querySelectorAll('button[type="submit"], button:not([type])').forEach(function (btn) {
+                btn.disabled = true;
+                if (!btn.dataset.noLoadingText) {
+                    btn.dataset.originalText = btn.innerHTML;
+                    btn.innerHTML = btn.dataset.loadingText || 'Procesando…';
+                }
+            });
+        });
+    })();
+    </script>
 </body>
 </html>
