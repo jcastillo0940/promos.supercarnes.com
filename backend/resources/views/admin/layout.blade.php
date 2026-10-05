@@ -156,7 +156,7 @@
         .ctx-chevron { font-size: .75rem; color: #64748b; flex-shrink: 0; transition: transform .15s; }
         .ctx-btn[aria-expanded="true"] .ctx-chevron { transform: rotate(180deg); }
         .ctx-dropdown {
-            position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
+            position: fixed; z-index: 400;
             background: #1e293b; border: 1px solid rgba(148,163,184,.2);
             border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
             overflow: hidden; max-height: 340px; display: flex; flex-direction: column;
@@ -459,7 +459,14 @@
             var search   = document.getElementById('ctx-search');
             if (!btn || !dropdown) return;
 
+            function position() {
+                var r = btn.getBoundingClientRect();
+                dropdown.style.top   = (r.bottom + 4) + 'px';
+                dropdown.style.left  = r.left + 'px';
+                dropdown.style.width = r.width + 'px';
+            }
             function open() {
+                position();
                 dropdown.hidden = false;
                 btn.setAttribute('aria-expanded', 'true');
                 if (search) { search.value = ''; filterItems(''); search.focus(); }
@@ -485,6 +492,9 @@
                     dropdown.hidden ? open() : close();
                 }
             });
+            window.addEventListener('resize', function () { if (!dropdown.hidden) position(); });
+            var sidebar = document.getElementById('sidebar-nav');
+            if (sidebar) sidebar.addEventListener('scroll', function () { if (!dropdown.hidden) position(); });
 
             function filterItems(term) {
                 dropdown.querySelectorAll('.ctx-item[data-search]').forEach(function (item) {
