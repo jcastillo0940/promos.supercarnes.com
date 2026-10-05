@@ -37,6 +37,43 @@
         .topbar-ctx-sep { opacity: .5; }
         .topbar-ctx-name { font-weight: 700; }
         .topbar-ctx-badge { font-size: .68rem; background: rgba(255,255,255,.15); border-radius: 999px; padding: .1rem .45rem; }
+        /* ── User menu ──────────────────────────────────────────────────────── */
+        .user-menu { position: relative; }
+        .user-btn {
+            display: flex; align-items: center; gap: .4rem;
+            min-height: 42px; padding: 0 .75rem 0 .3rem;
+            border-radius: 10px; border: 1px solid rgba(255,255,255,.2);
+            background: rgba(255,255,255,.10); color: #fff;
+            cursor: pointer; font: inherit; font-size: .875rem; font-weight: 600;
+        }
+        .user-btn:hover { background: rgba(255,255,255,.17); }
+        .user-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: rgba(255,255,255,.22); display: grid; place-items: center;
+            font-size: .78rem; font-weight: 800; flex-shrink: 0;
+        }
+        .user-name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-chevron { font-size: .72rem; opacity: .7; }
+        .user-btn[aria-expanded="true"] .user-chevron { transform: rotate(180deg); }
+        .user-dropdown {
+            position: absolute; top: calc(100% + 6px); right: 0; z-index: 200;
+            background: #1e293b; border: 1px solid rgba(148,163,184,.2);
+            border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+            min-width: 200px; overflow: hidden;
+        }
+        .user-dropdown-header { padding: .75rem 1rem; }
+        .user-dropdown-header strong { display: block; color: #e2e8f0; font-size: .875rem; }
+        .user-dropdown-header span { display: block; color: #64748b; font-size: .78rem; margin-top: .1rem; }
+        .user-dropdown-sep { height: 1px; background: rgba(148,163,184,.15); }
+        .user-dropdown-item {
+            display: block; width: 100%; padding: .7rem 1rem;
+            background: none; border: none; cursor: pointer;
+            color: #cbd5e1; font: inherit; font-size: .875rem; font-weight: 600;
+            text-align: left;
+        }
+        .user-dropdown-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+        .user-logout { color: #fca5a5; }
+        .user-logout:hover { background: rgba(239,68,68,.15); color: #fca5a5; }
         .brand { display: flex; flex-direction: column; line-height: 1.1; }
         .brand strong { font-size: .98rem; }
         .brand span { font-size: .75rem; opacity: .85; }
@@ -362,10 +399,29 @@
             </div>
             <div class="topbar-right">
                 @yield('topbar-actions')
-                <form method="POST" action="{{ route('admin.logout') }}" style="margin:0;">
-                    @csrf
-                    <button type="submit" data-no-loading-text>Cerrar sesión</button>
-                </form>
+                {{-- Menú de usuario ──────────────────────────────────────────── --}}
+                @auth
+                <div class="user-menu" id="user-menu">
+                    <button class="user-btn" id="user-btn" aria-expanded="false" aria-controls="user-dropdown" aria-label="Menú de usuario" type="button">
+                        <span class="user-avatar" aria-hidden="true">{{ strtoupper(substr(auth()->user()->full_name ?? auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                        <span class="user-name hide-mobile">{{ auth()->user()->full_name ?? auth()->user()->name }}</span>
+                        <span class="user-chevron hide-mobile" aria-hidden="true">▾</span>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown" hidden>
+                        <div class="user-dropdown-header">
+                            <strong>{{ auth()->user()->full_name ?? auth()->user()->name }}</strong>
+                            <span>{{ ['admin' => 'Administrador', 'operator' => 'Operador', 'supervisor' => 'Supervisor', 'manager' => 'Supervisor', 'cashier' => 'Cajero', 'jurado' => 'Jurado', 'staff_fanlyc' => 'Staff Fanlyc'][auth()->user()->role] ?? ucfirst(auth()->user()->role) }}</span>
+                        </div>
+                        <div class="user-dropdown-sep"></div>
+                        <form method="POST" action="{{ route('admin.logout') }}" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="user-dropdown-item user-logout" data-no-loading-text>
+                                Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endauth
             </div>
         </header>
 
@@ -444,6 +500,22 @@
                 item.addEventListener('click', function () {
                     try { localStorage.setItem('sc_last_ctx', item.href); } catch(e) {}
                 });
+            });
+        })();
+
+        // ── User menu ────────────────────────────────────────────────────────
+        (function () {
+            var btn = document.getElementById('user-btn');
+            var dd  = document.getElementById('user-dropdown');
+            if (!btn || !dd) return;
+            function open() { dd.hidden = false; btn.setAttribute('aria-expanded', 'true'); }
+            function close(){ dd.hidden = true;  btn.setAttribute('aria-expanded', 'false'); }
+            btn.addEventListener('click', function (e) { e.stopPropagation(); dd.hidden ? open() : close(); });
+            document.addEventListener('click', function (e) {
+                if (!dd.hidden && !dd.contains(e.target) && e.target !== btn) close();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !dd.hidden) { close(); btn.focus(); }
             });
         })();
 
