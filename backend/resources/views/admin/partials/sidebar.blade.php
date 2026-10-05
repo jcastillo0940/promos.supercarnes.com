@@ -15,6 +15,12 @@
                         Malta Vigor <small>Usuarios, ranking y facturas</small>
                     </a>
                 @endif
+                <a href="{{ route('admin.saba') }}" @class(['active' => request()->routeIs('admin.saba*')])>
+                    Saba <small>Emprende tu Sueño · participantes y SKUs</small>
+                </a>
+                <a href="{{ route('admin.nivea') }}" @class(['active' => request()->routeIs('admin.nivea*')])>
+                    NIVEA <small>Empollerando a Mamá · participantes y SKUs</small>
+                </a>
                 <a href="{{ route('admin.invoices') }}" @class(['active' => request()->routeIs('admin.invoices')])>
                     Facturas
                 </a>

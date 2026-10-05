@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\FondaMediaController;
 use App\Http\Controllers\Admin\FondaResultsController;
 use App\Http\Controllers\Admin\InvoiceBackofficeController;
 use App\Http\Controllers\Admin\JurorController;
+use App\Http\Controllers\Admin\NiveaController;
+use App\Http\Controllers\Admin\SabaController;
 use App\Http\Controllers\FanlycController;
 use App\Http\Controllers\FondaChallengeController;
 
@@ -135,6 +137,36 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/jurados', [JurorController::class, 'store'])->name('admin.jurors.store');
     Route::post('/adminrepus1car/jurados/{juror}/estado', [JurorController::class, 'toggleStatus'])->name('admin.jurors.toggle-status');
 
+    Route::get('/adminrepus1car/saba', [SabaController::class, 'index'])->name('admin.saba');
+    Route::get('/adminrepus1car/saba/configuracion', [SabaController::class, 'settings'])->name('admin.saba.settings');
+    Route::post('/adminrepus1car/saba/configuracion', [SabaController::class, 'updateSettings'])->name('admin.saba.settings.update');
+    Route::post('/adminrepus1car/saba/productos', [SabaController::class, 'updateProducts'])->name('admin.saba.products.update');
+    Route::post('/adminrepus1car/saba/productos/{rule}/eliminar', [SabaController::class, 'destroyProduct'])->whereNumber('rule')->name('admin.saba.products.destroy');
+    Route::post('/adminrepus1car/saba/archivos', [SabaController::class, 'updateAssets'])->name('admin.saba.assets.update');
+    Route::post('/adminrepus1car/saba/estado', [SabaController::class, 'toggleStatus'])->name('admin.saba.status');
+    Route::get('/adminrepus1car/saba/exportar', [SabaController::class, 'export'])->name('admin.saba.export');
+    Route::post('/adminrepus1car/saba/registro-manual', [SabaController::class, 'manualRegister'])->name('admin.saba.manual-register');
+    Route::get('/adminrepus1car/saba/participantes/{entry}', [SabaController::class, 'show'])->name('admin.saba.show');
+    Route::post('/adminrepus1car/saba/participantes/{entry}/aprobar', [SabaController::class, 'approve'])->name('admin.saba.approve');
+    Route::post('/adminrepus1car/saba/participantes/{entry}/rechazar', [SabaController::class, 'reject'])->name('admin.saba.reject');
+    Route::post('/adminrepus1car/saba/participantes/{entry}/ganadora', [SabaController::class, 'selectWinner'])->name('admin.saba.winner.select');
+    Route::post('/adminrepus1car/saba/participantes/{entry}/ganadora/quitar', [SabaController::class, 'removeWinner'])->name('admin.saba.winner.remove');
+
+    Route::get('/adminrepus1car/nivea', [NiveaController::class, 'index'])->name('admin.nivea');
+    Route::get('/adminrepus1car/nivea/configuracion', [NiveaController::class, 'settings'])->name('admin.nivea.settings');
+    Route::post('/adminrepus1car/nivea/configuracion', [NiveaController::class, 'updateSettings'])->name('admin.nivea.settings.update');
+    Route::post('/adminrepus1car/nivea/productos', [NiveaController::class, 'updateProducts'])->name('admin.nivea.products.update');
+    Route::post('/adminrepus1car/nivea/productos/{rule}/eliminar', [NiveaController::class, 'destroyProduct'])->whereNumber('rule')->name('admin.nivea.products.destroy');
+    Route::post('/adminrepus1car/nivea/archivos', [NiveaController::class, 'updateAssets'])->name('admin.nivea.assets.update');
+    Route::post('/adminrepus1car/nivea/estado', [NiveaController::class, 'toggleStatus'])->name('admin.nivea.status');
+    Route::get('/adminrepus1car/nivea/exportar', [NiveaController::class, 'export'])->name('admin.nivea.export');
+    Route::post('/adminrepus1car/nivea/registro-manual', [NiveaController::class, 'manualRegister'])->name('admin.nivea.manual-register');
+    Route::get('/adminrepus1car/nivea/participantes/{entry}', [NiveaController::class, 'show'])->name('admin.nivea.show');
+    Route::post('/adminrepus1car/nivea/participantes/{entry}/aprobar', [NiveaController::class, 'approve'])->name('admin.nivea.approve');
+    Route::post('/adminrepus1car/nivea/participantes/{entry}/rechazar', [NiveaController::class, 'reject'])->name('admin.nivea.reject');
+    Route::post('/adminrepus1car/nivea/participantes/{entry}/ganadora', [NiveaController::class, 'selectWinner'])->name('admin.nivea.winner.select');
+    Route::post('/adminrepus1car/nivea/participantes/{entry}/ganadora/quitar', [NiveaController::class, 'removeWinner'])->name('admin.nivea.winner.remove');
+
     Route::get('/adminrepus1car/fanlyc', [AdminFanlycController::class, 'index'])->name('admin.fanlyc');
     Route::post('/adminrepus1car/fanlyc/registrar-manual', [AdminFanlycController::class, 'manualRegister'])->name('admin.fanlyc.manual-register');
     Route::get('/adminrepus1car/fanlyc/{invoice}', [AdminFanlycController::class, 'show'])->name('admin.fanlyc.show');
@@ -159,6 +191,83 @@ Route::middleware(['auth', 'role:admin,staff_fanlyc'])->group(function () {
 Route::middleware(['auth', 'role:admin,jurado'])->group(function () {
     Route::get('/adminrepus1car/fonda-jury', [FondaJuryController::class, 'index'])->name('admin.fonda-jury');
     Route::post('/adminrepus1car/fonda-jury/evaluations/{assignment}', [FondaJuryController::class, 'evaluate'])->name('admin.fonda-jury.evaluate');
+});
+
+// /nivea — OG tags propios para Empollerando a Mamá.
+Route::get('/nivea', function () use ($frontendDist) {
+    $indexPath = $frontendDist ? $frontendDist.DIRECTORY_SEPARATOR.'index.html' : null;
+    abort_unless($indexPath && File::exists($indexPath), 404, 'Frontend no compilado. Ejecuta npm run build en frontend.');
+
+    $rules = (array) (\App\Models\Campaign::query()->where('slug', 'nivea')->first()?->rules ?? []);
+    $origin = request()->getSchemeAndHttpHost();
+    $title = 'Empollerando a Mamá con NIVEA y Super Carnes';
+    $description = 'Compra 1 producto NIVEA en Super Carnes, registra tu factura y cuéntanos por qué tu mamá merece ser empollerada. ¡10 ganadoras!';
+    $image = $origin.($rules['hero_url'] ?? $rules['logo_url'] ?? '/logo_web.jpg');
+    $url = $origin.'/nivea';
+    $e = fn (string $value) => e($value);
+
+    $html = File::get($indexPath);
+    $html = preg_replace('/<title>.*?<\/title>/s', '<title>'.$e($title).'</title>', $html);
+    $html = preg_replace('/<script type="application\/ld\+json" id="seo-jsonld">.*?<\/script>/s', '', $html);
+    $replacements = [
+        '/(<meta name="description" content=")[^"]*/' => $description,
+        '/(<meta name="theme-color" content=")[^"]*/' => '#003087',
+        '/(<meta property="og:title" content=")[^"]*/' => $title,
+        '/(<meta property="og:description" content=")[^"]*/' => $description,
+        '/(<meta property="og:url" content=")[^"]*/' => $url,
+        '/(<meta property="og:image" content=")[^"]*/' => $image,
+        '/(<meta name="twitter:title" content=")[^"]*/' => $title,
+        '/(<meta name="twitter:description" content=")[^"]*/' => $description,
+        '/(<meta name="twitter:image" content=")[^"]*/' => $image,
+        '/(<link rel="canonical" href=")[^"]*/' => $url,
+    ];
+    foreach ($replacements as $pattern => $value) {
+        $html = preg_replace_callback($pattern, fn ($m) => $m[1].$e($value), $html);
+    }
+
+    return response($html, 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'Cache-Control' => 'no-cache',
+    ]);
+});
+
+// /saba usa el mismo index.html, pero con titulo y vista previa social propios para
+// que los enlaces compartidos por WhatsApp/Facebook no muestren los datos de Malta.
+Route::get('/saba', function () use ($frontendDist) {
+    $indexPath = $frontendDist ? $frontendDist.DIRECTORY_SEPARATOR.'index.html' : null;
+    abort_unless($indexPath && File::exists($indexPath), 404, 'Frontend no compilado. Ejecuta npm run build en frontend.');
+
+    $rules = (array) (\App\Models\Campaign::query()->where('slug', 'saba')->first()?->rules ?? []);
+    $origin = request()->getSchemeAndHttpHost();
+    $title = 'Emprende tu Sueño con Saba y Super Carnes';
+    $description = 'Compra 1 producto Saba en Super Carnes, registra tu factura y cuéntanos por qué deberías ganar. ¡50 ganadoras!';
+    $image = $origin.($rules['hero_url'] ?? $rules['logo_url'] ?? '/logo_web.jpg');
+    $url = $origin.'/saba';
+    $e = fn (string $value) => e($value);
+
+    $html = File::get($indexPath);
+    $html = preg_replace('/<title>.*?<\/title>/s', '<title>'.$e($title).'</title>', $html);
+    $html = preg_replace('/<script type="application\/ld\+json" id="seo-jsonld">.*?<\/script>/s', '', $html);
+    $replacements = [
+        '/(<meta name="description" content=")[^"]*/' => $description,
+        '/(<meta name="theme-color" content=")[^"]*/' => '#14041f',
+        '/(<meta property="og:title" content=")[^"]*/' => $title,
+        '/(<meta property="og:description" content=")[^"]*/' => $description,
+        '/(<meta property="og:url" content=")[^"]*/' => $url,
+        '/(<meta property="og:image" content=")[^"]*/' => $image,
+        '/(<meta name="twitter:title" content=")[^"]*/' => $title,
+        '/(<meta name="twitter:description" content=")[^"]*/' => $description,
+        '/(<meta name="twitter:image" content=")[^"]*/' => $image,
+        '/(<link rel="canonical" href=")[^"]*/' => $url,
+    ];
+    foreach ($replacements as $pattern => $value) {
+        $html = preg_replace_callback($pattern, fn ($m) => $m[1].$e($value), $html);
+    }
+
+    return response($html, 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+        'Cache-Control' => 'no-cache',
+    ]);
 });
 
 Route::get('/{any?}', function () use ($frontendDist, $serveFrontendFile) {

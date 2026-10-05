@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\PublicSettingsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MaltaPublicController;
+use App\Http\Controllers\Api\NiveaPublicController;
+use App\Http\Controllers\Api\SabaPublicController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('invoices/resolve', [InvoiceController::class, 'resolve'])->middleware('throttle:invoice-scan');
@@ -26,3 +28,13 @@ Route::get('public/settings', [PublicSettingsController::class, 'index']);
 Route::get('public/branches', [PublicSettingsController::class, 'branches']);
 Route::post('public/malta/participant', [MaltaPublicController::class, 'participant'])->middleware('throttle:invoice-scan');
 Route::post('public/malta/progress', [MaltaPublicController::class, 'progress'])->middleware('throttle:invoice-scan');
+
+Route::get('public/saba', [SabaPublicController::class, 'show']);
+Route::post('public/saba/resolve', [SabaPublicController::class, 'resolve'])->middleware('throttle:invoice-scan');
+Route::post('public/saba/register', [SabaPublicController::class, 'register'])->middleware('throttle:invoice-scan');
+Route::post('public/saba/status', [SabaPublicController::class, 'status'])->middleware('throttle:invoice-scan');
+
+Route::get('public/nivea', [NiveaPublicController::class, 'show']);
+Route::post('public/nivea/resolve', [NiveaPublicController::class, 'resolve'])->middleware('throttle:invoice-scan');
+Route::post('public/nivea/register', [NiveaPublicController::class, 'register'])->middleware('throttle:invoice-scan');
+Route::post('public/nivea/status', [NiveaPublicController::class, 'status'])->middleware('throttle:invoice-scan');

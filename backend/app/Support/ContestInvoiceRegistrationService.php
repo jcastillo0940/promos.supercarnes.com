@@ -138,7 +138,16 @@ class ContestInvoiceRegistrationService
             ]);
         }
 
-        if ($invoiceAgePolicy !== 'none') {
+        if ($campaign->slug === 'malta-vigor') {
+            $maltaVigorStart = CarbonImmutable::parse('2026-09-01 00:00:00', 'America/Panama');
+            $maltaVigorEnd = CarbonImmutable::parse('2026-10-31 23:59:59', 'America/Panama');
+
+            if ($issuedAt->lt($maltaVigorStart) || $issuedAt->gt($maltaVigorEnd)) {
+                throw ValidationException::withMessages([
+                    'issued_at' => 'Para Malta Vigor solo participan facturas emitidas entre el 1 de septiembre y el 31 de octubre de 2026.',
+                ]);
+            }
+        } elseif ($invoiceAgePolicy !== 'none') {
             $oldestAllowed = match ($invoiceAgePolicy) {
                 'same_day' => $now->copy()->startOfDay(),
                 'last_24_hours' => $now->copy()->subHours(24),

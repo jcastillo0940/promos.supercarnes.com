@@ -128,7 +128,7 @@ class ContestInvoiceVerifier
         ];
     }
 
-    public function verify(User $user, array $payload, ?array $resolved = null): array
+    public function verify(?User $user, array $payload, ?array $resolved = null): array
     {
         $settings = InvoiceGoalSetting::query()->first();
         $validationMode = $settings?->validation_mode ?? 'manual';

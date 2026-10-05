@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" width="300" height="400">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9b5bd6"/>
+      <stop offset="0.6" stop-color="#5b2a86"/>
+      <stop offset="1" stop-color="#2e0f4a"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="seal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <path d="M40 38 Q150 22 260 38 Q284 200 260 362 Q150 378 40 362 Q16 200 40 38 Z" fill="url(#body)"/>
+  <path d="M40 38 Q150 22 260 38 L262 58 Q150 44 38 58 Z" fill="url(#seal)"/>
+  <path d="M38 342 Q150 356 262 342 L260 362 Q150 378 40 362 Z" fill="url(#seal)"/>
+  <g stroke="#ffffff" stroke-opacity="0.35" stroke-width="2">
+    <line x1="60" y1="36" x2="60" y2="56"/><line x1="90" y1="33" x2="90" y2="52"/><line x1="120" y1="31" x2="120" y2="50"/>
+    <line x1="150" y1="30" x2="150" y2="49"/><line x1="180" y1="31" x2="180" y2="50"/><line x1="210" y1="33" x2="210" y2="52"/><line x1="240" y1="36" x2="240" y2="56"/>
+  </g>
+  <path d="M70 70 Q90 200 70 330" stroke="url(#sheen)" stroke-width="26" fill="none" stroke-linecap="round"/>
+  <path d="M30 250 C 100 210, 180 300, 272 240 L 272 300 C 190 350, 100 270, 30 310 Z" fill="#ffffff" fill-opacity="0.14"/>
+  <g transform="translate(150 120)">
+    <rect x="-78" y="-34" width="156" height="68" rx="34" fill="#ffffff"/>
+    <text x="0" y="16" text-anchor="middle" font-family="Poppins, Arial Rounded MT Bold, Arial, sans-serif" font-weight="800" font-size="48" letter-spacing="-2" fill="#5b2a86">saba</text>
+  </g>
+  <g transform="translate(150 205)" fill="#ffffff" fill-opacity="0.9">
+    <ellipse cx="0" cy="-16" rx="9" ry="16"/><ellipse cx="0" cy="16" rx="9" ry="16"/>
+    <ellipse cx="-16" cy="0" rx="16" ry="9"/><ellipse cx="16" cy="0" rx="16" ry="9"/>
+    <circle r="7" fill="#9b5bd6"/>
+  </g>
+  <text x="150" y="268" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-weight="700" font-size="22" fill="#ffffff">Ultradelgada</text>
+  <text x="150" y="294" text-anchor="middle" font-family="Poppins, Arial, sans-serif" font-weight="500" font-size="14" letter-spacing="3" fill="#ffffff" fill-opacity="0.8">PROTECCIÓN</text>
+</svg>

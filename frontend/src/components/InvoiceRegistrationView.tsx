@@ -232,7 +232,7 @@ export function InvoiceRegistrationView({
                       Apunta la cámara al código QR de tu factura de Super Carnes
                     </p>
                   </div>
-                  <div id="invoice-qr-reader" className="w-full min-h-[280px] bg-black" />
+                  <div id="invoice-qr-reader" className="invoice-qr-scanner" />
               {invoiceScannerError && (
                 <div className="mx-4 mb-4 mt-2 flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
                   <span className="material-symbols-outlined text-base flex-shrink-0 mt-0.5">error</span>

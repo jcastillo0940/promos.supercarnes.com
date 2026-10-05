@@ -10878,3 +10878,30 @@ a {
   .malta-bottle-right { width: 240px; right: -130px; top: 18%; opacity: .35; }
   .malta-bottle-top, .malta-bottle-far, .malta-bottle-bottom, .malta-bottle-bottom-blur { display: none; }
 }
+
+/* Contenedor del escáner QR — html5-qrcode inyecta elementos con estilos inline;
+   los !important los sobreescriben para que el video quede confinado al cuadro */
+.invoice-qr-scanner {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  border-radius: 12px;
+}
+.invoice-qr-scanner > div {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.invoice-qr-scanner video,
+.invoice-qr-scanner canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  max-width: none !important;
+  max-height: none !important;
+}

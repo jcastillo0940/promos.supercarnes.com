@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Html5Qrcode, Html5QrcodeCameraScanConfig, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { api, type ApiDebugEntry, setApiToken } from './api'
@@ -135,14 +135,9 @@ const INVOICE_SCANNER_FORMATS: Html5QrcodeSupportedFormats[] = [0, 6, 11, 1]
 const INVOICE_SCANNER_START_CONFIG: Html5QrcodeCameraScanConfig = {
   fps: 12,
   disableFlip: true,
-  aspectRatio: 4 / 3,
   qrbox: (viewfinderWidth, viewfinderHeight) => {
     const edge = Math.floor(Math.max(190, Math.min(viewfinderWidth, viewfinderHeight) * 0.78))
-
-    return {
-      width: Math.min(edge, 330),
-      height: Math.min(edge, 330),
-    }
+    return { width: Math.min(edge, 330), height: Math.min(edge, 330) }
   },
 }
 
@@ -265,7 +260,43 @@ async function safelyStopInvoiceScanner(scanner: Html5Qrcode | null) {
   }
 }
 
+// Emprende tu Sueño con Saba es un modulo independiente: se carga en su propio chunk
+// y no comparte estado ni flujo con el resto de promociones.
+const SabaPromo = lazy(() => import('./saba/SabaPromo'))
+
+function isSabaPath(pathname: string) {
+  return pathname.replace(/\/+$/, '').split('/').filter(Boolean)[0]?.toLowerCase() === 'saba'
+}
+
+// Empollerando a Mamá con NIVEA es un modulo independiente: se carga en su propio chunk
+// y no comparte estado ni flujo con el resto de promociones.
+const NiveaPromo = lazy(() => import('./nivea/NiveaPromo'))
+
+function isNiveaPath(pathname: string) {
+  return pathname.replace(/\/+$/, '').split('/').filter(Boolean)[0]?.toLowerCase() === 'nivea'
+}
+
 export function App() {
+  if (isSabaPath(window.location.pathname)) {
+    return (
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f6effb' }} />}>
+        <SabaPromo />
+      </Suspense>
+    )
+  }
+
+  if (isNiveaPath(window.location.pathname)) {
+    return (
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f0f4fa' }} />}>
+        <NiveaPromo />
+      </Suspense>
+    )
+  }
+
+  return <PromoApp />
+}
+
+function PromoApp() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loadingCampaigns, setLoadingCampaigns] = useState(true)
   const [campaignError, setCampaignError] = useState<string | null>(null)
@@ -361,7 +392,7 @@ export function App() {
         error={campaignError}
         user={authUser}
         onLogout={() => void logoutParticipant(setAuthUser)}
-        onOpen={(slug) => openPath(`/${slug}`, setPath)}
+        onOpen={(slug) => (isSabaPath(`/${slug}`) ? window.location.assign(`/${slug}`) : openPath(`/${slug}`, setPath))}
       />
     )
   }
@@ -2240,5 +2271,6 @@ function normalizeError(error: unknown) {
     }
   }
   if (error instanceof Error) return error.message
+  if (typeof error === 'string') return 'Los permisos de tu cámara fallaron. Escribe el código manualmente o solicítalo vía WhatsApp.'
   return 'Ocurrio un error inesperado.'
 }
