@@ -9,7 +9,7 @@
                 <a href="{{ route('admin.dashboard') }}" @class(['active' => request()->routeIs('admin.dashboard')])>
                     Dashboard
                 </a>
-                <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice')])>
+                <a href="{{ route('admin.invoice-backoffice') }}" @class(['active' => request()->routeIs('admin.invoice-backoffice*')])>
                     Configuración
                 </a>
             @endif
@@ -57,7 +57,7 @@
 
             {{-- Module: Fonda --}}
             @if($u?->canAccessModule('fonda'))
-                <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge')])>
+                <a href="{{ route('admin.fonda-challenge') }}" @class(['active' => request()->routeIs('admin.fonda-challenge*')])>
                     Fonda Challenge
                 </a>
                 <a href="{{ route('admin.fonda-jury') }}" @class(['active' => request()->routeIs('admin.fonda-jury')])>
