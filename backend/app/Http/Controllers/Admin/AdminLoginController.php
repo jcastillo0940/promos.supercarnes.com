@@ -64,7 +64,7 @@ class AdminLoginController extends Controller
             $user->isSupervisor() => route('admin.prize-delivery'),
             $user->isJury()       => route('admin.fonda-jury'),
             $user->isFanlycStaff() => route('admin.fanlyc.redeem', \App\Models\FanlycZone::query()->where('is_active', true)->orderBy('sort_order')->value('code') ?? ''),
-            default               => route('admin.invoice-backoffice'),
+            default               => route('admin.inicio'),
         };
     }
 

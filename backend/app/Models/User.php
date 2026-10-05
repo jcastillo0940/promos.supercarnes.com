@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use App\Models\Campaign;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -172,18 +173,29 @@ class User extends Authenticatable
 
     public function firstModuleRoute(): string
     {
-        $map = [
-            'saba'          => 'admin.saba',
-            'nivea'         => 'admin.nivea',
-            'fanlyc'        => 'admin.fanlyc',
-            'fonda'         => 'admin.fonda-challenge',
-            'entrepreneurs' => 'admin.entrepreneurs',
-            'facturas'      => 'admin.invoices',
-            'blacklist'     => 'admin.blacklist',
-            'audit'         => 'admin.audit',
-        ];
-
         foreach ((array) ($this->admin_modules ?? []) as $module) {
+            if ($module === 'malta') {
+                $campaign = Campaign::query()
+                    ->where('participation_mode', 'product_ranking')
+                    ->orderByRaw("FIELD(status,'active','paused','draft','archived')")
+                    ->first();
+                if ($campaign) {
+                    return route('admin.campaigns.product-ranking.operations', $campaign);
+                }
+                continue;
+            }
+
+            $map = [
+                'saba'          => 'admin.saba',
+                'nivea'         => 'admin.nivea',
+                'fanlyc'        => 'admin.fanlyc',
+                'fonda'         => 'admin.fonda-challenge',
+                'entrepreneurs' => 'admin.entrepreneurs',
+                'facturas'      => 'admin.invoices',
+                'blacklist'     => 'admin.blacklist',
+                'audit'         => 'admin.audit',
+            ];
+
             if (isset($map[$module])) {
                 return route($map[$module]);
             }
