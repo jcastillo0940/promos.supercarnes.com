@@ -30,6 +30,7 @@ class FanlycController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'view_invoices'), 403);
         $campaign = $this->campaign();
 
         $query = FanlycInvoice::query()
@@ -68,6 +69,7 @@ class FanlycController extends Controller
 
     public function show(FanlycInvoice $invoice): View
     {
+        abort_unless(auth()->user()->canDoPromo('fanlyc', 'view_invoices'), 403);
         return view('admin.fanlyc-show', [
             'invoice' => $invoice->load('user', 'branch', 'fanlycZone', 'coupon', 'reviewedBy'),
         ]);
@@ -75,6 +77,7 @@ class FanlycController extends Controller
 
     public function approve(Request $request, FanlycInvoice $invoice, FanlycCouponIssuer $couponIssuer): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'view_invoices'), 403);
         abort_unless($invoice->status === 'pending_review', 422, 'Solo se puede aprobar una factura en revision.');
 
         $invoice->forceFill([
@@ -97,6 +100,7 @@ class FanlycController extends Controller
 
     public function reject(Request $request, FanlycInvoice $invoice): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'view_invoices'), 403);
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],
         ]);
@@ -141,6 +145,7 @@ class FanlycController extends Controller
 
     public function manualRegister(Request $request, FanlycRegistrationService $registrationService): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'upload_invoice_manual'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:40'],

@@ -25,6 +25,7 @@ class NiveaController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_participants'), 403);
         $campaign = $this->nivea->campaign();
 
         $entries = $this->filteredEntries($request, $campaign)
@@ -54,6 +55,7 @@ class NiveaController extends Controller
 
     public function show(NiveaEntry $entry): View
     {
+        abort_unless(auth()->user()->canDoPromo('nivea', 'view_participants'), 403);
         $campaign = $this->nivea->campaign();
         abort_unless($entry->campaign_id === $campaign->id, 404);
 
@@ -81,6 +83,7 @@ class NiveaController extends Controller
 
     public function settings(): View
     {
+        abort_unless(auth()->user()->canDoPromo('nivea', 'modify_config'), 403);
         $campaign = $this->nivea->campaign();
 
         return view('admin.nivea-settings', [
@@ -93,6 +96,7 @@ class NiveaController extends Controller
 
     public function updateSettings(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'modify_config'), 403);
         $campaign = $this->nivea->campaign();
 
         $validated = $request->validate([
@@ -147,6 +151,7 @@ class NiveaController extends Controller
 
     public function updateProducts(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'modify_config'), 403);
         $campaign = $this->nivea->campaign();
 
         $validated = $request->validate([
@@ -190,6 +195,7 @@ class NiveaController extends Controller
 
     public function destroyProduct(Request $request, int $rule): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'modify_config'), 403);
         $campaign = $this->nivea->campaign();
         $product = $campaign->productRules()->whereKey($rule)->firstOrFail();
 
@@ -210,6 +216,7 @@ class NiveaController extends Controller
 
     public function updateAssets(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'modify_config'), 403);
         $campaign = $this->nivea->campaign();
 
         $request->validate([
@@ -271,6 +278,7 @@ class NiveaController extends Controller
 
     public function toggleStatus(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'activate_pause'), 403);
         $campaign = $this->nivea->campaign();
         $validated = $request->validate([
             'status' => ['required', 'in:active,paused'],
@@ -296,6 +304,7 @@ class NiveaController extends Controller
 
     public function approve(Request $request, NiveaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_participants'), 403);
         $this->assertBelongsToNivea($entry);
         abort_if($entry->status === 'approved', 422, 'La participación ya está aprobada.');
 
@@ -322,6 +331,7 @@ class NiveaController extends Controller
 
     public function reject(Request $request, NiveaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_participants'), 403);
         $this->assertBelongsToNivea($entry);
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],
@@ -347,6 +357,7 @@ class NiveaController extends Controller
 
     public function selectWinner(Request $request, NiveaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_winners'), 403);
         $this->assertBelongsToNivea($entry);
         $slots = (int) $this->nivea->rule($entry->campaign, 'winner_slots', 10);
 
@@ -386,6 +397,7 @@ class NiveaController extends Controller
 
     public function removeWinner(Request $request, NiveaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_winners'), 403);
         $this->assertBelongsToNivea($entry);
         $position = $entry->winner_position;
 
@@ -404,6 +416,7 @@ class NiveaController extends Controller
 
     public function manualRegister(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'upload_invoice_manual'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:40'],
@@ -424,6 +437,7 @@ class NiveaController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        abort_unless($request->user()->canDoPromo('nivea', 'export_data'), 403);
         $campaign = $this->nivea->campaign();
         $query = $this->filteredEntries($request, $campaign)->with('branch')->orderBy('id');
 

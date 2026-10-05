@@ -19,6 +19,7 @@ class FondaChallengeController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'view_participants'), 403);
         $campaign = $this->campaign();
 
         $query = FondaRegistration::query()
@@ -54,6 +55,7 @@ class FondaChallengeController extends Controller
 
     public function edit(FondaRegistration $registration): View
     {
+        abort_unless(auth()->user()->canDoPromo('fonda', 'modify_config'), 403);
         return view('admin.fonda-challenge-edit', [
             'registration' => $registration,
             'statuses' => self::STATUSES,
@@ -62,6 +64,7 @@ class FondaChallengeController extends Controller
 
     public function update(Request $request, FondaRegistration $registration): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'modify_config'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:40', Rule::unique('fonda_registrations', 'cedula')->where('campaign_id', $registration->campaign_id)->ignore($registration->id)],
@@ -92,6 +95,7 @@ class FondaChallengeController extends Controller
 
     public function updateStatus(Request $request, FondaRegistration $registration): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'view_participants'), 403);
         $validated = $request->validate([
             'status' => ['required', Rule::in(['pending_review', 'needs_correction', 'approved', 'rejected', 'checked_in', 'ready_for_judging', 'disqualified'])],
             'reason' => ['nullable', 'string', 'max:2000'],
@@ -165,6 +169,7 @@ class FondaChallengeController extends Controller
 
     public function ranking(FondaRankingService $rankingService): View
     {
+        abort_unless(auth()->user()->canDoPromo('fonda', 'view_dashboard'), 403);
         $campaign = $this->campaign();
 
         return view('admin.fonda-challenge-ranking', [

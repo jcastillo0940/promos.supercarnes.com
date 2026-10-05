@@ -90,6 +90,10 @@ class InvoiceBackofficeController extends Controller
 
     public function editCampaign(Request $request, Campaign $campaign): View
     {
+        if ($campaign->participation_mode === 'product_ranking') {
+            abort_unless($request->user()->canDoPromo("malta-{$campaign->id}", 'modify_config'), 403);
+        }
+
         return view('admin.invoice-backoffice', [
             'settings' => $this->settings(),
             'campaigns' => Campaign::query()->with('productRules')->whereKey($campaign->id)->get(),
@@ -177,6 +181,10 @@ class InvoiceBackofficeController extends Controller
         foreach ($payload['campaigns'] as $campaignData) {
             $campaign = Campaign::query()->findOrFail($campaignData['id']);
             $mode = $campaignData['participation_mode'] ?? $campaign->participation_mode ?? 'points';
+
+            if ($mode === 'product_ranking') {
+                abort_unless($request->user()->canDoPromo("malta-{$campaign->id}", 'modify_config'), 403);
+            }
             $thresholdAmount = $campaignData['entry_threshold_amount'] ?? $campaign->entry_threshold_amount;
 
             if ($mode === 'product_ranking' && (($campaignData['status'] ?? $campaign->status) === 'active' || (bool) ($campaignData['is_listed'] ?? false))) {
@@ -376,6 +384,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking', 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'view_dashboard'), 403);
 
         $rows = app(\App\Support\ProductRankingService::class)->leaderboard($campaign);
         $limit = (int) data_get($campaign->rules, 'winner_slots', 5);
@@ -400,6 +409,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking', 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'activate_pause'), 403);
 
         abort_if($campaign->ranking_frozen_at, 422, 'El ranking de esta campaña ya fue congelado.');
 
@@ -464,6 +474,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking', 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'view_participants'), 403);
 
         $ranking = $rankingService->leaderboard($campaign);
         $winnerSlots = (int) data_get($campaign->rules, 'winner_slots', 5);
@@ -520,6 +531,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking', 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'export_data'), 403);
 
         $ranking = $rankingService->leaderboard($campaign);
         $minimumAge = (int) data_get($campaign->rules, 'minimum_age', 18);
@@ -559,6 +571,7 @@ class InvoiceBackofficeController extends Controller
     ): RedirectResponse {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking', 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'upload_invoice_manual'), 403);
 
         if ($campaign->ranking_frozen_at) {
             throw ValidationException::withMessages(['invoice_number' => 'No se pueden añadir facturas después de congelar el ranking.']);
@@ -717,6 +730,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking' && $winner->campaign_id === $campaign->id, 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'view_winners'), 403);
         abort_unless($winner->status === 'selected', 422, 'Solo se puede reemplazar un ganador principal.');
         $validated = $request->validate(['reason' => ['required', 'string', 'min:8', 'max:500']]);
         DB::transaction(function () use ($request, $campaign, $winner, $validated): void {
@@ -756,6 +770,7 @@ class InvoiceBackofficeController extends Controller
     {
         $this->authorizeAccess($request);
         abort_unless($campaign->participation_mode === 'product_ranking' && $flag->invoice?->campaign_id === $campaign->id, 404);
+        abort_unless($request->user()?->canDoPromo("malta-{$campaign->id}", 'view_fraud'), 403);
         $validated = $request->validate([
             'status' => ['required', Rule::in(['resolved', 'dismissed'])],
             'resolution_notes' => ['required', 'string', 'min:8', 'max:1000'],
@@ -1071,6 +1086,7 @@ class InvoiceBackofficeController extends Controller
 
     public function entrepreneurs(Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('entrepreneurs', 'view_participants'), 403);
         $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
 
         $counts = (clone $this->entrepreneursFilteredQuery($request))
@@ -1121,6 +1137,7 @@ class InvoiceBackofficeController extends Controller
 
     public function entrepreneursExport(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
+        abort_unless($request->user()->canDoPromo('entrepreneurs', 'export_data'), 403);
         $dreamCampaign = Campaign::query()->where('slug', 'del-sueno-al-puesto')->first();
 
         $entrepreneurs = $this->applyEntrepreneursSort(

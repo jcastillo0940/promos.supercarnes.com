@@ -15,6 +15,7 @@ class FanlycRedemptionController extends Controller
 {
     public function index(string $zoneCode, Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'deliver_prizes'), 403);
         $zone = $this->zoneOrFail($zoneCode);
         $coupon = null;
 

@@ -16,6 +16,7 @@ class FanlycZoneController extends Controller
 {
     public function index(): View
     {
+        abort_unless(auth()->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         $zones = FanlycZone::query()
             ->orderBy('sort_order')
             ->with(['branches' => fn ($query) => $query->wherePivot('is_active', true)])
@@ -37,6 +38,7 @@ class FanlycZoneController extends Controller
 
     public function assignBranch(Request $request, FanlycZoneResolver $resolver): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         $validated = $request->validate([
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'fanlyc_zone_id' => ['required', 'integer', 'exists:fanlyc_zones,id'],
@@ -51,6 +53,7 @@ class FanlycZoneController extends Controller
 
     public function unassignBranch(Request $request, FanlycZoneBranch $mapping, FanlycZoneResolver $resolver): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         $resolver->unassignBranch($mapping->id);
 
         Audit::log('fanlyc.zone_branch.unassigned', 'fanlyc_zone_branch', $mapping->id, $request->user(), $request, [

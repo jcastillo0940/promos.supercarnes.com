@@ -13,6 +13,7 @@ class FondaResultsController extends Controller
 {
     public function freeze(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'activate_pause'), 403);
         $campaign = Campaign::query()->where('slug', 'fonda-challenge')->firstOrFail();
 
         $lock = FondaResultLock::query()->firstOrCreate(['campaign_id' => $campaign->id]);
@@ -31,6 +32,7 @@ class FondaResultsController extends Controller
 
     public function publish(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'activate_pause'), 403);
         $campaign = Campaign::query()->where('slug', 'fonda-challenge')->firstOrFail();
 
         $lock = FondaResultLock::query()->firstOrCreate(['campaign_id' => $campaign->id]);

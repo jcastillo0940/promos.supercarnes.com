@@ -15,6 +15,7 @@ class JurorController extends Controller
 {
     public function index(): View
     {
+        abort_unless(auth()->user()->canDoPromo('fonda', 'modify_config'), 403);
         return view('admin.jurors', [
             'jurors' => User::query()->where('role', 'jurado')->orderBy('full_name')->get(),
         ]);
@@ -22,6 +23,7 @@ class JurorController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'modify_config'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')],

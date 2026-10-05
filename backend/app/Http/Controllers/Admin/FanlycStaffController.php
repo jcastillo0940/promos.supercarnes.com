@@ -15,6 +15,7 @@ class FanlycStaffController extends Controller
 {
     public function index(): View
     {
+        abort_unless(auth()->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         return view('admin.fanlyc-staff', [
             'staff' => User::query()->where('role', 'staff_fanlyc')->orderBy('full_name')->get(),
         ]);
@@ -22,6 +23,7 @@ class FanlycStaffController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
@@ -47,6 +49,7 @@ class FanlycStaffController extends Controller
 
     public function toggleStatus(Request $request, User $staff): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'modify_config'), 403);
         abort_unless($staff->role === 'staff_fanlyc', 404);
 
         $staff->update(['is_active' => ! $staff->is_active]);

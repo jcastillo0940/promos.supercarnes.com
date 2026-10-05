@@ -25,6 +25,7 @@ class SabaController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->canDoPromo('saba', 'view_participants'), 403);
         $campaign = $this->saba->campaign();
 
         $entries = $this->filteredEntries($request, $campaign)
@@ -54,6 +55,7 @@ class SabaController extends Controller
 
     public function show(SabaEntry $entry): View
     {
+        abort_unless(auth()->user()->canDoPromo('saba', 'view_participants'), 403);
         $campaign = $this->saba->campaign();
         abort_unless($entry->campaign_id === $campaign->id, 404);
 
@@ -81,6 +83,7 @@ class SabaController extends Controller
 
     public function settings(): View
     {
+        abort_unless(auth()->user()->canDoPromo('saba', 'modify_config'), 403);
         $campaign = $this->saba->campaign();
 
         return view('admin.saba-settings', [
@@ -93,6 +96,7 @@ class SabaController extends Controller
 
     public function updateSettings(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'modify_config'), 403);
         $campaign = $this->saba->campaign();
 
         $validated = $request->validate([
@@ -155,6 +159,7 @@ class SabaController extends Controller
 
     public function updateProducts(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'modify_config'), 403);
         $campaign = $this->saba->campaign();
 
         $validated = $request->validate([
@@ -198,6 +203,7 @@ class SabaController extends Controller
 
     public function destroyProduct(Request $request, int $rule): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'modify_config'), 403);
         $campaign = $this->saba->campaign();
         $product = $campaign->productRules()->whereKey($rule)->firstOrFail();
 
@@ -218,6 +224,7 @@ class SabaController extends Controller
 
     public function updateAssets(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'modify_config'), 403);
         $campaign = $this->saba->campaign();
 
         $request->validate([
@@ -280,6 +287,7 @@ class SabaController extends Controller
 
     public function toggleStatus(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'activate_pause'), 403);
         $campaign = $this->saba->campaign();
         $validated = $request->validate([
             'status' => ['required', 'in:active,paused'],
@@ -305,6 +313,7 @@ class SabaController extends Controller
 
     public function approve(Request $request, SabaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'view_participants'), 403);
         $this->assertBelongsToSaba($entry);
         abort_if($entry->status === 'approved', 422, 'La participación ya está aprobada.');
 
@@ -331,6 +340,7 @@ class SabaController extends Controller
 
     public function reject(Request $request, SabaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'view_participants'), 403);
         $this->assertBelongsToSaba($entry);
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:2000'],
@@ -357,6 +367,7 @@ class SabaController extends Controller
 
     public function selectWinner(Request $request, SabaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'view_winners'), 403);
         $this->assertBelongsToSaba($entry);
         $slots = (int) $this->saba->rule($entry->campaign, 'winner_slots', 50);
 
@@ -396,6 +407,7 @@ class SabaController extends Controller
 
     public function removeWinner(Request $request, SabaEntry $entry): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'view_winners'), 403);
         $this->assertBelongsToSaba($entry);
         $position = $entry->winner_position;
 
@@ -414,6 +426,7 @@ class SabaController extends Controller
 
     public function manualRegister(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'upload_invoice_manual'), 403);
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:150'],
             'cedula' => ['required', 'string', 'max:40'],
@@ -433,6 +446,7 @@ class SabaController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        abort_unless($request->user()->canDoPromo('saba', 'export_data'), 403);
         $campaign = $this->saba->campaign();
         $query = $this->filteredEntries($request, $campaign)->with('branch')->orderBy('id');
 
