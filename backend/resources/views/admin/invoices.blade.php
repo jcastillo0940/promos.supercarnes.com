@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <form method="GET" action="{{ route('admin.invoices') }}" class="form-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
                 <div class="field">
                     <label for="campaign_id">Promoción</label>

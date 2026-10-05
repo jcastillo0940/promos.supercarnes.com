@@ -13,32 +13,32 @@
     .kpi-card {
         position: relative;
         padding: 1.1rem 1.2rem;
-        border-radius: 16px;
-        background: #fff;
-        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: var(--bo-surface);
+        border: 1px solid var(--bo-border);
         overflow: hidden;
     }
     .kpi-card::before {
         content: '';
         position: absolute;
         inset: 0 auto 0 0;
-        width: 4px;
-        background: var(--accent, #dc2626);
+        width: 3px;
+        background: var(--accent, var(--bo-accent));
     }
-    .kpi-card strong { display:block; font-size: 1.9rem; line-height:1.1; color:#0f172a; }
-    .kpi-card span { display:block; margin-top:.3rem; font-size:.8rem; color:#64748b; font-weight:600; }
+    .kpi-card strong { display:block; font-size: 1.9rem; line-height:1.1; color:var(--bo-fg); }
+    .kpi-card span { display:block; margin-top:.3rem; font-size:.8rem; color:var(--bo-fg2); font-weight:600; }
     .chart-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 1rem;
     }
     .chart-card {
-        background:#fff;
-        border:1px solid #e5e7eb;
-        border-radius:16px;
+        background: var(--bo-surface);
+        border: 1px solid var(--bo-border);
+        border-radius: 12px;
         padding:1.1rem 1.1rem 1.4rem;
     }
-    .chart-card h3 { margin:0 0 .9rem; font-size: .95rem; color:#0f172a; }
+    .chart-card h3 { margin:0 0 .9rem; font-size: .95rem; color:var(--bo-fg); font-weight:700; }
     .chart-card .chart-canvas-wrap { position: relative; height: 260px; }
     .chart-card.wide { grid-column: 1 / -1; }
     @media (max-width: 860px) {

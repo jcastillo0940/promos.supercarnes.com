@@ -23,7 +23,7 @@
                 <p>El jurado inicia sesión en /admin/login con estas credenciales y solo ve la sección de evaluación.</p>
             </div>
         </div>
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <form method="POST" action="{{ route('admin.jurors.store') }}" class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                 @csrf
                 <div class="field">

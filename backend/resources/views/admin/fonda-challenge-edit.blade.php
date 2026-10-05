@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <h2 style="margin:0 0 .5rem;font-size:1rem;">Cambiar estado</h2>
             <form method="POST" action="{{ route('admin.fonda-challenge.status', $registration) }}" class="form-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
                 @csrf
@@ -62,7 +62,7 @@
             </form>
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <h2 style="margin:0 0 .5rem;font-size:1rem;">Datos del participante</h2>
             <form method="POST" action="{{ route('admin.fonda-challenge.update', $registration) }}" class="stack">
                 @csrf
@@ -102,9 +102,9 @@
             </form>
         </div>
 
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" style="border-top:1px solid var(--bo-border);">
             <h2 style="margin:0 0 .5rem;font-size:1rem;">Código QR</h2>
-            <img src="{{ route('fonda-challenge.qr', $registration->code) }}" alt="QR {{ $registration->code }}" style="width:180px;height:180px;border:1px solid #e5e7eb;border-radius:12px;">
+            <img src="{{ route('fonda-challenge.qr', $registration->code) }}" alt="QR {{ $registration->code }}" style="width:180px;height:180px;border:1px solid var(--bo-border);border-radius:12px;">
             <p style="margin:.5rem 0 0;color:#64748b;font-size:.85rem;">Se envió por correo a {{ $registration->email }} al momento de la inscripción.</p>
         </div>
     </div>

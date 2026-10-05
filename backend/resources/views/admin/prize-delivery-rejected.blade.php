@@ -21,13 +21,13 @@
             <div class="error">{{ $reason }}</div>
 
             <div class="form-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
+                <div class="page-card" style="box-shadow:none;border:1px solid var(--bo-border);">
                     <div class="page-section">
                         <p class="sidebar-title">QR / CUFE</p>
                         <div style="word-break:break-all;">{{ $qrCode ?? '—' }}</div>
                     </div>
                 </div>
-                <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
+                <div class="page-card" style="box-shadow:none;border:1px solid var(--bo-border);">
                     <div class="page-section">
                         <p class="sidebar-title">Cédula declarada</p>
                         <div>{{ $cedula ?? '—' }}</div>
@@ -36,7 +36,7 @@
             </div>
 
             @if(!empty($winner))
-                <div class="page-card" style="box-shadow:none;border:1px solid #e5e7eb;">
+                <div class="page-card" style="box-shadow:none;border:1px solid var(--bo-border);">
                     <div class="page-section">
                         <p class="sidebar-title">Ganador encontrado</p>
                         <div><strong>{{ $winner->user?->full_name ?? $winner->user?->name ?? '—' }}</strong> · {{ $winner->user?->cedula ?? '—' }}</div>
@@ -65,7 +65,7 @@
                                 </label>
                             </div>
                             <div class="responsive-actions">
-                                <button class="btn btn-primary" type="submit">Reabrir validación</button>
+                                <button class="btn btn-red" type="submit">Reabrir validación</button>
                             </div>
                         </form>
                     </div>

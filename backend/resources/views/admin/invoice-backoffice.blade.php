@@ -25,15 +25,15 @@
             margin-bottom: .25rem;
         }
         .config-section-head h2 { margin: 0; font-size: 1.05rem; }
-        .config-section-head p { margin: .2rem 0 0; color: #64748b; font-size: .85rem; }
-        .field-hint { display: block; margin-top: .35rem; color: #94a3b8; font-size: .78rem; }
+        .config-section-head p { margin: .2rem 0 0; color: var(--bo-fg2); font-size: .85rem; }
+        .field-hint { display: block; margin-top: .35rem; color: var(--bo-muted); font-size: .78rem; }
 
         .campaign-list { display: grid; gap: 1rem; }
         .campaign-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
+            border: 1px solid var(--bo-border);
+            border-radius: 12px;
             overflow: hidden;
-            background: #fff;
+            background: var(--bo-surface);
         }
         .campaign-card > summary {
             list-style: none;
@@ -44,36 +44,36 @@
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
-            background: #f8fafc;
+            background: var(--bo-bg);
         }
         .campaign-card > summary::-webkit-details-marker { display: none; }
         .campaign-card > summary::marker { content: ''; }
         .campaign-summary-main { display: flex; align-items: center; gap: .65rem; flex-wrap: wrap; min-width: 0; }
         .campaign-summary-main strong { font-size: 1rem; }
-        .campaign-summary-main .mono { color: #64748b; font-size: .82rem; }
+        .campaign-summary-main .mono { color: var(--bo-fg2); font-size: .82rem; }
         .campaign-summary-right { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
         .campaign-chevron {
             display: inline-flex;
             width: 24px; height: 24px;
             align-items: center; justify-content: center;
             border-radius: 8px;
-            background: #e2e8f0;
-            color: #475569;
+            background: var(--bo-border);
+            color: var(--bo-fg2);
             transition: transform .18s ease;
             flex-shrink: 0;
         }
         .campaign-card[open] .campaign-chevron { transform: rotate(180deg); }
-        .campaign-body { padding: 1.1rem; border-top: 1px solid #e5e7eb; }
+        .campaign-body { padding: 1.1rem; border-top: 1px solid var(--bo-border); }
         .campaign-quickbar {
             display: flex; align-items: center; justify-content: space-between; gap: 1rem;
             padding: .85rem 1rem; margin-bottom: 1.1rem; border-radius: 12px;
-            background: linear-gradient(135deg, #f8fafc, #fefce8); border: 1px solid #e5e7eb;
+            background: var(--bo-bg); border: 1px solid var(--bo-border);
         }
         .campaign-quickbar-copy { display: grid; gap: .2rem; }
-        .campaign-quickbar-copy strong { color: #0f172a; font-size: .92rem; }
-        .campaign-quickbar-copy span { color: #64748b; font-size: .78rem; }
+        .campaign-quickbar-copy strong { color: var(--bo-fg); font-size: .92rem; }
+        .campaign-quickbar-copy span { color: var(--bo-fg2); font-size: .78rem; }
         .campaign-quickbar .btn { min-width: 142px; text-align: center; }
-        .campaign-readiness { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin-top: .35rem; color: #64748b; font-size: .76rem; }
+        .campaign-readiness { display: flex; flex-wrap: wrap; gap: .35rem .7rem; margin-top: .35rem; color: var(--bo-fg2); font-size: .76rem; }
         .campaign-readiness span::before { content: '•'; color: #16a34a; margin-right: .25rem; }
         @media (max-width: 640px) {
             .campaign-quickbar { align-items: stretch; flex-direction: column; }
@@ -86,10 +86,10 @@
             font-weight: 800;
             letter-spacing: .06em;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: var(--bo-muted);
             margin: 0 0 .7rem;
             padding-bottom: .5rem;
-            border-bottom: 1px dashed #e2e8f0;
+            border-bottom: 1px dashed var(--bo-border);
         }
         .toggle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem .9rem; }
         .switch-row {
@@ -98,16 +98,16 @@
             justify-content: space-between;
             gap: .75rem;
             padding: .55rem .7rem;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--bo-border);
             border-radius: 10px;
-            background: #f8fafc;
+            background: var(--bo-bg);
         }
-        .switch-row span { font-size: .85rem; font-weight: 600; color: #334155; }
+        .switch-row span { font-size: .85rem; font-weight: 600; color: var(--bo-fg2); }
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .switch-track {
             position: absolute; inset: 0; cursor: pointer;
-            background: #cbd5e1; border-radius: 999px; transition: background .15s ease;
+            background: var(--bo-border-dark); border-radius: 999px; transition: background .15s ease;
         }
         .switch-track::before {
             content: ''; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px;
@@ -120,12 +120,12 @@
         .mode-fields + .mode-fields { margin-top: .8rem; }
         .campaign-actions {
             display: flex; justify-content: flex-end; gap: .6rem; flex-wrap: wrap;
-            margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;
+            margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--bo-border);
         }
         .new-campaign-toggle > summary {
             list-style: none; cursor: pointer;
             display: flex; align-items: center; gap: .6rem;
-            font-weight: 700; color: #b91c1c; padding: .2rem 0;
+            font-weight: 700; color: var(--bo-accent); padding: .2rem 0;
         }
         .new-campaign-toggle > summary::-webkit-details-marker { display: none; }
         .new-campaign-toggle > summary::marker { content: ''; }
@@ -239,13 +239,13 @@
         </div>
 
         @if (! $editingCampaign)
-        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section" class="section-sep" style="">
             <details class="new-campaign-toggle">
                 <summary>＋ Crear nueva promoción</summary>
                 <form method="POST" action="{{ route('admin.invoice-backoffice.campaigns.store') }}" style="margin-top:14px;">
                     @csrf
                     <input type="hidden" name="key" value="{{ $backofficeKey }}">
-                    <div class="page-card" style="box-shadow:none;border:1px solid #cbd5e1;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);">
+                    <div class="page-card" style="box-shadow:none;">
                         <div class="page-section">
                             <div class="field-group">
                                 <p class="field-group-title">Información general</p>
@@ -379,7 +379,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="page-section" style="border-top:1px solid #e5e7eb;">
+                        <div class="page-section" class="section-sep" style="">
                             <button type="submit" class="btn btn-red">Crear promoción</button>
                         </div>
                     </div>
@@ -388,7 +388,7 @@
         </div>
         @endif
 
-        <div class="page-section campaign-list" style="border-top:1px solid #e5e7eb;">
+        <div class="page-section campaign-list" class="section-sep" style="">
             @foreach ($campaigns as $campaign)
                 @php
                     $mode = old("campaigns.{$campaign->id}.participation_mode", $campaign->participation_mode ?? 'points');

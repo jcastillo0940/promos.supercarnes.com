@@ -56,7 +56,7 @@
                                 @if($jurors->isNotEmpty())
                                     <form method="POST" action="{{ route('admin.fonda-jury.assign', $registration) }}" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
                                         @csrf
-                                        <select name="user_id" required style="min-width:220px; min-height:44px; border-radius:10px; border:1px solid #cbd5e1; padding:0 .6rem;">
+                                        <select name="user_id" required style="min-width:220px; min-height:44px; border-radius:10px; border:1px solid var(--bo-border-dark); padding:0 .6rem;">
                                             <option value="">Selecciona jurado</option>
                                             @foreach($jurors as $juror)
                                                 <option value="{{ $juror->id }}">{{ $juror->full_name ?? $juror->name }}</option>

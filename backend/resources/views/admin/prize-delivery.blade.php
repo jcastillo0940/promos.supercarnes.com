@@ -43,7 +43,7 @@
                 <button class="btn btn-gray" type="button" id="stop-camera" disabled>Detener cámara</button>
             </div>
             <div id="scanner-status" class="notice" style="display:none;"></div>
-            <div id="scanner-preview" style="display:none;max-width:420px;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb;background:#0f172a;">
+            <div id="scanner-preview" style="display:none;max-width:420px;border-radius:14px;overflow:hidden;border:1px solid var(--bo-border);background:#0f172a;">
                 <video id="scanner-video" autoplay playsinline style="width:100%;display:block;"></video>
             </div>
 
@@ -95,7 +95,7 @@
                 </div>
             </div>
 
-            <div class="page-section" style="border-top:1px solid #e5e7eb;">
+            <div class="page-section" style="border-top:1px solid var(--bo-border);">
                 @if($winner && $winner->prize_delivered_at)
                     <div class="success">Este premio ya fue marcado como entregado el {{ $winner->prize_delivered_at->format('d/m/Y H:i') }}.</div>
                 @endif
@@ -108,17 +108,17 @@
                             <div class="field">
                                 <label for="id_card_photo">Fotografía de la cédula</label>
                                 <input id="id_card_photo" name="id_card_photo" type="file" accept="image/*" capture="environment">
-                                <img id="id-card-preview" alt="Vista previa cédula" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                <img id="id-card-preview" alt="Vista previa cédula" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid var(--bo-border);">
                             </div>
                             <div class="field">
                                 <label for="delivery_photo">Fotografía entregando el premio</label>
                                 <input id="delivery_photo" name="delivery_photo" type="file" accept="image/*" capture="environment">
-                                <img id="delivery-preview" alt="Vista previa entrega" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                <img id="delivery-preview" alt="Vista previa entrega" style="display:none;margin-top:.75rem;max-width:100%;border-radius:14px;border:1px solid var(--bo-border);">
                             </div>
                         </div>
                         <div class="field">
                             <label for="delivery_notes">Observaciones</label>
-                            <textarea id="delivery_notes" name="delivery_notes" rows="4" style="width:100%;padding:.8rem;border:1px solid #cbd5e1;border-radius:10px;"></textarea>
+                            <textarea id="delivery_notes" name="delivery_notes" rows="4" style="width:100%;padding:.8rem;border:1px solid var(--bo-border-dark);border-radius:10px;"></textarea>
                         </div>
                         <div class="field" style="display:flex;align-items:flex-start;gap:.75rem;">
                             <input id="delivery_confirmation" name="delivery_confirmation" type="checkbox" value="1" style="width:18px;height:18px;margin-top:.2rem;">
@@ -150,7 +150,7 @@
                             <label>Foto de la cédula</label>
                             @if($winner->id_card_photo_path)
                                 <a href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">
-                                    <img id="evidence-id-card" src="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" alt="Cédula" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                    <img id="evidence-id-card" src="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" alt="Cédula" style="max-width:100%;border-radius:14px;border:1px solid var(--bo-border);">
                                 </a>
                                 <div style="margin-top:.5rem;">
                                     <a id="evidence-id-card-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->id_card_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
@@ -163,7 +163,7 @@
                             <label>Foto de entrega</label>
                             @if($winner->delivery_photo_path)
                                 <a href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">
-                                    <img id="evidence-delivery" src="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" alt="Entrega" style="max-width:100%;border-radius:14px;border:1px solid #e5e7eb;">
+                                    <img id="evidence-delivery" src="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" alt="Entrega" style="max-width:100%;border-radius:14px;border:1px solid var(--bo-border);">
                                 </a>
                                 <div style="margin-top:.5rem;">
                                     <a id="evidence-delivery-link" class="btn btn-gray" href="{{ route('admin.media', ['path' => $winner->delivery_photo_path]) }}" target="_blank" rel="noopener">Abrir imagen</a>
