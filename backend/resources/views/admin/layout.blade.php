@@ -304,6 +304,9 @@
     @stack('scripts')
     <script>
     (function () {
+        var flash = document.querySelector('.success, .error, .notice, .alert-success');
+        if (flash) flash.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
         document.addEventListener('submit', function (e) {
             var form = e.target;
             var msg = (e.submitter && e.submitter.dataset.confirm) || form.dataset.confirm;
