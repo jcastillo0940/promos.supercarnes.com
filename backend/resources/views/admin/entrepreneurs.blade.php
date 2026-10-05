@@ -3,11 +3,6 @@
 @section('title', 'Del sueño al puesto')
 @section('subtitle', 'Emprendedores')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice') }}">Configuración</a>
-    <a class="topbar-action hide-mobile" href="{{ route('admin.invoices') }}">Facturas</a>
-@endsection
-
 @push('styles')
     <style>
         .stat-grid {

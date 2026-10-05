@@ -97,7 +97,7 @@
     {{-- Operator: accesos directos según módulos --}}
     @if($u?->isOperator())
         @if($u->canAccessModule('malta'))
-            @php($maltaCampaign = \App\Models\Campaign::query()->where('participation_mode','product_ranking')->orderByRaw("FIELD(status,'active','paused','draft','archived')")->first())
+            @php($maltaCampaign = \App\Models\Campaign::query()->where('participation_mode','product_ranking')->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'paused' THEN 2 WHEN 'draft' THEN 3 ELSE 4 END")->first())
             @if($maltaCampaign)
                 <div class="inicio-card">
                     <h3>{{ $maltaCampaign->name }}</h3>

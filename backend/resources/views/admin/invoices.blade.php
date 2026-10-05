@@ -3,11 +3,6 @@
 @section('title', 'Facturas')
 @section('subtitle', 'Gestión de facturas')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice') }}">Configuración</a>
-    <a class="topbar-action hide-mobile" href="{{ route('admin.winners') }}">Ganadores</a>
-@endsection
-
 @section('content')
     @if (session('status'))
         <div class="success">{{ session('status') }}</div>

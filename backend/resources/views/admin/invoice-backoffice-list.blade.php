@@ -3,11 +3,6 @@
 @section('title', 'Promociones')
 @section('subtitle', 'Vista general')
 
-@section('topbar-actions')
-    <a class="topbar-action hide-mobile" href="{{ route('admin.invoice-backoffice.campaigns.edit', $campaigns->first() ?? 0) }}"
-       style="{{ $campaigns->isEmpty() ? 'pointer-events:none;opacity:.5;' : '' }}">
-    </a>
-@endsection
 
 @push('styles')
 <style>
