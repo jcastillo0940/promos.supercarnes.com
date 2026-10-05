@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FanlycZone;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,16 +14,8 @@ class AdminLoginController extends Controller
 {
     public function showLogin(): View|RedirectResponse
     {
-        if (Auth::check() && Auth::user()->isAdmin()) {
-            return redirect()->route('admin.invoice-backoffice');
-        }
-
-        if (Auth::check() && Auth::user()->isSupervisor()) {
-            return redirect()->route('admin.prize-delivery');
-        }
-
-        if (Auth::check() && Auth::user()->isJury()) {
-            return redirect()->route('admin.fonda-jury');
+        if (Auth::check()) {
+            return redirect($this->defaultRedirect(Auth::user()));
         }
 
         return view('admin.login');
@@ -37,7 +31,15 @@ class AdminLoginController extends Controller
         if (Auth::attempt($credentials, remember: true)) {
             $user = Auth::user();
 
-            if (! $user || (! $user->isAdmin() && ! $user->isSupervisor() && ! $user->isJury())) {
+            $hasAccess = $user && (
+                $user->isAdmin() ||
+                $user->isOperator() ||
+                $user->isSupervisor() ||
+                $user->isJury() ||
+                $user->isFanlycStaff()
+            );
+
+            if (! $hasAccess) {
                 Auth::logout();
                 return back()->withErrors(['email' => 'No tienes permisos para acceder al backoffice.']);
             }
@@ -49,16 +51,21 @@ class AdminLoginController extends Controller
 
             $request->session()->regenerate();
 
-            $redirect = match (true) {
-                $user->isSupervisor() => route('admin.prize-delivery'),
-                $user->isJury() => route('admin.fonda-jury'),
-                default => route('admin.invoice-backoffice'),
-            };
-
-            return redirect()->intended($redirect);
+            return redirect()->intended($this->defaultRedirect($user));
         }
 
         return back()->withErrors(['email' => 'Credenciales incorrectas.'])->onlyInput('email');
+    }
+
+    private function defaultRedirect(User $user): string
+    {
+        return match (true) {
+            $user->isOperator()   => $user->firstModuleRoute(),
+            $user->isSupervisor() => route('admin.prize-delivery'),
+            $user->isJury()       => route('admin.fonda-jury'),
+            $user->isFanlycStaff() => route('admin.fanlyc.redeem', \App\Models\FanlycZone::query()->where('is_active', true)->orderBy('sort_order')->value('code') ?? ''),
+            default               => route('admin.invoice-backoffice'),
+        };
     }
 
     public function logout(Request $request): RedirectResponse

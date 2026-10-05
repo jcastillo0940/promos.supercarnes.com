@@ -23,6 +23,7 @@ class User extends Authenticatable
         'full_name',
         'branch_id',
         'role',
+        'admin_modules',
         'cedula',
         'document_type',
         'email',
@@ -77,6 +78,7 @@ class User extends Authenticatable
             'group_stage_goal_prediction' => 'integer',
             'disqualified_at' => 'datetime',
             'dream_promo_qualified_at' => 'datetime',
+            'admin_modules' => 'array',
         ];
     }
 
@@ -125,6 +127,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isOperator(): bool
+    {
+        return $this->role === 'operator';
+    }
+
     public function isSupervisor(): bool
     {
         return in_array($this->role, ['supervisor', 'manager'], true);
@@ -148,5 +155,40 @@ class User extends Authenticatable
     public function isFanlycStaff(): bool
     {
         return $this->role === 'staff_fanlyc';
+    }
+
+    public function canAccessModule(string $module): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($this->isOperator() && is_array($this->admin_modules)) {
+            return in_array($module, $this->admin_modules, true);
+        }
+
+        return false;
+    }
+
+    public function firstModuleRoute(): string
+    {
+        $map = [
+            'saba'          => 'admin.saba',
+            'nivea'         => 'admin.nivea',
+            'fanlyc'        => 'admin.fanlyc',
+            'fonda'         => 'admin.fonda-challenge',
+            'entrepreneurs' => 'admin.entrepreneurs',
+            'facturas'      => 'admin.invoices',
+            'blacklist'     => 'admin.blacklist',
+            'audit'         => 'admin.audit',
+        ];
+
+        foreach ((array) ($this->admin_modules ?? []) as $module) {
+            if (isset($map[$module])) {
+                return route($map[$module]);
+            }
+        }
+
+        return route('admin.login');
     }
 }
