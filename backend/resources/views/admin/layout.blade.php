@@ -220,6 +220,15 @@
         .field input:focus, .field select:focus { outline: 2px solid rgba(220, 38, 38, .18); border-color: #dc2626; }
         .responsive-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
         .responsive-actions form, .responsive-actions a { margin: 0; }
+        .empty {
+            padding: 1.5rem 1rem;
+            color: #94a3b8;
+            font-size: .88rem;
+            text-align: center;
+            border: 1px dashed #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
         .hide-mobile { display: block; }
         .show-mobile { display: none; }
 
