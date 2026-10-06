@@ -99,8 +99,16 @@
                     <div class="chart-canvas-wrap"><canvas id="ch-status"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h3>Top sucursales (por registros)</h3>
+                    <h3>Top sucursales</h3>
                     <div class="chart-canvas-wrap"><canvas id="ch-branch"></canvas></div>
+                </div>
+                <div class="chart-card wide">
+                    <h3>Top productos / SKUs elegibles</h3>
+                    <div class="chart-canvas-wrap" style="height:280px;"><canvas id="ch-skus"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Unidades elegibles por registro</h3>
+                    <div class="chart-canvas-wrap"><canvas id="ch-units"></canvas></div>
                 </div>
             </div>
         </div>
@@ -116,6 +124,8 @@
     const daily    = @json($daily);
     const counts   = @json($counts);
     const byBranch = @json($byBranch);
+    const topSkus  = @json($topSkus ?? []);
+    const byUnits  = @json($byUnits ?? []);
 
     const STATUS_LABELS = {
         'approved': 'Aprobadas',
@@ -181,6 +191,56 @@
             plugins: { legend: { position: 'bottom', labels: { font: FONT, boxWidth: 12, padding: 8 } } },
         },
     });
+
+    // Top SKUs horizontal bar
+    if (topSkus.length && document.getElementById('ch-skus')) {
+        new Chart(document.getElementById('ch-skus'), {
+            type: 'bar',
+            data: {
+                labels: topSkus.map(r => r.sku),
+                datasets: [{
+                    data: topSkus.map(r => r.total),
+                    backgroundColor: topSkus.map((_, i) => PALETTE[i % PALETTE.length]),
+                    borderRadius: 5,
+                    borderSkipped: false,
+                }],
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { font: FONT }, beginAtZero: true, grid: { display: false } },
+                    y: { ticks: { font: { ...FONT, size: 10 }, maxTicksLimit: 12 } },
+                },
+            },
+        });
+    }
+
+    // Eligible units bar
+    if (byUnits.length && document.getElementById('ch-units')) {
+        new Chart(document.getElementById('ch-units'), {
+            type: 'bar',
+            data: {
+                labels: byUnits.map(r => r.eligible_units + ' und.'),
+                datasets: [{
+                    label: 'Registros',
+                    data: byUnits.map(r => r.total),
+                    backgroundColor: '#7c3aed',
+                    borderRadius: 5,
+                    borderSkipped: false,
+                }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { font: FONT }, grid: { display: false } },
+                    y: { ticks: { font: FONT }, beginAtZero: true },
+                },
+            },
+        });
+    }
 
     // Branch horizontal bar
     new Chart(document.getElementById('ch-branch'), {

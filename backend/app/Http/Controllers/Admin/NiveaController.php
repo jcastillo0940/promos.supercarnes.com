@@ -562,6 +562,17 @@ class NiveaController extends Controller
             ->limit(10)
             ->get();
 
+        $byUnits = (clone $base)
+            ->whereNotNull('eligible_units')
+            ->selectRaw('eligible_units, count(*) as total')
+            ->groupBy('eligible_units')
+            ->orderBy('eligible_units')
+            ->get();
+
+        $topSkus = $this->aggregateTopSkus(
+            (clone $base)->whereNotNull('matched_products')->pluck('matched_products')
+        );
+
         return view('admin.nivea-dashboard', [
             'campaign'  => $campaign,
             'period'    => $period,
@@ -573,6 +584,34 @@ class NiveaController extends Controller
             'counts'    => $counts,
             'daily'     => $daily,
             'byBranch'  => $byBranch,
+            'byUnits'   => $byUnits,
+            'topSkus'   => $topSkus,
         ]);
+    }
+
+    private function aggregateTopSkus(\Illuminate\Support\Collection $rows, int $limit = 10): array
+    {
+        $counts = [];
+        foreach ($rows as $json) {
+            $products = is_array($json) ? $json : json_decode($json, true);
+            if (! is_array($products)) {
+                continue;
+            }
+            foreach ($products as $p) {
+                if (empty($p['is_eligible'])) {
+                    continue;
+                }
+                $key = trim($p['description'] ?? $p['barcode'] ?? 'Desconocido');
+                $counts[$key] = ($counts[$key] ?? 0) + (int) ($p['quantity'] ?? 1);
+            }
+        }
+        arsort($counts);
+        $top = array_slice($counts, 0, $limit, true);
+
+        return array_map(
+            fn($desc, $qty) => ['sku' => $desc, 'total' => $qty],
+            array_keys($top),
+            array_values($top)
+        );
     }
 }
