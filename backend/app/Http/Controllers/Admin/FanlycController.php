@@ -172,11 +172,11 @@ class FanlycController extends Controller
         $period   = (int) $request->input('period', 30);
         $since    = $period > 0 ? now()->subDays($period) : null;
 
-        $baseInvoice = FanlycInvoice::query()->where('campaign_id', $campaign->id);
-        $baseCoupon  = FanlycCoupon::query()->where('campaign_id', $campaign->id);
+        $baseInvoice = FanlycInvoice::query()->where('fanlyc_invoices.campaign_id', $campaign->id);
+        $baseCoupon  = FanlycCoupon::query()->where('fanlyc_coupons.campaign_id', $campaign->id);
         if ($since) {
-            $baseInvoice->where('created_at', '>=', $since);
-            $baseCoupon->where('created_at', '>=', $since);
+            $baseInvoice->where('fanlyc_invoices.created_at', '>=', $since);
+            $baseCoupon->where('fanlyc_coupons.created_at', '>=', $since);
         }
 
         $invoiceCounts = (clone $baseInvoice)

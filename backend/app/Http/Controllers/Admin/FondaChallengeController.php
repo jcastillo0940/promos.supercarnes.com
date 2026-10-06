@@ -186,9 +186,9 @@ class FondaChallengeController extends Controller
         $period   = (int) $request->input('period', 30);
         $since    = $period > 0 ? now()->subDays($period) : null;
 
-        $base = FondaRegistration::query()->where('campaign_id', $campaign->id);
+        $base = FondaRegistration::query()->where('fonda_registrations.campaign_id', $campaign->id);
         if ($since) {
-            $base->where('created_at', '>=', $since);
+            $base->where('fonda_registrations.created_at', '>=', $since);
         }
 
         $counts = (clone $base)

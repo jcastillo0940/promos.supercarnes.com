@@ -532,9 +532,9 @@ class NiveaController extends Controller
         $period   = (int) $request->input('period', 30);
         $since    = $period > 0 ? now()->subDays($period) : null;
 
-        $base = NiveaEntry::query()->where('campaign_id', $campaign->id);
+        $base = NiveaEntry::query()->where('nivea_entries.campaign_id', $campaign->id);
         if ($since) {
-            $base->where('created_at', '>=', $since);
+            $base->where('nivea_entries.created_at', '>=', $since);
         }
 
         $counts = (clone $base)
