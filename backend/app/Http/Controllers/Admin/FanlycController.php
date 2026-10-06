@@ -164,6 +164,61 @@ class FanlycController extends Controller
         return back()->with('status', 'Factura registrada a nombre del cliente. '.$outcome['message']);
     }
 
+    public function dashboard(Request $request): View
+    {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'view_dashboard'), 403);
+
+        $campaign = $this->campaign();
+        $period   = (int) $request->input('period', 30);
+        $since    = $period > 0 ? now()->subDays($period) : null;
+
+        $baseInvoice = FanlycInvoice::query()->where('campaign_id', $campaign->id);
+        $baseCoupon  = FanlycCoupon::query()->where('campaign_id', $campaign->id);
+        if ($since) {
+            $baseInvoice->where('created_at', '>=', $since);
+            $baseCoupon->where('created_at', '>=', $since);
+        }
+
+        $invoiceCounts = (clone $baseInvoice)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $totalInvoices  = $invoiceCounts->sum();
+        $approved       = (int) ($invoiceCounts['approved'] ?? 0);
+        $pending        = (int) ($invoiceCounts['pending_review'] ?? 0);
+        $totalCoupons   = (clone $baseCoupon)->count();
+        $redeemed       = (clone $baseCoupon)->where('status', 'redeemed')->count();
+
+        $daily = (clone $baseInvoice)
+            ->selectRaw('DATE(created_at) as day, count(*) as total')
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        $byZone = FanlycCoupon::query()
+            ->where('fanlyc_coupons.campaign_id', $campaign->id)
+            ->where('fanlyc_coupons.status', 'redeemed')
+            ->join('fanlyc_zones', 'fanlyc_coupons.fanlyc_zone_id', '=', 'fanlyc_zones.id')
+            ->selectRaw('fanlyc_zones.name as zone, count(*) as total')
+            ->groupBy('fanlyc_zones.name')
+            ->orderByDesc('total')
+            ->get();
+
+        return view('admin.fanlyc-dashboard', [
+            'campaign'       => $campaign,
+            'period'         => $period,
+            'totalInvoices'  => $totalInvoices,
+            'approved'       => $approved,
+            'pending'        => $pending,
+            'totalCoupons'   => $totalCoupons,
+            'redeemed'       => $redeemed,
+            'invoiceCounts'  => $invoiceCounts,
+            'daily'          => $daily,
+            'byZone'         => $byZone,
+        ]);
+    }
+
     private function campaign(): Campaign
     {
         return Campaign::query()->where('slug', 'fanlyc')->firstOrFail();

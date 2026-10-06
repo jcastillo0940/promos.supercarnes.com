@@ -523,4 +523,56 @@ class NiveaController extends Controller
             Storage::disk('public')->delete(substr($url, strlen('/storage/')));
         }
     }
+
+    public function dashboard(Request $request): View
+    {
+        abort_unless($request->user()->canDoPromo('nivea', 'view_dashboard'), 403);
+
+        $campaign = $this->nivea->campaign();
+        $period   = (int) $request->input('period', 30);
+        $since    = $period > 0 ? now()->subDays($period) : null;
+
+        $base = NiveaEntry::query()->where('campaign_id', $campaign->id);
+        if ($since) {
+            $base->where('created_at', '>=', $since);
+        }
+
+        $counts = (clone $base)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $total    = $counts->sum();
+        $approved = (int) ($counts['approved'] ?? 0);
+        $pending  = (int) ($counts['pending_review'] ?? 0);
+        $rejected = $counts->except(['approved', 'pending_review'])->sum();
+        $winners  = NiveaEntry::query()->where('campaign_id', $campaign->id)->whereNotNull('winner_position')->count();
+
+        $daily = (clone $base)
+            ->selectRaw('DATE(created_at) as day, count(*) as total, COALESCE(AVG(purchase_amount), 0) as avg_amount')
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        $byBranch = (clone $base)
+            ->join('branches', 'nivea_entries.branch_id', '=', 'branches.id')
+            ->selectRaw('branches.name as branch, count(*) as total')
+            ->groupBy('branches.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        return view('admin.nivea-dashboard', [
+            'campaign'  => $campaign,
+            'period'    => $period,
+            'total'     => $total,
+            'approved'  => $approved,
+            'pending'   => $pending,
+            'rejected'  => $rejected,
+            'winners'   => $winners,
+            'counts'    => $counts,
+            'daily'     => $daily,
+            'byBranch'  => $byBranch,
+        ]);
+    }
 }

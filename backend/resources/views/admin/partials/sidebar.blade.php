@@ -200,6 +200,15 @@
 
                 {{-- Saba --}}
                 @if($promoCtx['key'] === 'saba' && $u?->canAccessModule('saba'))
+                    @if($u?->canDoPromo('saba', 'view_dashboard'))
+                        <a href="{{ route('admin.saba.dashboard') }}"
+                           title="Dashboard"
+                           @class(['active' => request()->routeIs('admin.saba.dashboard')])
+                           aria-current="{{ request()->routeIs('admin.saba.dashboard') ? 'page' : 'false' }}">
+                            {!! $ico('bar-chart') !!}
+                            <span class="nav-label">Dashboard</span>
+                        </a>
+                    @endif
                     <a href="{{ route('admin.saba') }}"
                        title="Participantes"
                        @class(['active' => request()->routeIs('admin.saba') && !request()->routeIs('admin.saba.settings')])
@@ -226,6 +235,15 @@
 
                 {{-- NIVEA --}}
                 @if($promoCtx['key'] === 'nivea' && $u?->canAccessModule('nivea'))
+                    @if($u?->canDoPromo('nivea', 'view_dashboard'))
+                        <a href="{{ route('admin.nivea.dashboard') }}"
+                           title="Dashboard"
+                           @class(['active' => request()->routeIs('admin.nivea.dashboard')])
+                           aria-current="{{ request()->routeIs('admin.nivea.dashboard') ? 'page' : 'false' }}">
+                            {!! $ico('bar-chart') !!}
+                            <span class="nav-label">Dashboard</span>
+                        </a>
+                    @endif
                     <a href="{{ route('admin.nivea') }}"
                        title="Participantes"
                        @class(['active' => request()->routeIs('admin.nivea') && !request()->routeIs('admin.nivea.settings')])
@@ -253,6 +271,15 @@
                 {{-- Fanlyc --}}
                 @if($promoCtx['key'] === 'fanlyc')
                     @if($u?->canAccessModule('fanlyc'))
+                        @if($u?->canDoPromo('fanlyc', 'view_dashboard'))
+                            <a href="{{ route('admin.fanlyc.dashboard') }}"
+                               title="Dashboard"
+                               @class(['active' => request()->routeIs('admin.fanlyc.dashboard')])
+                               aria-current="{{ request()->routeIs('admin.fanlyc.dashboard') ? 'page' : 'false' }}">
+                                {!! $ico('bar-chart') !!}
+                                <span class="nav-label">Dashboard</span>
+                            </a>
+                        @endif
                         <a href="{{ route('admin.fanlyc') }}"
                            title="Facturas Fanlyc"
                            @class(['active' => request()->routeIs('admin.fanlyc') || request()->routeIs('admin.fanlyc.show')])
@@ -291,6 +318,15 @@
                 {{-- Fonda Challenge --}}
                 @if($promoCtx['key'] === 'fonda')
                     @if($u?->canAccessModule('fonda'))
+                        @if($u?->canDoPromo('fonda', 'view_dashboard'))
+                            <a href="{{ route('admin.fonda-challenge.dashboard') }}"
+                               title="Dashboard"
+                               @class(['active' => request()->routeIs('admin.fonda-challenge.dashboard')])
+                               aria-current="{{ request()->routeIs('admin.fonda-challenge.dashboard') ? 'page' : 'false' }}">
+                                {!! $ico('bar-chart') !!}
+                                <span class="nav-label">Dashboard</span>
+                            </a>
+                        @endif
                         <a href="{{ route('admin.fonda-challenge') }}"
                            title="Participantes"
                            @class(['active' => request()->routeIs('admin.fonda-challenge') || request()->routeIs('admin.fonda-challenge.edit') || request()->routeIs('admin.fonda-challenge.status') || request()->routeIs('admin.fonda-challenge.approve') || request()->routeIs('admin.fonda-challenge.reject')])

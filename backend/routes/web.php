@@ -99,6 +99,7 @@ Route::middleware(['auth', 'role:admin,supervisor,manager'])->group(function () 
 
 // ─── Module: saba ─────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'module:saba'])->group(function () {
+    Route::get('/adminrepus1car/saba/dashboard', [SabaController::class, 'dashboard'])->name('admin.saba.dashboard');
     Route::get('/adminrepus1car/saba', [SabaController::class, 'index'])->name('admin.saba');
     Route::get('/adminrepus1car/saba/configuracion', [SabaController::class, 'settings'])->name('admin.saba.settings');
     Route::post('/adminrepus1car/saba/configuracion', [SabaController::class, 'updateSettings'])->name('admin.saba.settings.update');
@@ -117,6 +118,7 @@ Route::middleware(['auth', 'module:saba'])->group(function () {
 
 // ─── Module: nivea ────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'module:nivea'])->group(function () {
+    Route::get('/adminrepus1car/nivea/dashboard', [NiveaController::class, 'dashboard'])->name('admin.nivea.dashboard');
     Route::get('/adminrepus1car/nivea', [NiveaController::class, 'index'])->name('admin.nivea');
     Route::get('/adminrepus1car/nivea/configuracion', [NiveaController::class, 'settings'])->name('admin.nivea.settings');
     Route::post('/adminrepus1car/nivea/configuracion', [NiveaController::class, 'updateSettings'])->name('admin.nivea.settings.update');
@@ -146,6 +148,7 @@ Route::middleware(['auth', 'module:malta'])->group(function () {
 
 // ─── Module: fanlyc ───────────────────────────────────────────────────────────
 Route::middleware(['auth', 'module:fanlyc'])->group(function () {
+    Route::get('/adminrepus1car/fanlyc/dashboard', [AdminFanlycController::class, 'dashboard'])->name('admin.fanlyc.dashboard');
     Route::get('/adminrepus1car/fanlyc', [AdminFanlycController::class, 'index'])->name('admin.fanlyc');
     Route::post('/adminrepus1car/fanlyc/registrar-manual', [AdminFanlycController::class, 'manualRegister'])->name('admin.fanlyc.manual-register');
     Route::get('/adminrepus1car/fanlyc/{invoice}', [AdminFanlycController::class, 'show'])->name('admin.fanlyc.show');
@@ -162,6 +165,7 @@ Route::middleware(['auth', 'module:fanlyc'])->group(function () {
 
 // ─── Module: fonda ────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'module:fonda'])->group(function () {
+    Route::get('/adminrepus1car/fonda-challenge/dashboard', [AdminFondaChallengeController::class, 'dashboard'])->name('admin.fonda-challenge.dashboard');
     Route::get('/adminrepus1car/fonda-challenge', [AdminFondaChallengeController::class, 'index'])->name('admin.fonda-challenge');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/status', [AdminFondaChallengeController::class, 'updateStatus'])->name('admin.fonda-challenge.status');
     Route::post('/adminrepus1car/fonda-challenge/{registration}/approve', [AdminFondaChallengeController::class, 'approve'])->name('admin.fonda-challenge.approve');

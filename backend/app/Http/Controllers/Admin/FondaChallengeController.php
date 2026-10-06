@@ -178,6 +178,59 @@ class FondaChallengeController extends Controller
         ]);
     }
 
+    public function dashboard(Request $request): View
+    {
+        abort_unless($request->user()->canDoPromo('fonda', 'view_dashboard'), 403);
+
+        $campaign = $this->campaign();
+        $period   = (int) $request->input('period', 30);
+        $since    = $period > 0 ? now()->subDays($period) : null;
+
+        $base = FondaRegistration::query()->where('campaign_id', $campaign->id);
+        if ($since) {
+            $base->where('created_at', '>=', $since);
+        }
+
+        $counts = (clone $base)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $total    = $counts->sum();
+        $approved = (int) ($counts['approved'] ?? 0) + (int) ($counts['checked_in'] ?? 0) + (int) ($counts['ready_for_judging'] ?? 0);
+        $pending  = (int) ($counts['pending_review'] ?? 0) + (int) ($counts['needs_correction'] ?? 0);
+        $rejected = (int) ($counts['rejected'] ?? 0) + (int) ($counts['disqualified'] ?? 0);
+        $checkedIn = (int) ($counts['checked_in'] ?? 0);
+
+        $daily = (clone $base)
+            ->selectRaw('DATE(created_at) as day, count(*) as total')
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        $dailyCheckins = FondaRegistration::query()
+            ->where('campaign_id', $campaign->id)
+            ->whereNotNull('checked_in_at')
+            ->when($since, fn($q) => $q->where('checked_in_at', '>=', $since))
+            ->selectRaw('DATE(checked_in_at) as day, count(*) as total')
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        return view('admin.fonda-dashboard', [
+            'campaign'      => $campaign,
+            'period'        => $period,
+            'total'         => $total,
+            'approved'      => $approved,
+            'pending'       => $pending,
+            'rejected'      => $rejected,
+            'checkedIn'     => $checkedIn,
+            'counts'        => $counts,
+            'daily'         => $daily,
+            'dailyCheckins' => $dailyCheckins,
+        ]);
+    }
+
     private function campaign(): Campaign
     {
         return Campaign::query()->where('slug', 'fonda-challenge')->firstOrFail();
