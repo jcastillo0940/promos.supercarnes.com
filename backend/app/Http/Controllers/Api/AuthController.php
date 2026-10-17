@@ -39,6 +39,14 @@ class AuthController extends Controller
             ]);
         }
 
+        // Si la cédula ya tiene una cuenta con contraseña establecida, no permitir
+        // re-registro con un email distinto — evita toma de cuenta ajena.
+        if ($existingUser && $existingUser->password && $data['email'] !== $existingUser->email) {
+            throw ValidationException::withMessages([
+                'document_number' => 'Esta cedula ya tiene una cuenta registrada. Inicia sesion.',
+            ]);
+        }
+
         $user = $existingUser ?: new User();
         $user->forceFill([
             'name' => $data['full_name'],
