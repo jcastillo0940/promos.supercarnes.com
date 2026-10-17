@@ -362,15 +362,16 @@ export function InvoiceRegistrationView({
                   Código final del CUFE
                 </label>
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center rounded-xl border border-outline-variant overflow-hidden bg-surface-container-lowest focus-within:border-primary-container transition-colors">
-                    <span className="px-3 py-3 text-xs text-on-surface-variant/40 font-mono bg-surface-container border-r border-outline-variant select-none whitespace-nowrap shrink-0">
-                      FE…-249262-
+                  <div className="flex flex-col rounded-xl border border-outline-variant overflow-hidden bg-surface-container-lowest focus-within:border-primary-container transition-colors">
+                    <span className="px-3 pt-2.5 pb-0 text-[10px] text-on-surface-variant/50 font-mono bg-surface-container border-b border-outline-variant/50 select-none whitespace-nowrap leading-snug">
+                      FE01200000032812-2-249262-
                     </span>
                     <input
                       type="text"
                       inputMode="numeric"
+                      maxLength={40}
                       className="flex-1 min-w-0 bg-transparent px-3 py-3 text-on-surface text-sm font-mono focus:outline-none"
-                      placeholder="6300032026051830…"
+                      placeholder="63000XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
                       value={shortCode}
                       onChange={(e) => handleShortCodeChange(e.target.value)}
                       onPaste={(e) => {

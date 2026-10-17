@@ -6,6 +6,10 @@
     <h2>Ingresar</h2>
     <p class="sub">Acceso exclusivo para administradores</p>
 
+    @if(session('status'))
+        <p style="color:#16a34a; font-size:.88rem; margin-bottom:1rem;">{{ session('status') }}</p>
+    @endif
+
     <form method="POST" action="{{ route('admin.login.post') }}">
         @csrf
         <div class="field">

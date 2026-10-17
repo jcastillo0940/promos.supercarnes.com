@@ -91,8 +91,8 @@
                         <input id="email" name="email" type="email" value="{{ old('email') }}" required>
                     </div>
                     <div class="field">
-                        <label for="password">Contraseña</label>
-                        <input id="password" name="password" type="text" minlength="8" required>
+                        <label for="password">Contraseña <span style="font-weight:400; color:var(--bo-muted);">(opcional — si la dejas vacía se envía un correo de invitación)</span></label>
+                        <input id="password" name="password" type="password" minlength="8" autocomplete="new-password">
                     </div>
                 </div>
 
@@ -129,7 +129,7 @@
                             <strong>{{ $op->full_name ?? $op->name }}</strong>
                             <span style="margin-left:.5rem;color:var(--bo-muted);font-size:.88rem;">{{ $op->email }}</span>
                         </div>
-                        <div style="display:flex;align-items:center;gap:.5rem;">
+                        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
                             @if($op->is_active)
                                 <span class="badge badge-green">Activo</span>
                             @else
@@ -140,6 +140,13 @@
                                 @csrf
                                 <button class="btn btn-gray" type="submit" style="padding:.4rem .75rem;font-size:.8rem;">
                                     {{ $op->is_active ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.operators.resend-invite', $op) }}"
+                                data-confirm="¿Reenviar enlace de acceso a {{ $op->email }}?">
+                                @csrf
+                                <button class="btn btn-gray" type="submit" style="padding:.4rem .75rem;font-size:.8rem;">
+                                    Reenviar enlace
                                 </button>
                             </form>
                         </div>

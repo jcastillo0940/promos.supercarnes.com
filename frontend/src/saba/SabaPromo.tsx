@@ -319,7 +319,19 @@ function InvoiceStep({ onValidated, onStatus }: { onValidated: (raw: string, sum
         >
           <label className="saba-field">
             <span>Últimos números del CUFE</span>
-            <input value={cufeTail} onChange={(event) => setCufeTail(event.target.value.replace(/\D/g, '').slice(0, 60))} inputMode="numeric" placeholder="Solo números, hasta 60" />
+            <div style={{display:'flex',flexDirection:'column',borderRadius:'12px',border:'1px solid rgba(255,127,191,0.32)',background:'rgba(10,2,16,0.6)',overflow:'hidden'}}>
+              <span style={{padding:'5px 14px 4px',fontSize:'10px',color:'rgba(255,255,255,0.35)',fontFamily:'monospace',borderBottom:'1px solid rgba(255,127,191,0.12)',letterSpacing:'0.01em',userSelect:'none'}}>
+                FE01200000032812-2-249262-
+              </span>
+              <input
+                value={cufeTail}
+                onChange={(event) => setCufeTail(event.target.value.replace(/\D/g, '').slice(0, 40))}
+                inputMode="numeric"
+                maxLength={40}
+                placeholder="63000XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                style={{border:'none',background:'transparent',borderRadius:0,boxShadow:'none',minHeight:'auto',padding:'10px 14px',fontFamily:'monospace'}}
+              />
+            </div>
           </label>
           <button type="submit" className="saba-btn saba-btn-primary saba-btn-block" disabled={loading || cufeTail.length < 10}>
             {loading ? 'Validando factura…' : 'Validar factura'}

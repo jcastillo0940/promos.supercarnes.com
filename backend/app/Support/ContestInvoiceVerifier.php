@@ -120,12 +120,51 @@ class ContestInvoiceVerifier
             $storeNumber = (int) $storeMatches[1];
         }
 
+        // Algunas cajas emiten la dirección sin el prefijo "SUPER CARNES NO. X",
+        // ej: "CALLE CUARTA, MERCADO PUBLICO, SANTIAGO, VERAGUAS" (sucursal 4).
+        if (! $storeNumber && $address) {
+            $storeNumber = $this->storeNumberFromAddress($address);
+        }
+
         return [
             'name' => $name !== '' ? $name : $raw,
             'address' => $address,
             'phone' => $phone,
             'store_number' => $storeNumber,
         ];
+    }
+
+    /**
+     * Fragmentos de dirección distintivos de cada sucursal, tomados de las
+     * direcciones que DGI ha devuelto históricamente.
+     */
+    private const ADDRESS_FRAGMENTS = [
+        '/MERCADO\s+P[UÚ]BLICO/iu' => 4,
+        '/CANTO\s+DEL\s+LLANO/iu' => 6,
+        '/PLAZA\s+PALERMO/iu' => 3,
+        '/CALLE\s+10A/iu' => 5,
+        '/CIABEL/iu' => 10,
+        '/PASEO\s+DE\s+GRACI/iu' => 9,
+        '/ALEJANDRO\s+TAPIA/iu' => 1,
+        '/VIA\s+SONADORA/iu' => 8,
+        '/PLAZA\s+PAN\s+CANAL/iu' => 12,
+        '/BELISARIO\s+PORRAS/iu' => 7,
+        '/AVE\.?\s+CENTRAL,\s*SANTIAGO/iu' => 2,
+        '/V[IÍ]A\s+LA\s+MITRA/iu' => 11,
+        '/COSTA\s+VERDE/iu' => 13,
+        '/INTERAMERICANA\s+ATALAYA/iu' => 14,
+        '/EL\s+TRAPICHITO/iu' => 15,
+    ];
+
+    private function storeNumberFromAddress(string $address): ?int
+    {
+        foreach (self::ADDRESS_FRAGMENTS as $pattern => $storeNumber) {
+            if (preg_match($pattern, $address)) {
+                return $storeNumber;
+            }
+        }
+
+        return null;
     }
 
     public function verify(?User $user, array $payload, ?array $resolved = null): array

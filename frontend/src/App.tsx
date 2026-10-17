@@ -1044,20 +1044,26 @@ function PromoLanding({
               ) : entryMode === 'manual' ? (
                 <div className="promo-manual">
                   <label>
-                    Ultimos 60 numeros del CUFE
-                    <input
-                      value={invoiceForm.cufe_tail}
-                      onChange={(e) => {
-                        setManualTouched(true)
-                        setInvoiceForm((current) => ({
-                          ...current,
-                          cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60),
-                        }))
-                      }}
-                      maxLength={60}
-                      inputMode="numeric"
-                      placeholder="Escribe solo los ultimos 60 numeros"
-                    />
+                    Ultimos numeros del CUFE
+                    <div style={{display:'flex',flexDirection:'column',borderRadius:'12px',border:'1px solid rgba(186,255,53,.3)',background:'rgba(0,12,8,.7)',overflow:'hidden'}}>
+                      <span style={{padding:'5px 14px 4px',fontSize:'10px',color:'rgba(255,255,255,0.35)',fontFamily:'monospace',borderBottom:'1px solid rgba(186,255,53,.15)',letterSpacing:'0.01em',userSelect:'none'}}>
+                        FE01200000032812-2-249262-
+                      </span>
+                      <input
+                        value={invoiceForm.cufe_tail}
+                        onChange={(e) => {
+                          setManualTouched(true)
+                          setInvoiceForm((current) => ({
+                            ...current,
+                            cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 40),
+                          }))
+                        }}
+                        maxLength={40}
+                        inputMode="numeric"
+                        placeholder="63000XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                        style={{border:'none',background:'transparent',borderRadius:0,boxShadow:'none',minHeight:'auto',padding:'10px 14px',fontFamily:'monospace'}}
+                      />
+                    </div>
                   </label>
                   <button className="promo-primary" type="button" disabled={invoiceForm.cufe_tail.length < 10} onClick={() => void validateManualCufe()}>
                     {resolvingInvoice ? 'Validando...' : 'Validar CUFE'}
@@ -1299,8 +1305,13 @@ function PromoLanding({
                   <input type="hidden" value={invoiceForm.cufe_tail} readOnly />
                 ) : (
                   <label className="promo-form-wide">
-                    Ultimos 60 numeros del CUFE
-                    <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 60) }))} maxLength={60} inputMode="numeric" placeholder="Escribe solo los ultimos 60 numeros" required />
+                    Ultimos numeros del CUFE
+                    <div style={{display:'flex',flexDirection:'column',borderRadius:'12px',border:'1px solid rgba(var(--promo-input-border, 100 100 120),.32)',background:'rgba(var(--promo-input-bg, 10 10 20),.6)',overflow:'hidden'}}>
+                      <span style={{padding:'5px 14px 4px',fontSize:'10px',color:'rgba(255,255,255,0.35)',fontFamily:'monospace',borderBottom:'1px solid rgba(255,255,255,.08)',letterSpacing:'0.01em',userSelect:'none'}}>
+                        FE01200000032812-2-249262-
+                      </span>
+                      <input value={invoiceForm.cufe_tail} onChange={(e) => setInvoiceForm((current) => ({ ...current, cufe_tail: e.target.value.replace(/\D/g, '').slice(0, 40) }))} maxLength={40} inputMode="numeric" placeholder="63000XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" required style={{border:'none',background:'transparent',borderRadius:0,boxShadow:'none',minHeight:'auto',padding:'10px 14px',fontFamily:'monospace'}} />
+                    </div>
                   </label>
                 )}
               </div>

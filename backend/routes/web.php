@@ -65,6 +65,8 @@ Route::get('/{file}', function (string $file) use ($frontendDist, $serveFrontend
 Route::get('/admin/login', [AdminLoginController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AdminLoginController::class, 'login'])->name('admin.login.post');
 Route::post('/admin/logout', [AdminLoginController::class, 'logout'])->name('admin.logout');
+Route::get('/admin/password/{token}', [AdminLoginController::class, 'showPasswordReset'])->name('admin.password.reset');
+Route::post('/admin/password/reset', [AdminLoginController::class, 'resetPassword'])->name('admin.password.reset.store');
 
 // ─── Admin · super-admin only ─────────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin'])->group(function () {
@@ -87,6 +89,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/adminrepus1car/operadores', [OperatorController::class, 'store'])->name('admin.operators.store');
     Route::post('/adminrepus1car/operadores/{operator}/modulos', [OperatorController::class, 'updateModules'])->name('admin.operators.modules');
     Route::post('/adminrepus1car/operadores/{operator}/estado', [OperatorController::class, 'toggleStatus'])->name('admin.operators.toggle-status');
+    Route::post('/adminrepus1car/operadores/{operator}/reenviar-invitacion', [OperatorController::class, 'resendInvite'])->name('admin.operators.resend-invite');
 });
 
 // ─── Prize delivery (admin + supervisor + manager) ────────────────────────────

@@ -197,10 +197,10 @@ class User extends Authenticatable
             return (bool) ($record->permissions[$permission] ?? false);
         }
 
-        // Fallback: if the operator has module-level access, allow everything.
-        $moduleKey = str_starts_with($promoKey, 'malta-') ? 'malta' : $promoKey;
-
-        return $this->canAccessModule($moduleKey);
+        // Deny when no explicit permission row exists. savePromoPermissions() always
+        // writes a row (deny-all when none submitted), so absence means a legacy
+        // operator pre-dating this system — deny until explicitly migrated.
+        return false;
     }
 
     public function firstModuleRoute(): string

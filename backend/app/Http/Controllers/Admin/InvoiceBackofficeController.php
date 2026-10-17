@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\InvoiceParticipationReceipt;
 use App\Models\Branch;
 use App\Models\Campaign;
 use App\Models\FraudFlag;
@@ -20,6 +21,7 @@ use App\Support\ProductRankingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -723,6 +725,14 @@ class InvoiceBackofficeController extends Controller
 
         $fraudDetection->inspectApprovedInvoice($participant, $invoice, $request);
 
+        if ($participant->email) {
+            try {
+                Mail::to($participant->email)->send(new InvoiceParticipationReceipt($invoice));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         return back()->with('status', "Factura manual registrada: {$eligibleUnits} unidades Malta Vigor acreditadas.");
     }
 
@@ -872,7 +882,15 @@ class InvoiceBackofficeController extends Controller
 
     public function selectWinner(Request $request, RegisteredInvoice $invoice): RedirectResponse
     {
-        $invoice->loadMissing('user');
+        $invoice->loadMissing(['user', 'campaign']);
+
+        // Product-ranking (Malta) winners are managed through a dedicated flow.
+        // Prevent facturas operators from injecting Malta invoices into the general winner pool.
+        abort_if(
+            $invoice->campaign?->participation_mode === 'product_ranking',
+            403,
+            'Las facturas de campañas Malta no pueden usarse en el módulo de ganadores generales.'
+        );
 
         abort_unless($invoice->invoice_number && $invoice->user?->cedula, 422, 'La factura no cumple los criterios mínimos.');
 
@@ -916,8 +934,17 @@ class InvoiceBackofficeController extends Controller
         return back()->with('status', 'Ganador agregado correctamente.');
     }
 
-    public function removeWinner(PromoWinner $winner): RedirectResponse
+    public function removeWinner(Request $request, PromoWinner $winner): RedirectResponse
     {
+        // Winners belonging to a product_ranking campaign are managed exclusively
+        // via the Malta module. The facturas module may only remove general winners
+        // (those with no campaign_id, i.e. phase_id-based invoice contest).
+        abort_if(
+            $winner->campaign_id !== null,
+            403,
+            'Este ganador pertenece a una campaña Malta y debe gestionarse desde el módulo correspondiente.'
+        );
+
         $winner->delete();
 
         return back()->with('status', 'Ganador removido correctamente.');
