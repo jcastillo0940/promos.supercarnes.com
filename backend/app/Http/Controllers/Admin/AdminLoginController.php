@@ -107,6 +107,6 @@ class AdminLoginController extends Controller
                 ->with('status', 'Contraseña creada correctamente. Ya puedes iniciar sesión.');
         }
 
-        return back()->withErrors(['email' => __($status)]);
+        return back()->withErrors(['email' => 'El enlace es inválido o ha expirado. Solicita una nueva invitación al administrador.']);
     }
 }

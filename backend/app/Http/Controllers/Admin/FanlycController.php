@@ -123,6 +123,7 @@ class FanlycController extends Controller
 
     public function voidCoupon(Request $request, FanlycCoupon $coupon): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fanlyc', 'view_invoices'), 403);
         $validated = $request->validate([
             'void_reason' => ['required', 'string', 'max:2000'],
         ]);

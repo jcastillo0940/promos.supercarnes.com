@@ -95,7 +95,7 @@ class FondaChallengeController extends Controller
 
     public function updateStatus(Request $request, FondaRegistration $registration): RedirectResponse
     {
-        abort_unless($request->user()->canDoPromo('fonda', 'view_participants'), 403);
+        abort_unless($request->user()->canDoPromo('fonda', 'modify_config'), 403);
         $validated = $request->validate([
             'status' => ['required', Rule::in(['pending_review', 'needs_correction', 'approved', 'rejected', 'checked_in', 'ready_for_judging', 'disqualified'])],
             'reason' => ['nullable', 'string', 'max:2000'],
@@ -148,6 +148,7 @@ class FondaChallengeController extends Controller
 
     public function checkIn(Request $request, FondaRegistration $registration): RedirectResponse
     {
+        abort_unless($request->user()->canDoPromo('fonda', 'deliver_prizes'), 403);
         abort_unless($registration->status === 'approved' || $registration->status === 'ready_for_judging', 422, 'La fonda debe estar aprobada.');
 
         $registration->forceFill([
