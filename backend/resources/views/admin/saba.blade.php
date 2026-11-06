@@ -152,6 +152,7 @@
                                     <td data-label="Estado">
                                         <span class="badge badge-{{ match($entry->status) { 'approved' => 'green', 'pending_review' => 'yellow', default => 'red' } }}">{{ $entry->statusLabel() }}</span>
                                         @if($entry->source === 'whatsapp')<br><small style="color:#94a3b8;">WhatsApp</small>@endif
+                                        @if($entry->source === 'manual_invoice')<br><small style="color:#94a3b8;">Sin CUFE</small>@endif
                                     </td>
                                     <td data-label="Ganadora">
                                         @if($entry->winner_position)
@@ -203,9 +204,51 @@
                     <input id="manual_birthdate" name="birthdate" type="date" value="{{ old('birthdate') }}" required>
                 </div>
                 <div class="field">
+                    <label for="manual_invoice_type">Tipo de factura</label>
+                    <select id="manual_invoice_type" name="invoice_type">
+                        <option value="cufe" @selected(old('invoice_type', 'cufe') === 'cufe')>Con CUFE o QR</option>
+                        <option value="series" @selected(old('invoice_type') === 'series')>Sin CUFE (serie de factura)</option>
+                    </select>
+                </div>
+                <div class="field" data-invoice-type="cufe">
                     <label for="manual_qr">CUFE o contenido del QR</label>
                     <input id="manual_qr" name="qr_raw_text" type="text" value="{{ old('qr_raw_text') }}" required>
                 </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_series">Serie de factura</label>
+                    <input id="manual_series" name="invoice_series" type="text" value="{{ old('invoice_series') }}" placeholder="BCHT-1111" maxlength="60" required>
+                </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_invoice_date">Fecha de la factura</label>
+                    <input id="manual_invoice_date" name="invoice_date" type="date" value="{{ old('invoice_date') }}" required>
+                </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_branch">Sucursal</label>
+                    <select id="manual_branch" name="branch_id" required>
+                        <option value="">Selecciona una sucursal</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" @selected((string) old('branch_id') === (string) $branch->id)>{{ $branch->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_amount">Monto de la factura</label>
+                    <input id="manual_amount" name="purchase_amount" type="number" step="0.01" min="0.01" value="{{ old('purchase_amount') }}" required>
+                </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_product">Producto</label>
+                    <select id="manual_product" name="product_rule_id" required>
+                        <option value="">Selecciona un producto</option>
+                        @foreach($products as $product)
+                            <option value="{{ $product->id }}" @selected((string) old('product_rule_id') === (string) $product->id)>{{ $product->product_name }}{{ $product->presentation ? ' · '.$product->presentation : '' }} ({{ $product->barcode }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field" data-invoice-type="series">
+                    <label for="manual_quantity">Unidades</label>
+                    <input id="manual_quantity" name="product_quantity" type="number" step="1" min="1" value="{{ old('product_quantity', 1) }}" required>
+                </div>
+                <p data-invoice-type="series" style="grid-column:1 / -1;margin:0;color:#64748b;">Las facturas sin CUFE no se validan con la DGI: quedan En revisión hasta que alguien las apruebe contra la factura física.</p>
                 <div class="field" style="grid-column:1 / -1;">
                     <label for="manual_story">¿Por qué merece ganar?</label>
                     <textarea id="manual_story" name="story" rows="4" required>{{ old('story') }}</textarea>
@@ -223,4 +266,16 @@
         </div>
     </div>
     </div>
+    <script>
+        (() => {
+            const type = document.getElementById('manual_invoice_type');
+            const sync = () => document.querySelectorAll('[data-invoice-type]').forEach((block) => {
+                const active = block.dataset.invoiceType === type.value;
+                block.style.display = active ? '' : 'none';
+                block.querySelectorAll('input, select').forEach((field) => { field.disabled = !active; });
+            });
+            type.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
 @endsection

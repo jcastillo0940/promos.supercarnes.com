@@ -32,6 +32,7 @@ class NiveaPromoService
 {
     public const SLUG = 'nivea';
     public const TIMEZONE = 'America/Panama';
+    public const SOURCE_MANUAL_INVOICE = 'manual_invoice';
 
     public function __construct(
         private readonly CufeParser $cufeParser,
@@ -229,8 +230,101 @@ class NiveaPromoService
             $notes[] = 'Registrada manualmente desde el backoffice (WhatsApp) por '.$admin->email.'.';
         }
 
+        return $this->persistEntry($campaign, $participant, [
+            'cufe' => strtoupper((string) ($verification['canonical_cufe'] ?? $inspection['cufe'])),
+            'qr_raw_text' => $data['qr_raw_text'] ?? null,
+            'invoice_number' => $inspection['resolved']['invoice_number'] ?? null,
+            'issuer_ruc' => $inspection['resolved']['issuer_ruc'] ?? null,
+            'issuer_name' => $inspection['resolved']['issuer_name'] ?? null,
+            'branch_id' => $inspection['branch_id'],
+            'issued_at' => $inspection['resolved']['issued_at'],
+            'purchase_amount' => $inspection['resolved']['purchase_amount'] ?? null,
+            'eligible_units' => $inspection['product']['eligible_units'],
+            'product_check_status' => $inspection['product']['status'],
+            'matched_products' => collect($inspection['product']['matched_products'])
+                ->map(fn ($item) => collect($item)->except('source_payload')->all())
+                ->values()
+                ->all(),
+            'dgi_response_payload' => $inspection['resolved']['payload'] ?? null,
+        ], $status, $notes, $source, $request, $admin);
+    }
+
+    /**
+     * Registra desde el backoffice una factura sin CUFE (serie impresa, ej. BCHT-1111).
+     * Sin DGI no hay nada que la valide, asi que siempre queda en revision.
+     */
+    public function registerManualInvoice(array $data, Request $request, User $admin): NiveaEntry
+    {
+        $campaign = $this->campaign();
+        $participant = $this->validateParticipant($campaign, $data, self::SOURCE_MANUAL_INVOICE);
+
+        if ($this->activeEntryFor($campaign, $participant['cedula'])) {
+            throw ValidationException::withMessages([
+                'cedula' => 'Esta cédula ya está participando. La participación es una sola por persona.',
+            ]);
+        }
+
+        $series = $this->normalizeInvoiceSeries((string) ($data['invoice_series'] ?? ''));
+        if (! preg_match('/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/', $series) || ! preg_match('/[0-9]/', $series)) {
+            throw ValidationException::withMessages([
+                'invoice_series' => 'Escribe la serie de la factura, por ejemplo BCHT-1111.',
+            ]);
+        }
+
+        // cufe es obligatorio y unico: esta clave hace que la misma serie no entre dos veces.
+        $invoiceKey = 'SINCUFE-'.preg_replace('/-0+(?=[0-9])/', '-', $series);
+        if (NiveaEntry::query()->where('cufe', $invoiceKey)->exists()) {
+            throw ValidationException::withMessages([
+                'invoice_series' => 'Esta factura ya fue registrada en Empollerando a Mamá.',
+            ]);
+        }
+
+        $issuedAt = CarbonImmutable::parse((string) $data['invoice_date'], self::TIMEZONE)->startOfDay();
+        $this->assertIssuedWithinPromo($campaign, $issuedAt);
+
+        $rule = $campaign->productRules()->where('is_active', true)->find($data['product_rule_id'] ?? null);
+        if (! $rule) {
+            throw ValidationException::withMessages([
+                'product_rule_id' => 'Selecciona un producto participante de la promoción.',
+            ]);
+        }
+
+        $quantity = (int) $data['product_quantity'];
+
+        return $this->persistEntry($campaign, $participant, [
+            'cufe' => $invoiceKey,
+            'invoice_number' => $series,
+            'branch_id' => (int) $data['branch_id'],
+            'issued_at' => $issuedAt->utc(),
+            'purchase_amount' => $data['purchase_amount'],
+            'eligible_units' => $quantity,
+            'product_check_status' => 'manual',
+            'matched_products' => [[
+                'barcode' => $rule->barcode,
+                'description' => $rule->product_name,
+                'quantity' => $quantity,
+                'unit_price' => null,
+                'is_eligible' => true,
+                'presentation' => $rule->presentation,
+            ]],
+        ], 'pending_review', [
+            'Factura sin CUFE registrada manualmente por '.$admin->email.'. No fue validada con la DGI: verificar contra la factura física.',
+        ], self::SOURCE_MANUAL_INVOICE, $request, $admin);
+    }
+
+    private function normalizeInvoiceSeries(string $value): string
+    {
+        return strtoupper(preg_replace('/\s*-\s*|\s+/', '-', trim($value)) ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $invoice  columnas de la factura
+     * @param  array<int, string>  $notes
+     */
+    private function persistEntry(Campaign $campaign, array $participant, array $invoice, string $status, array $notes, string $source, ?Request $request, ?User $admin): NiveaEntry
+    {
         try {
-            $entry = DB::transaction(function () use ($campaign, $participant, $inspection, $verification, $status, $notes, $data, $request, $source, $admin): NiveaEntry {
+            $entry = DB::transaction(function () use ($campaign, $participant, $invoice, $status, $notes, $request, $source, $admin): NiveaEntry {
                 $entry = NiveaEntry::query()->create([
                     'campaign_id' => $campaign->id,
                     'cedula' => $participant['cedula'],
@@ -244,21 +338,7 @@ class NiveaPromoService
                     'declared_eligibility_at' => now(),
                     'terms_version' => $campaign->terms_version,
                     'accepted_terms_at' => now(),
-                    'cufe' => strtoupper((string) ($verification['canonical_cufe'] ?? $inspection['cufe'])),
-                    'qr_raw_text' => $data['qr_raw_text'] ?? null,
-                    'invoice_number' => $inspection['resolved']['invoice_number'] ?? null,
-                    'issuer_ruc' => $inspection['resolved']['issuer_ruc'] ?? null,
-                    'issuer_name' => $inspection['resolved']['issuer_name'] ?? null,
-                    'branch_id' => $inspection['branch_id'],
-                    'issued_at' => $inspection['resolved']['issued_at'],
-                    'purchase_amount' => $inspection['resolved']['purchase_amount'] ?? null,
-                    'eligible_units' => $inspection['product']['eligible_units'],
-                    'product_check_status' => $inspection['product']['status'],
-                    'matched_products' => collect($inspection['product']['matched_products'])
-                        ->map(fn ($item) => collect($item)->except('source_payload')->all())
-                        ->values()
-                        ->all(),
-                    'dgi_response_payload' => $inspection['resolved']['payload'] ?? null,
+                    ...$invoice,
                     'status' => $status,
                     'validation_notes' => $notes === [] ? null : implode(' ', $notes),
                     'source' => $source,

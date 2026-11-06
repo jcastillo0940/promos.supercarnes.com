@@ -179,6 +179,88 @@ class SabaPromoTest extends TestCase
         $this->assertSame(1, $entry->fresh()->winner_position);
     }
 
+    public function test_admin_can_register_an_invoice_without_cufe(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.saba.manual-register'), $this->manualInvoice())->assertRedirect();
+
+        $entry = SabaEntry::query()->sole();
+        $this->assertSame('BCHT-1111', $entry->invoice_number);
+        $this->assertSame('SINCUFE-BCHT-1111', $entry->cufe);
+        $this->assertSame('pending_review', $entry->status);
+        $this->assertSame('manual_invoice', $entry->source);
+        $this->assertSame($this->branch->id, $entry->branch_id);
+        $this->assertSame('25.40', $entry->purchase_amount);
+        $this->assertSame(2, $entry->eligible_units);
+        $this->assertSame('7501019006210', $entry->matched_products[0]['barcode']);
+        $this->assertSame('2026-10-02', $entry->issued_at->timezone('America/Panama')->toDateString());
+
+        $this->actingAs($admin)->get(route('admin.saba.show', $entry))->assertOk()->assertSee('BCHT-1111')->assertSee('Ingresado manualmente');
+        $this->actingAs($admin)->get(route('admin.saba'))->assertOk()->assertSee('Sin CUFE');
+    }
+
+    public function test_invoice_series_cannot_be_registered_twice(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->post(route('admin.saba.manual-register'), $this->manualInvoice())->assertRedirect();
+
+        $this->actingAs($admin)
+            ->post(route('admin.saba.manual-register'), $this->manualInvoice(['cedula' => '8-999-1111', 'invoice_series' => 'bcht - 01111']))
+            ->assertSessionHasErrors('invoice_series');
+
+        $this->assertSame(1, SabaEntry::query()->count());
+    }
+
+    public function test_invoice_without_cufe_must_be_within_the_promo_and_use_a_promo_product(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $otherCampaign = Campaign::query()->where('slug', 'nivea')->firstOrFail();
+        $foreignRule = $otherCampaign->productRules()->create(['barcode' => '999', 'product_name' => 'Otro', 'is_active' => true]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.saba.manual-register'), $this->manualInvoice(['invoice_date' => '2026-09-01']))
+            ->assertSessionHasErrors('qr_raw_text');
+        $this->actingAs($admin)
+            ->post(route('admin.saba.manual-register'), $this->manualInvoice(['product_rule_id' => $foreignRule->id]))
+            ->assertSessionHasErrors('product_rule_id');
+        $this->actingAs($admin)
+            ->post(route('admin.saba.manual-register'), $this->manualInvoice(['invoice_series' => 'BCHT']))
+            ->assertSessionHasErrors('invoice_series');
+
+        $this->assertSame(0, SabaEntry::query()->count());
+    }
+
+    public function test_manual_register_with_cufe_still_works(): void
+    {
+        $this->fakeInvoice('FE-TEST-SABA-1-0000000000', '2026-10-02 10:00:00', [['codigo' => '7501019006210', 'cantidad' => 1]]);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('admin.saba.manual-register'), [
+            ...$this->participant('FE-TEST-SABA-1-0000000000'),
+            'confirmed_eligibility' => '1',
+        ])->assertRedirect();
+
+        $entry = SabaEntry::query()->sole();
+        $this->assertSame('whatsapp', $entry->source);
+        $this->assertSame('approved', $entry->status);
+    }
+
+    private function manualInvoice(array $overrides = []): array
+    {
+        return array_merge($this->participant(''), [
+            'qr_raw_text' => null,
+            'invoice_type' => 'series',
+            'invoice_series' => 'bcht-1111',
+            'invoice_date' => '2026-10-02',
+            'branch_id' => $this->branch->id,
+            'purchase_amount' => '25.40',
+            'product_rule_id' => $this->campaign->productRules()->value('id'),
+            'product_quantity' => 2,
+            'confirmed_eligibility' => '1',
+        ], $overrides);
+    }
+
     private function participant(string $cufe, array $overrides = []): array
     {
         return array_merge([

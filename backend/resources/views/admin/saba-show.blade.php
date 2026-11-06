@@ -30,7 +30,7 @@
                         <span class="badge badge-green">Ganadora · puesto {{ $entry->winner_position }}@if(isset($cashPrizes[(string) $entry->winner_position])) · ${{ number_format($cashPrizes[(string) $entry->winner_position], 0) }}@endif</span>
                     @endif
                     · Registrada {{ $entry->created_at?->timezone('America/Panama')->format('d/m/Y H:i') }}
-                    · Origen: {{ $entry->source === 'whatsapp' ? 'WhatsApp (backoffice)' : 'Página web' }}
+                    · Origen: {{ ['whatsapp' => 'WhatsApp (backoffice)', 'manual_invoice' => 'Factura sin CUFE (backoffice)'][$entry->source] ?? 'Página web' }}
                 </p>
             </div>
         </div>
@@ -54,12 +54,16 @@
                     <tr><th>Fecha</th><td>{{ $entry->issued_at?->timezone('America/Panama')->format('d/m/Y H:i') ?? '—' }}</td></tr>
                     <tr><th>Monto</th><td>${{ number_format((float) $entry->purchase_amount, 2) }}</td></tr>
                     <tr><th>Productos</th><td>
-                        <span class="badge badge-{{ $entry->product_check_status === 'matched' ? 'green' : 'yellow' }}">{{ $entry->product_check_status === 'matched' ? 'Saba detectado' : 'Sin detalle — revisar' }}</span>
+                        <span class="badge badge-{{ $entry->product_check_status === 'matched' ? 'green' : 'yellow' }}">{{ ['matched' => 'Saba detectado', 'manual' => 'Ingresado manualmente'][$entry->product_check_status] ?? 'Sin detalle — revisar' }}</span>
                         @foreach($entry->matched_products ?? [] as $item)
                             <br><small>{{ rtrim(rtrim(number_format((float) ($item['quantity'] ?? 0), 3), '0'), '.') }} × {{ $item['description'] ?? $item['barcode'] ?? '' }} <span style="color:#94a3b8;">({{ $item['barcode'] ?? '' }})</span></small>
                         @endforeach
                     </td></tr>
-                    <tr><th>CUFE</th><td style="word-break:break-all;"><small>{{ $entry->cufe }}</small></td></tr>
+                    @if($entry->source === 'manual_invoice')
+                        <tr><th>Serie de factura</th><td>{{ $entry->invoice_number }} <small>Sin CUFE</small></td></tr>
+                    @else
+                        <tr><th>CUFE</th><td style="word-break:break-all;"><small>{{ $entry->cufe }}</small></td></tr>
+                    @endif
                     <tr><th>Emisor</th><td>{{ $entry->issuer_name }} <small>{{ $entry->issuer_ruc }}</small></td></tr>
                 </table>
             </div>

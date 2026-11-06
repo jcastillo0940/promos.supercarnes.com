@@ -49,6 +49,7 @@ class NiveaController extends Controller
             'winnerSlots' => (int) $this->nivea->rule($campaign, 'winner_slots', 10),
             'productCount' => $campaign->productRules()->where('is_active', true)->count(),
             'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'products' => $campaign->productRules()->where('is_active', true)->orderBy('product_name')->get(['id', 'barcode', 'presentation', 'product_name']),
             'isOpen' => $this->nivea->isOpen($campaign),
         ]);
     }
@@ -425,11 +426,20 @@ class NiveaController extends Controller
             'birthdate' => ['required', 'date'],
             'nominee_name' => ['required', 'string', 'max:150'],
             'story' => ['required', 'string', 'max:5000'],
-            'qr_raw_text' => ['required', 'string', 'max:2048'],
+            'invoice_type' => ['nullable', 'in:cufe,series'],
+            'qr_raw_text' => ['exclude_if:invoice_type,series', 'required', 'string', 'max:2048'],
+            'invoice_series' => ['exclude_unless:invoice_type,series', 'required', 'string', 'max:60'],
+            'invoice_date' => ['exclude_unless:invoice_type,series', 'required', 'date'],
+            'branch_id' => ['exclude_unless:invoice_type,series', 'required', 'integer', 'exists:branches,id'],
+            'purchase_amount' => ['exclude_unless:invoice_type,series', 'required', 'numeric', 'min:0.01', 'max:99999999.99'],
+            'product_rule_id' => ['exclude_unless:invoice_type,series', 'required', 'integer'],
+            'product_quantity' => ['exclude_unless:invoice_type,series', 'required', 'integer', 'min:1', 'max:9999'],
             'confirmed_eligibility' => ['accepted'],
         ]);
 
-        $entry = $this->nivea->register($validated, $request, 'whatsapp', $request->user());
+        $entry = ($validated['invoice_type'] ?? 'cufe') === 'series'
+            ? $this->nivea->registerManualInvoice($validated, $request, $request->user())
+            : $this->nivea->register($validated, $request, 'whatsapp', $request->user());
 
         return redirect()->route('admin.nivea.show', $entry)
             ->with('status', 'Participación registrada a nombre de '.$entry->full_name.' ('.$entry->statusLabel().').');
