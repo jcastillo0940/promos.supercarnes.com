@@ -178,6 +178,8 @@ class InvoiceBackofficeController extends Controller
             'campaigns.*.delivery_deadline' => ['nullable', 'date'],
             'campaigns.*.delivery_requirements' => ['nullable', 'string', 'max:500'],
             'campaigns.*.product_rules_text' => ['nullable', 'string'],
+            'campaigns.*.invoice_issued_from' => ['nullable', 'date'],
+            'campaigns.*.invoice_issued_to' => ['nullable', 'date'],
         ]);
 
         foreach ($payload['campaigns'] as $campaignData) {
@@ -234,7 +236,13 @@ class InvoiceBackofficeController extends Controller
                 'delivery_location' => $campaignData['delivery_location'] ?? null,
                 'delivery_deadline' => $campaignData['delivery_deadline'] ?? null,
                 'delivery_requirements' => $campaignData['delivery_requirements'] ?? null,
-            ])->save();
+            ]);
+
+            if (in_array($campaign->slug, ['saba', 'nivea'], true)) {
+                $this->applyInvoiceIssuedRange($request, $campaign, $campaignData);
+            }
+
+            $campaign->save();
 
             if ($mode === 'product_ranking') {
                 $this->syncProductRules($campaign, (string) ($campaignData['product_rules_text'] ?? ''));
@@ -248,6 +256,49 @@ class InvoiceBackofficeController extends Controller
         return redirect()
             ->route('admin.invoice-backoffice')
             ->with('status', 'Promociones actualizadas.');
+    }
+
+    /**
+     * Saba/NIVEA validan la fecha de emisión de la factura contra rules.invoice_issued_from/to,
+     * no contra starts_at/ends_at. Permite editarlas desde la pantalla de editar promoción.
+     */
+    private function applyInvoiceIssuedRange(Request $request, Campaign $campaign, array $campaignData): void
+    {
+        if (! array_key_exists('invoice_issued_from', $campaignData) && ! array_key_exists('invoice_issued_to', $campaignData)) {
+            return;
+        }
+
+        $rules = is_array($campaign->rules) ? $campaign->rules : [];
+        $before = [
+            'invoice_issued_from' => $rules['invoice_issued_from'] ?? null,
+            'invoice_issued_to' => $rules['invoice_issued_to'] ?? null,
+        ];
+
+        $from = filled($campaignData['invoice_issued_from'] ?? null)
+            ? Carbon::parse($campaignData['invoice_issued_from'])->toDateString()
+            : $before['invoice_issued_from'];
+        $to = filled($campaignData['invoice_issued_to'] ?? null)
+            ? Carbon::parse($campaignData['invoice_issued_to'])->toDateString()
+            : $before['invoice_issued_to'];
+
+        if ($from && $to && $to < $from) {
+            throw ValidationException::withMessages([
+                "campaigns.{$campaign->id}.invoice_issued_to" => 'La fecha "Facturas emitidas hasta" debe ser igual o posterior a "Facturas emitidas desde".',
+            ]);
+        }
+
+        $after = ['invoice_issued_from' => $from, 'invoice_issued_to' => $to];
+        if ($after === $before) {
+            return;
+        }
+
+        $campaign->rules = array_merge($rules, $after);
+
+        Audit::log("{$campaign->slug}.settings.updated", 'campaign', $campaign->id, $request->user(), $request, [
+            'source' => 'campaign_edit',
+            'before' => $before,
+            'after' => $after,
+        ]);
     }
 
     public function toggleCampaignStatus(Request $request, Campaign $campaign): RedirectResponse

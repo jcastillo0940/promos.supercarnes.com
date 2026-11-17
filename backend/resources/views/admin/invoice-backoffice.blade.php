@@ -582,6 +582,17 @@
                                         <label>Máximo facturas por día</label>
                                         <input type="number" min="1" name="campaigns[{{ $campaign->id }}][daily_max_invoices]" value="{{ old("campaigns.{$campaign->id}.daily_max_invoices", $campaign->daily_max_invoices ?? 100) }}">
                                     </div>
+                                    @if (in_array($campaign->slug, ['saba', 'nivea'], true))
+                                        <div class="field">
+                                            <label>Facturas emitidas desde</label>
+                                            <input type="date" name="campaigns[{{ $campaign->id }}][invoice_issued_from]" value="{{ old("campaigns.{$campaign->id}.invoice_issued_from", data_get($campaign->rules, 'invoice_issued_from')) }}">
+                                        </div>
+                                        <div class="field">
+                                            <label>Facturas emitidas hasta</label>
+                                            <input type="date" name="campaigns[{{ $campaign->id }}][invoice_issued_to]" value="{{ old("campaigns.{$campaign->id}.invoice_issued_to", data_get($campaign->rules, 'invoice_issued_to')) }}">
+                                            <small class="field-hint">Solo se aceptan facturas con fecha de emisión dentro de este rango. Es independiente de la fecha “Fin” de la promoción.</small>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="toggle-grid" style="margin-top:.9rem;">
                                     <label class="switch-row">
